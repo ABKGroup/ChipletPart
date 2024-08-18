@@ -1,0 +1,259 @@
+<!--
+    Filename: assembly_process_definitions.xml
+    Author: Alexander Graening
+    Affiliation: University of California, Los Angeles
+    Email: agraening@ucla.edu
+
+    Assembly Process Definition Format:
+        - Name: The name listed here is the name that should be referenced in the system definition.
+        - Materials Cost per mm2: This is given in units of $/mm^2. This is the
+            cost of the materials used in the assembly process.
+        - Pick and place machine cost in USD.
+        - Pick and place machine lifetime in years over which the initial costs are ammortized.
+        - Pick and place machine uptime as a fraction of ownership time. The value should be between 0 and 1.
+        - Pick and place technician yearly cost in USD.
+        - Pick and place time in seconds.
+        - Pick and place group size. This is the number of chips that can be picked and placed at once.
+        - Bonding machine cost in USD.
+        - Bonding machine lifetime in years over which the initial costs are ammortized.
+        - Bonding machine uptime as a fraction of ownership time. The value should be between 0 and 1.
+        - Bonding technician yearly cost in USD.
+        - Bonding time in seconds.
+        - Bonding group size. This is the number of chips that can be bonded at once.
+        - Die separation distance in mm.
+        - Edge exclusion distance in mm.
+        - Maximum pad current density in A/mm^2.
+        - Bonding pitch in mm.
+        - Alignment yield as a fraction between 0 and 1.
+        - Bonding yield as a fraction between 0 and 1.
+        - Dielectric bond defect density in units of defects/mm^2.  
+
+    Description: Define a starter assembly process definition library for the example design.
+            The actual parameters are intended to come relatively close to reasonable parameters,
+            but users should replace these numbers with real numbers if they have them.
+
+    Note that each parameter is required to be set even if it is not relevant to the application.
+            If is it not used, select a relevant value that will interact correctly with the cost model.
+            If no value is selected, at least define the line as the empty string: <parameter_name="">.
+            A list of required parameters for the assembly object is below:
+                - name
+                - materials_cost_per_mm2
+                - picknplace_machine_cost
+                - picknplace_machine_lifetime
+                - picknplace_machine_uptime
+                - picknplace_technician_yearly_cost
+                - picknplace_time
+                - picknplace_group
+                - bonding_machine_cost
+                - bonding_machine_lifetime
+                - bonding_machine_uptime
+                - bonding_technician_yearly_cost
+                - bonding_time
+                - bonding_group
+                - die_separation
+                - edge_exclusion
+                - max_pad_current_density
+                - bonding_pitch
+                - alignment_yield
+                - bonding_yield
+                - dielectric_bond_defect_density
+-->
+
+<!-- Note on parameters. 
+    materials_cost_per_mm2 is set arbitrarily, need a source
+    machine_cost numbers are set based on discussions with Professor Iyer and Krutikesh
+    machine_lifetime and machine_uptime are set to arbitrary numbers that make some sense
+    picknplace_time and bonding_time are set based on discussions with Krutikesh
+    technician costs are arbitrary
+    die_separation and edge_exclusion are arbitrary (check if edge_exclusion here is used anymore now this is defined in the wafer_process)
+    max_pad_current_density was set according to <fill in source here>
+    dielecric_bond_defect_density was set to 0 since there is no dielectric bond for organic substrates.
+    alignment_yield and bonding_yield are set arbitrarily with some small verification from <fill in source here>
+    bonding_pitch I think was set according to UCIe standard <add source here>
+    group size is set somewhat arbitrarily to show individual placement but bonding of multiple chips simultaneously
+    -->
+<assembly_processes>
+    <assembly name="organic_25_simultaneous_bonding" 
+        materials_cost_per_mm2="0.1"
+        picknplace_machine_cost="800000"
+        picknplace_machine_lifetime="5"
+        picknplace_machine_uptime="0.9"
+        picknplace_technician_yearly_cost="100000"
+        picknplace_time="10"
+        picknplace_group="1"
+        bonding_machine_cost="800000"
+        bonding_machine_lifetime="5"
+        bonding_machine_uptime="0.9"
+        bonding_technician_yearly_cost="100000"
+        bonding_time="20"
+        bonding_group="10"
+        die_separation="1.000"
+        edge_exclusion="2.000"
+        max_pad_current_density="100.0"
+        bonding_pitch="0.025"
+        alignment_yield="0.999"
+        bonding_yield="0.999999"
+        dielectric_bond_defect_density="0.0">
+    </assembly>
+    <assembly name="organic_55_simultaneous_bonding" 
+        materials_cost_per_mm2="0.1"
+        picknplace_machine_cost="1000000"
+        picknplace_machine_lifetime="5"
+        picknplace_machine_uptime="0.9"
+        picknplace_technician_yearly_cost="100000"
+        picknplace_time="10"
+        picknplace_group="1"
+        bonding_machine_cost="300000"
+        bonding_machine_lifetime="5"
+        bonding_machine_uptime="0.9"
+        bonding_technician_yearly_cost="100000"
+        bonding_time="20"
+        bonding_group="10"
+        die_separation="1.000"
+        edge_exclusion="2.000"
+        max_pad_current_density="100.0"
+        bonding_pitch="0.055"
+        alignment_yield="0.999"
+        bonding_yield="0.999999"
+        dielectric_bond_defect_density="0.0">
+    </assembly>
+    <assembly name="organic_simultaneous_bonding" 
+        materials_cost_per_mm2="0.1"
+        picknplace_machine_cost="600000"
+        picknplace_machine_lifetime="5"
+        picknplace_machine_uptime="0.9"
+        picknplace_technician_yearly_cost="100000"
+        picknplace_time="10"
+        picknplace_group="1"
+        bonding_machine_cost="200000"
+        bonding_machine_lifetime="5"
+        bonding_machine_uptime="0.9"
+        bonding_technician_yearly_cost="100000"
+        bonding_time="20"
+        bonding_group="10"
+        die_separation="1.000"
+        edge_exclusion="2.000"
+        max_pad_current_density="100.0"
+        bonding_pitch="0.110"
+        alignment_yield="0.999"
+        bonding_yield="0.999999"
+        dielectric_bond_defect_density="0.0">
+    </assembly>
+    <!-- Note on parameters. 
+        materials_cost_per_mm2 is set arbitrarily, need a source
+        machine_cost numbers are set based on discussions with Professor Iyer and Krutikesh
+        machine_lifetime and machine_uptime are set to arbitrary numbers that make some sense
+        picknplace_time and bonding_time are set based on discussions with Krutikesh
+        technician costs are arbitrary
+        die_separation and edge_exclusion are arbitrary (check if edge_exclusion here is used anymore now this is defined in the wafer_process)
+        max_pad_current_density was set according to <fill in source here>
+        dielecric_bond_defect_density was set to 0 since this process is for TCB not for hybrid.
+        alignment_yield and bonding_yield are set arbitrarily with some small verification from <fill in source here>
+        bonding_pitch was set according to the waferscale tapeout at UCLA
+        group size was set to show individual placement and bonding
+        -->
+    <assembly name="silicon_45_individual_bonding" 
+        materials_cost_per_mm2="0.1"
+        picknplace_machine_cost="500000"
+        picknplace_machine_lifetime="5"
+        picknplace_machine_uptime="0.9"
+        picknplace_technician_yearly_cost="100000"
+        picknplace_time="10"
+        picknplace_group="1"
+        bonding_machine_cost="500000"
+        bonding_machine_lifetime="5"
+        bonding_machine_uptime="0.9"
+        bonding_technician_yearly_cost="100000"
+        bonding_time="20"
+        bonding_group="1"
+        die_separation="0.100"
+        edge_exclusion="0.100"
+        max_pad_current_density="10000.0"
+        bonding_pitch="0.045"
+        alignment_yield="0.999"
+        bonding_yield="0.999999"
+        dielectric_bond_defect_density="0.0">
+    </assembly>
+    <assembly name="silicon_individual_bonding" 
+        materials_cost_per_mm2="0.1"
+        picknplace_machine_cost="1800000"
+        picknplace_machine_lifetime="5"
+        picknplace_machine_uptime="0.9"
+        picknplace_technician_yearly_cost="100000"
+        picknplace_time="10"
+        picknplace_group="1"
+        bonding_machine_cost="1800000"
+        bonding_machine_lifetime="5"
+        bonding_machine_uptime="0.9"
+        bonding_technician_yearly_cost="100000"
+        bonding_time="20"
+        bonding_group="1"
+        die_separation="0.100"
+        edge_exclusion="0.100"
+        max_pad_current_density="10000.0"
+        bonding_pitch="0.010"
+        alignment_yield="0.999"
+        bonding_yield="0.999999"
+        dielectric_bond_defect_density="0.0">
+    </assembly>
+    <!-- Note on parameters. 
+        materials_cost_per_mm2 is set arbitrarily, need a source
+        machine_cost numbers are set based on discussions with Professor Iyer and Krutikesh
+        machine_lifetime and machine_uptime are set to arbitrary numbers that make some sense
+        picknplace_time and bonding_time are set based on discussions with Krutikesh
+        technician costs are arbitrary
+        die_separation and edge_exclusion are arbitrary (check if edge_exclusion here is used anymore now this is defined in the wafer_process)
+        max_pad_current_density was set according to <fill in source here>
+        dielecric_bond_defect_density was set since nonzero since this is meant to be for hybrid bonding.
+        alignment_yield and bonding_yield are set arbitrarily with some small verification from <fill in source here>
+        bonding_pitch was set according to the waferscale tapeout at UCLA
+        group size was set to show individual placement and bonding
+        -->
+    <assembly name="w2w_hybrid_bonding" 
+        materials_cost_per_mm2="0.1"
+        picknplace_machine_cost="1000000"
+        picknplace_machine_lifetime="5"
+        picknplace_machine_uptime="0.9"
+        picknplace_technician_yearly_cost="100000"
+        picknplace_time="10"
+        picknplace_group="1000"
+        bonding_machine_cost="1000000"
+        bonding_machine_lifetime="5"
+        bonding_machine_uptime="0.9"
+        bonding_technician_yearly_cost="100000"
+        bonding_time="20"
+        bonding_group="1000"
+        die_separation="0.100"
+        edge_exclusion="0.100"
+        max_pad_current_density="10000.0"
+        bonding_pitch="0.001"
+        alignment_yield="0.99999"
+        bonding_yield="0.99999999"
+        dielectric_bond_defect_density="0.0001">
+    </assembly>
+    <!-- Note on parameters
+        Here the parameters are set to as much as possible eliminate all assembly cost and yield impact. 
+        -->
+    <assembly name="dummy_assembly_process" 
+        materials_cost_per_mm2="0.0"
+        picknplace_machine_cost="0"
+        picknplace_machine_lifetime="1"
+        picknplace_machine_uptime="1.0"
+        picknplace_technician_yearly_cost="0"
+        picknplace_time="1"
+        picknplace_group="1"
+        bonding_machine_cost="0"
+        bonding_machine_lifetime="1"
+        bonding_machine_uptime="1.0"
+        bonding_technician_yearly_cost="0"
+        bonding_time="1"
+        bonding_group="1"
+        die_separation="0.0"
+        edge_exclusion="0.0"
+        max_pad_current_density="1.0"
+        bonding_pitch="1.0"
+        alignment_yield="1.0"
+        bonding_yield="1.0"
+        dielectric_bond_defect_density="0.0">
+    </assembly>
+</assembly_processes>

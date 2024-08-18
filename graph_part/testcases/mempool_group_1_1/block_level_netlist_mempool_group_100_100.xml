@@ -1,0 +1,1003 @@
+<netlist>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[0\].i_axi_dma_backend"
+		block1="gen_dmas\[0\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="231"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[0\].i_axi_to_reqrsp"
+		block1="gen_dmas\[0\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="10"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[1\].i_axi_dma_backend"
+		block1="gen_dmas\[1\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="231"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[1\].i_axi_to_reqrsp"
+		block1="gen_dmas\[1\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="10"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[2\].i_axi_dma_backend"
+		block1="gen_dmas\[2\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="231"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[2\].i_axi_to_reqrsp"
+		block1="gen_dmas\[2\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="10"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[3\].i_axi_dma_backend"
+		block1="gen_dmas\[3\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="231"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_dmas\[3\].i_axi_to_reqrsp"
+		block1="gen_dmas\[3\].i_dma_axi_xbar"
+		bb_count=""
+		bandwidth="10"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[0\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[10\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[11\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[12\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[13\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[14\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[15\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[1\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[2\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[3\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[4\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[5\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[6\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[7\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[8\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[1\].i_remote_interco"
+		block1="gen_tiles\[9\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[0\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[10\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[11\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[12\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[13\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[14\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[15\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[1\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[2\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[3\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[4\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[5\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[6\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[7\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[8\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[2\].i_remote_interco"
+		block1="gen_tiles\[9\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[0\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[10\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[11\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[12\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[13\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[14\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[15\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[1\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[2\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[3\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[4\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[5\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[6\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[7\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[8\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_remote_interco\[3\].i_remote_interco"
+		block1="gen_tiles\[9\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[0\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[0\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="22"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[0\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[0\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="145"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[10\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[10\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[10\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="94"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[10\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="159"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[11\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[11\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="147"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[11\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="86"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[11\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="159"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[12\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="157"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[12\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[12\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[12\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="136"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[13\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="157"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[13\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[13\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="157"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[13\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="136"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[14\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="134"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[14\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="157"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[14\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="92"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[14\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="54"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[15\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="90"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[15\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[15\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="157"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[15\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="52"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[1\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[1\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[1\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="66"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[1\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[2\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[2\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="90"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[2\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[2\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="159"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[3\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[3\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[3\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[3\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="159"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[4\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[4\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="151"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[4\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="24"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[4\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="145"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[5\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[5\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="151"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[5\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[5\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="136"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[6\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[6\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="151"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[6\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[6\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="163"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[7\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[7\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="155"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[7\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[7\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="159"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[8\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[8\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[8\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="64"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[8\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="110"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[9\].i_tile"
+		block1="gen_remote_interco\[1\].i_remote_interco"
+		bb_count=""
+		bandwidth="20"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[9\].i_tile"
+		block1="gen_remote_interco\[2\].i_remote_interco"
+		bb_count=""
+		bandwidth="92"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[9\].i_tile"
+		block1="gen_remote_interco\[3\].i_remote_interco"
+		bb_count=""
+		bandwidth="86"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="gen_tiles\[9\].i_tile"
+		block1="i_local_interco"
+		bb_count=""
+		bandwidth="159"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_axi_interco"
+		block1="gen_axi_group_cuts\[0\].i_axi_cut"
+		bb_count=""
+		bandwidth="767"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_dma_req_register"
+		block1="gen_dmas\[0\].i_axi_dma_backend"
+		bb_count=""
+		bandwidth="34"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_dma_req_register"
+		block1="gen_dmas\[1\].i_axi_dma_backend"
+		bb_count=""
+		bandwidth="34"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_dma_req_register"
+		block1="gen_dmas\[2\].i_axi_dma_backend"
+		bb_count=""
+		bandwidth="34"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_dma_req_register"
+		block1="gen_dmas\[3\].i_axi_dma_backend"
+		bb_count=""
+		bandwidth="34"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_dma_req_register"
+		block1="i_idma_distributed_midend"
+		bb_count=""
+		bandwidth="14"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_idma_distributed_midend"
+		block1="i_dma_req_register"
+		bb_count=""
+		bandwidth="2"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[0\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[10\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[11\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[12\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[13\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[14\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[15\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[1\].i_tile"
+		bb_count=""
+		bandwidth="4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[2\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[3\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[4\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[5\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[6\].i_tile"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[7\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[8\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="i_local_interco"
+		block1="gen_tiles\[9\].i_tile"
+		bb_count=""
+		bandwidth="6"
+		average_bandwidth_utilization="0.5">
+	</net>
+</netlist>

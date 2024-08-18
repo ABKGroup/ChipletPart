@@ -1,0 +1,170 @@
+<netlist>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_0"
+		block1="Memory_0"
+		bb_count=""
+		bandwidth="7826.379782569368"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Memory_0"
+		block1="Network_0"
+		bb_count=""
+		bandwidth="3794.6083794275723"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_0"
+		block1="Compute_0"
+		bb_count=""
+		bandwidth="13281.129327996503"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Compute_0"
+		block1="Network_0"
+		bb_count=""
+		bandwidth="26977.293947492897"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_1"
+		block1="Memory_1"
+		bb_count=""
+		bandwidth="7826.379782569368"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Memory_1"
+		block1="Network_1"
+		bb_count=""
+		bandwidth="3794.6083794275723"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_1"
+		block1="Compute_1"
+		bb_count=""
+		bandwidth="13281.129327996503"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Compute_1"
+		block1="Network_1"
+		bb_count=""
+		bandwidth="26977.293947492897"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_2"
+		block1="Memory_2"
+		bb_count=""
+		bandwidth="7826.379782569368"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Memory_2"
+		block1="Network_2"
+		bb_count=""
+		bandwidth="3794.6083794275723"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_2"
+		block1="Compute_2"
+		bb_count=""
+		bandwidth="13281.129327996503"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Compute_2"
+		block1="Network_2"
+		bb_count=""
+		bandwidth="26977.293947492897"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_3"
+		block1="Memory_3"
+		bb_count=""
+		bandwidth="7826.379782569368"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Memory_3"
+		block1="Network_3"
+		bb_count=""
+		bandwidth="3794.6083794275723"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_3"
+		block1="Compute_3"
+		bb_count=""
+		bandwidth="13281.129327996503"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Compute_3"
+		block1="Network_3"
+		bb_count=""
+		bandwidth="26977.293947492897"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_0"
+		block1="Network_1"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_1"
+		block1="Network_0"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_2"
+		block1="Network_0"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_0"
+		block1="Network_2"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_3"
+		block1="Network_1"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_1"
+		block1="Network_3"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_3"
+		block1="Network_2"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Network_2"
+		block1="Network_3"
+		bb_count=""
+		bandwidth="2994.183174392069"
+		average_bandwidth_utilization="0.5">
+	</net>
+</netlist>

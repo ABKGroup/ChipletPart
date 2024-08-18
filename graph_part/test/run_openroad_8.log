@@ -1,0 +1,18 @@
+OpenROAD v2.0-13568-g763b5ad 
+Features included (+) or not (-): +Charts +GPU +GUI +Python : RELEASE
+This program is licensed under the BSD-3 license. See the LICENSE file for details.
+Components of this program may be licensed under more restrictive licenses which must be honored.
+[INFO PAR-0002] Partitioning hypergraph.
+Partitioning Parameters
+	Number of partitions = 8
+	UBfactor = 5.0
+	Seed = 0
+	Vertex dimensions = 1
+	Hyperedge dimensions = 1
+	Placement dimensions = 0
+	Global net threshold = 1000
+[INFO PAR-0038] Display Used Files
+	Hypergraph file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/graph_part/testcases/48_4_14_4_400_1/block_level_netlist_ws-48_4_14_4_400_1_hmetis.hgr
+	Solution file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/graph_part/testcases/48_4_14_4_400_1/block_level_netlist_ws-48_4_14_4_400_1_hmetis.hgr.part.8
+[WARNING PAR-0003] Timing-driven mode is not supported! Disabling timing aware.
+[INFO PAR-0017] Read hypergraph has 192 vertices and 384 hyperedges.
