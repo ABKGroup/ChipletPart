@@ -1,3 +1,37 @@
+///////////////////////////////////////////////////////////////////////////
+//
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
 #include "Hypergraph.h"
@@ -5,9 +39,9 @@
 #include "Utilities.h"
 #include "floorplan.h"
 #include <Python.h>
+#include <chrono>
 #include <deque>
 #include <set>
-
 namespace chiplet {
 
 using Partition = std::vector<int>;
@@ -26,6 +60,7 @@ struct cblock {
   float area;
   float power;
   std::string tech;
+  bool is_memory;
 };
 
 // Hyperedge Gain.
@@ -126,7 +161,8 @@ public:
   }
 
   // Get cost for single partition from scratch.
-  float GetCostFromScratch(const std::vector<int> &partitionIds);
+  float GetCostFromScratch(const std::vector<int> &partitionIds,
+                           bool print = false);
 
   float GetApproxDelta(float &delta_area, float &delta_bandwidth, int &from_pid,
                        int &to_pid);
@@ -226,6 +262,12 @@ public:
                             const std::vector<int> &partition);
 
   void SetLegacyCost(float legacyCost) { legacy_cost_ = legacyCost; }
+
+  // get the total floorplan time
+  float GetTotalFloorplanTime() const { return total_fplan_time_; }
+
+  float GetCostModelTime() const { return total_cost_model_time_; }
+
 private:
   bool Terminate(std::deque<float> &history, float &new_cost);
   void InitializeSingleGainBucket(
@@ -273,26 +315,32 @@ private:
                  std::string netlist_file, std::string blocks_file);
 
   float AreaScalingFactor(std::string initial_tech_node,
-                          std::string actual_tech_node) {
+                          std::string actual_tech_node, bool is_memory) {
     // Define the scaling factors for the area.
     std::vector<std::vector<float>> area_scaling_factors = {
-        {1, 0.34, 0.15, 0.08, 0.053, 0.025, 0.011, 0.01, 0.0093, 0.0055,
-         0.0032},
-        {2.9, 1, 0.44, 0.23, 0.16, 0.072, 0.033, 0.03, 0.027, 0.016, 0.0092},
-        {6.6, 2.3, 1, 0.53, 0.35, 0.16, 0.075, 0.067, 0.061, 0.036, 0.021},
-        {12, 4.3, 1.9, 1, 0.66, 0.31, 0.14, 0.13, 0.12, 0.068, 0.039},
-        {19, 6.4, 2.8, 1.5, 1, 0.46, 0.21, 0.19, 0.17, 0.1, 0.059},
-        {40, 14, 6.1, 3.3, 2.2, 1, 0.46, 0.41, 0.38, 0.22, 0.13},
-        {88, 30, 13, 7.1, 4.7, 2.2, 1, 0.89, 0.82, 0.48, 0.28},
-        {99, 34, 15, 7.9, 5.3, 2.4, 1.1, 1, 0.91, 0.54, 0.31},
-        {110, 37, 16, 8.7, 5.8, 2.7, 1.2, 1.1, 1, 0.59, 0.34},
-        {180, 63, 28, 15, 9.8, 4.5, 2.1, 1.9, 1.7, 1, 0.58},
-        {320, 110, 48, 25, 17, 7.8, 3.6, 3.2, 2.9, 1.7, 1}};
+        {1, 0.53, 0.35, 0.16, 0.075, 0.067, 0.061, 0.036, 0.021},
+        {1.9, 1, 0.66, 0.31, 0.14, 0.13, 0.12, 0.068, 0.039},
+        {2.8, 1.5, 1, 0.46, 0.21, 0.19, 0.17, 0.1, 0.059},
+        {6.1, 3.3, 2.2, 1, 0.46, 0.41, 0.38, 0.22, 0.13},
+        {13, 7.1, 4.7, 2.2, 1, 0.89, 0.82, 0.48, 0.28},
+        {15, 7.9, 5.3, 2.4, 1.1, 1, 0.91, 0.54, 0.31},
+        {16, 8.7, 5.8, 2.7, 1.2, 1.1, 1, 0.59, 0.34},
+        {28, 15, 9.8, 4.5, 2.1, 1.9, 1.7, 1, 0.58},
+        {48, 25, 17, 7.8, 3.6, 3.2, 2.9, 1.7, 1}};
+    std::vector<std::vector<float>> memory_area_scaling_factors = {
+        {1, 0.53, 0.43, 0.19, 0.1, 0.12, 0.1, 0.096, 0.077},
+        {1.9, 1, 0.836, 0.372, 0.187, 0.238, 0.2, 0.18, 0.143},
+        {2.2, 1.18, 1, 0.44, 0.22, 0.275, 0.22, 0.21, 0.17},
+        {5.1, 2.75, 2.3, 1, 0.51, 0.63, 0.53, 0.49, 0.40},
+        {9.75, 5.3, 4.47, 1.98, 1, 1.22, 1.03, 0.96, 0.77},
+        {8.2, 4.3, 3.7, 1.6, 0.8, 1, 0.82, 0.79, 0.62},
+        {9.6, 5.22, 4.4, 1.9, 0.96, 1.2, 1, 0.94, 0.75},
+        {10.5, 5.6, 4.6, 2.02, 1.05, 1.3, 1.06, 1, 0.798},
+        {13, 6.8, 5.9, 2.5, 1.3, 1.6, 1.3, 1.2, 1}};
 
     // Tech Nodes
-    std::vector<std::string> tech_nodes = {"180nm", "130nm", "90nm", "65nm",
-                                           "45nm",  "32nm",  "20nm", "16nm",
-                                           "14nm",  "10nm",  "7nm"};
+    std::vector<std::string> tech_nodes = {
+        "90nm", "65nm", "45nm", "32nm", "20nm", "16nm", "14nm", "10nm", "7nm"};
     // Find the index of the initial_tech_node and actual_tech_node in the
     // tech_nodes vector.
     int initial_index = -1;
@@ -312,8 +360,12 @@ private:
                 << std::endl;
       exit(1);
     }
+
     // Return the scaling factor.
-    return area_scaling_factors[initial_index][actual_index];
+    if (is_memory)
+      return memory_area_scaling_factors[initial_index][actual_index];
+    else
+      return area_scaling_factors[initial_index][actual_index];
   }
 
   float PowerScalingFactor(std::string initial_tech_node,
@@ -526,7 +578,7 @@ private:
   float costConfidenceInterval_ = -1.0;
   float powerConfidenceInterval_ = -1.0;
   float cost_coefficient_ = 1.0;
-  float power_coefficient_ = 1.0;
+  float power_coefficient_ = 0.0;
   std::vector<float> areaSlopes_;
   std::vector<float> powerAreaSlopes_;
   std::vector<float> costBandwidthSlopes_;
@@ -536,6 +588,9 @@ private:
   std::vector<float> x_locations_;
   std::vector<float> y_locations_;
   bool approx_state_ = 0;
+  // tally global runtime
+  float total_cost_model_time_ = 0.0;
+  float total_fplan_time_ = 0.0;
   // 0 stands for gain bucket initialization
   // 1 stands for gain bucket neighbor update
   HGraphPtr soc_;

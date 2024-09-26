@@ -1,3 +1,36 @@
+///////////////////////////////////////////////////////////////////////////
+//
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
 ///////////////////////////////////////////////////////////////////////////////
 // High-level description
 // This file includes the basic data structure for hypergraph,
@@ -25,21 +58,30 @@ using HGraphPtr = std::shared_ptr<Hypergraph>;
 
 class Hypergraph {
 public:
-  Hypergraph(
-      int vertex_dimensions, int hyperedge_dimensions,
-      const std::vector<std::vector<int>> &hyperedges,
-      const std::vector<std::vector<float>> &vertex_weights,
-      const std::vector<std::vector<float>> &hyperedge_weights);
+  Hypergraph(int vertex_dimensions, int hyperedge_dimensions,
+             const std::vector<std::vector<int>> &hyperedges,
+             const std::vector<std::vector<float>> &vertex_weights,
+             const std::vector<std::vector<float>> &hyperedge_weights,
+             const std::vector<float> &reaches,
+             const std::vector<float> &io_sizes);
 
   int GetNumVertices() const { return num_vertices_; }
   int GetNumHyperedges() const { return num_hyperedges_; }
   int GetVertexDimensions() const { return vertex_dimensions_; }
   int GetHyperedgeDimensions() const { return hyperedge_dimensions_; }
-  void SetReach(const std::vector<float> &reach) { reach_ = reach; }
+  void SetReach(const std::vector<float> &reaches) { reaches_ = reaches; }
 
-  void SetReach(int hyperedge_id, float val) { reach_[hyperedge_id] = val; }
+  void SetReach(int hyperedge_id, float val) { reaches_[hyperedge_id] = val; }
 
-  float GetReach(const int hyperedge_id) const { return reach_[hyperedge_id]; }
+  float GetReach(const int hyperedge_id) const {
+    return reaches_[hyperedge_id];
+  }
+
+  void SetIoSize(int hyperedge_id, float val) { io_sizes_[hyperedge_id] = val; }
+
+  float GetIoSize(const int hyperedge_id) const {
+    return io_sizes_[hyperedge_id];
+  }
 
   std::vector<float> GetTotalVertexWeights() const;
 
@@ -81,7 +123,7 @@ public:
       for (const auto &v : Vertices(hyperedge_id)) {
         if (v != vertex_id) {
           neighbors.insert(v);
-        }          
+        }
       }
     }
     return std::vector<int>(neighbors.begin(), neighbors.end());
@@ -104,7 +146,8 @@ private:
   std::vector<int> vind_;
   std::vector<int> vptr_;
   // store reach here
-  std::vector<float> reach_;
+  std::vector<float> reaches_;
+  std::vector<float> io_sizes_;
 };
 
 } // namespace chiplet

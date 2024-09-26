@@ -102,7 +102,7 @@
         bandwidth="4"
         wire_count="1"
         bidirectional="False"
-        energy_per_bit="0.000000000001"
+        energy_per_bit="0.001"
         reach="2.0">
     </io>
     <!-- This is another example of a serial protocol, but this does not

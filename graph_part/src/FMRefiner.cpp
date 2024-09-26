@@ -1,3 +1,37 @@
+///////////////////////////////////////////////////////////////////////////
+//
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
 #include "FMRefiner.h"
 #include "Hypergraph.h"
 #include "Utilities.h"
@@ -325,7 +359,7 @@ bool ChipletRefiner::CheckFloorPlanFeasible(const HGraphPtr hgraph,
     local_pos_seq_.push_back(local_pos_seq_.size());
     local_neg_seq_.push_back(local_neg_seq_.size());
   }
-  
+
   auto floor_tuple =
       Floorplanner(max_steps, perturbations, cooling_acceleration_factor, true);
   if (std::get<3>(floor_tuple) == false) {
@@ -484,12 +518,6 @@ void ChipletRefiner::InitializeGainBucketsKWay(
     const std::vector<int> &boundary_vertices, const Matrix<int> &net_degs,
     const Partition &solution) {
   InitSlopes(num_parts_);
-  // print the solution to file
-  std::ofstream solution_file("dbg_ptn.txt");
-  for (int i = 0; i < solution.size(); i++) {
-    solution_file << solution[i] << std::endl;
-  }
-  solution_file.close();
   for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
     InitializeSingleGainBucket(buckets, to_pid, hgraph, boundary_vertices,
                                net_degs, solution);
@@ -550,8 +578,6 @@ ChipletRefiner::PickMoveKWay(GainBuckets &buckets, const HGraphPtr &hgraph,
 
     bool feasible = CheckFloorPlanFeasible(hgraph, 100, 100, 0.00001, vertex, i,
                                            from_pid, partition);
-
-    // bool feasible = true;
     if (feasible == true && gain > candidate->GetGain()) {
       to_pid = i;
       candidate = ele;
@@ -567,12 +593,8 @@ ChipletRefiner::PickMoveKWay(GainBuckets &buckets, const HGraphPtr &hgraph,
   if (to_pid > -1 || best_to_pid == -1) {
     return candidate;
   }
-  
+
   return candidate;
-  /*// Case 2:  "corking effect", i.e., no candidate
-  return buckets.at(best_to_pid)
-      ->GetBestCandidate(curr_block_balance, upper_block_balance,
-                         lower_block_balance, hgraph);*/
 }
 
 // move one vertex based on the calculated gain_cell
@@ -763,67 +785,7 @@ GainCell ChipletRefiner::CalculateVertexGain(int v, int from_pid, int to_pid,
     return std::make_shared<VertexGain>(v, from_pid, to_pid, 0.0f);
   }
 
-  // define lambda function
-  // for checking connectivity (number of blocks connected by a hyperedge)
-  // function : check the connectivity for the hyperedge
-  auto GetConnectivity = [&](int e) {
-    int connectivity = 0;
-    for (auto &num_v : net_degs[e]) {
-      if (num_v > 0) {
-        connectivity++;
-      }
-    }
-    return connectivity;
-  };
-
-  // traverse all the hyperedges connected to v
-  for (const int e : hgraph->Edges(v)) {
-    const int connectivity = GetConnectivity(e);
-    const float e_score = hgraph->GetHyperedgeWeights(e)[0];
-    if (connectivity == 0) {
-      // ignore the hyperedge consisting of multiple vertices
-      // ignore single-vertex hyperedge
-      continue;
-    }
-    if (connectivity == 1 && net_degs[e][from_pid] > 1) {
-      // move from_pid to to_pid will have negative score
-      // all the vertices are with block from_id
-      cut_score -= e_score;
-    } else if (connectivity == 2 && net_degs[e][from_pid] == 1 &&
-               net_degs[e][to_pid] > 0) {
-      // all the vertices excluding v are all within block to_pid
-      // move from_pid to to_pid will increase the score
-      cut_score += e_score;
-    }
-  }
-
-  float delta_cost = 0.0;
-  if (approx_state_ == 0) {
-    delta_cost = GetSingleMoveCost(solution, v, from_pid, to_pid);
-    /*float scalar_vertex_weight = hgraph->GetVertexWeights(v)[0];
-    float approx_delta_cost =
-        GetApproxDelta(scalar_vertex_weight, cut_score, from_pid, to_pid);*/
-    /*if (std::abs(delta_cost) > GetCostConfidenceInterval()) {
-      delta_cost = GetSingleMoveCost(solution, v, from_pid, to_pid);
-    }*/
-  } else {
-    // get weight of the vertex
-    auto vertex_weight = hgraph->GetVertexWeights(v);
-    // convert vector of vertex weight to singular scalar value
-    float scalar_vertex_weight =
-        std::accumulate(vertex_weight.begin(), vertex_weight.end(), 0.0);
-    delta_cost =
-        GetApproxDelta(scalar_vertex_weight, cut_score, from_pid, to_pid);
-    if (std::abs(delta_cost) > GetCostConfidenceInterval()) {
-      float base_cost = GetCostAndSlopes(solution);
-      delta_cost =
-          GetApproxDelta(scalar_vertex_weight, cut_score, from_pid, to_pid);
-      if (std::abs(delta_cost) > GetCostConfidenceInterval()) {
-        delta_cost = GetSingleMoveCost(solution, v, from_pid, to_pid);
-      }
-    }
-  }
-
+  float delta_cost = GetSingleMoveCost(solution, v, from_pid, to_pid);
   return std::make_shared<VertexGain>(v, from_pid, to_pid, delta_cost);
 }
 
@@ -1318,7 +1280,9 @@ float ChipletRefiner::GetCostAndSlopes(const std::vector<int> &partitionIds) {
           chiplet_blocks_[partition_vector[partitionId][blockId]].area *
           AreaScalingFactor(
               chiplet_blocks_[partition_vector[partitionId][blockId]].tech,
-              tech_array_[partitionId]);
+              tech_array_[partitionId],
+              chiplet_blocks_[partition_vector[partitionId][blockId]]
+                  .is_memory);
       chiplet_powers[partitionId] +=
           chiplet_blocks_[partition_vector[partitionId][blockId]].power *
           PowerScalingFactor(
@@ -1651,7 +1615,8 @@ PyObject *ChipletRefiner::BuildModel(const std::vector<int> &partitionIDs,
   // Build a Python nested dictionary of the chip format.
   // Get the largest partition ID in partitionIDs.
 
-  int num_parts = *std::max_element(partitionIDs.begin(), partitionIDs.end()) + 1;
+  int num_parts =
+      *std::max_element(partitionIDs.begin(), partitionIDs.end()) + 1;
 
   // Get a list of block numbers for each partition.
   std::vector<std::vector<int>> partitionVector =
@@ -1672,7 +1637,6 @@ PyObject *ChipletRefiner::BuildModel(const std::vector<int> &partitionIDs,
   float total_area = 0.0;
   float total_power = 0.0;
 
-
   for (int partitionId = 0; partitionId < num_parts; partitionId++) {
     for (int blockId = 0; blockId < partitionVector[partitionId].size();
          ++blockId) {
@@ -1680,7 +1644,8 @@ PyObject *ChipletRefiner::BuildModel(const std::vector<int> &partitionIDs,
           chiplet_blocks_[partitionVector[partitionId][blockId]].area *
           AreaScalingFactor(
               chiplet_blocks_[partitionVector[partitionId][blockId]].tech,
-              tech_array_[partitionId]);
+              tech_array_[partitionId],
+              chiplet_blocks_[partitionVector[partitionId][blockId]].is_memory);
       chiplet_powers[partitionId] +=
           chiplet_blocks_[partitionVector[partitionId][blockId]].power *
           PowerScalingFactor(
@@ -1689,16 +1654,25 @@ PyObject *ChipletRefiner::BuildModel(const std::vector<int> &partitionIDs,
     }
     total_area += chiplet_areas[partitionId];
     total_power += chiplet_powers[partitionId];
+    total_power += chiplet_powers[partitionId];
   }
 
   // Get block names from the blocks vector and store as a list of python
   // strings in a PyObject*
-  PyObject *block_names = PyList_New(num_parts);
+  PyObject *block_names = PyList_New(chiplet_blocks_.size());
+  PyObject *block_chiplet_names = PyList_New(num_parts);
   for (int partitionId = 0; partitionId < num_parts; partitionId++) {
     PyObject *block_chiplet_name =
         PyUnicode_DecodeUTF8((std::to_string(partitionId)).c_str(),
                              (std::to_string(partitionId)).size(), "strict");
-    PyList_SetItem(block_names, partitionId, block_chiplet_name);
+    PyList_SetItem(block_chiplet_names, partitionId, block_chiplet_name);
+  }
+
+  for (int blockId = 0; blockId < chiplet_blocks_.size(); blockId++) {
+    PyObject *block_name =
+        PyUnicode_DecodeUTF8(chiplet_blocks_[blockId].name.c_str(),
+                             chiplet_blocks_[blockId].name.size(), "strict");
+    PyList_SetItem(block_names, blockId, block_name);
   }
 
   PyObject *chip = NULL;
@@ -1841,7 +1815,7 @@ PyObject *ChipletRefiner::BuildModel(const std::vector<int> &partitionIDs,
             PyObject *pChipArgs = PyTuple_Pack(
                 9, chip_params, io_list, layer_list, wafer_process_list,
                 assembly_process_list, test_process_list, connectivity,
-                average_bandwidth_utilization_combined, block_names);
+                average_bandwidth_utilization_combined, block_chiplet_names);
             chip = PyObject_CallObject(pFunctionReadChip, pChipArgs);
             Py_XDECREF(pChipArgs);
           }
@@ -1898,7 +1872,8 @@ float ChipletRefiner::GetApproxDelta(float &delta_area, float &delta_bandwidth,
 // 1. partition ids -> 1 cost output
 // We assume the blocks have been ordered in some order
 // We assume the partition id and block id both starts with 0
-float ChipletRefiner::GetCostFromScratch(const std::vector<int> &partitionIds) {
+float ChipletRefiner::GetCostFromScratch(const std::vector<int> &partitionIds,
+                                         bool print) {
   float cost = 0.0;
   float cost_weight = cost_coefficient_;
   float power = 0.0;
@@ -1985,7 +1960,7 @@ HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
                                           const std::vector<int> &partition) {
   Matrix<float> vertex_weights_c = GetBlockBalance(hgraph, partition);
   Matrix<float> new_vertex_weights_c;
-  // if a cluster has 0 weight then drop it 
+  // if a cluster has 0 weight then drop it
   std::vector<int> cluster_id_map_new;
   for (int i = 0; i < vertex_weights_c.size(); i++) {
     if (vertex_weights_c[i][0] > 0.0) {
@@ -2003,7 +1978,7 @@ HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
     if (cluster_id_map.find(vertex_cluster_id_vec[i]) == cluster_id_map.end()) {
       cluster_id_map[vertex_cluster_id_vec[i]] = cluster_id;
       cluster_id++;
-    } 
+    }
     vertex_cluster_id_vec[i] = cluster_id_map[vertex_cluster_id_vec[i]];
   }
 
@@ -2011,6 +1986,8 @@ HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
   Matrix<float> hyperedges_weights_c; // each element represents the weight of
                                       // the clustered hyperedge
   std::vector<int> degrees(vertex_weights_c.size(), 0);
+  std::vector<float> reaches;
+  std::vector<float> io_cell_sizes;
   for (int e = 0; e < hgraph->GetNumHyperedges(); e++) {
     const auto range = hgraph->Vertices(e);
     const int he_size = range.size();
@@ -2024,15 +2001,22 @@ HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
     }
     if (hyperedge_c.size() <= 1) {
       continue; // ignore the single-vertex hyperedge
-    } 
+    }
     hyperedges_c.push_back(
         std::vector<int>(hyperedge_c.begin(), hyperedge_c.end()));
     hyperedges_weights_c.push_back(hgraph->GetHyperedgeWeights(e));
+    reaches.push_back(hgraph->GetReach(e));
+    io_cell_sizes.push_back(hgraph->GetIoSize(e));
   }
 
   HGraphPtr chiplet_level_hgraph = std::make_shared<Hypergraph>(
       hgraph->GetVertexDimensions(), hgraph->GetHyperedgeDimensions(),
-      hyperedges_c, new_vertex_weights_c, hyperedges_weights_c);
+      hyperedges_c, new_vertex_weights_c, hyperedges_weights_c, reaches,
+      io_cell_sizes);
+
+  /* print the chiplet level hypergraph */
+  
+
   return chiplet_level_hgraph;
 }
 

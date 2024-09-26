@@ -12,6 +12,8 @@
         - Defect Density: This is the defect density of the layer in units of defects/mm^2.
         - Critical Area Ratio: This is the fraction of the core area which should be considered to be critical.
         - Clustering Factor: Parameter for the negative binomial yield model.
+        - Transistor Density: The transistor density for active layers only. Set to 0 otherwise. Values for 5nm and 7nm are
+            taken from TSMC values in https://en.wikichip.org/wiki/5_nm_lithography_process and ... (Units in MTr/mm^2)
         - Litho Percent: This is the percentage of costs which come from time spent on the lithography tool.
             This is used to scale the costs relative to number of exposures per wafer.
         - NRE Mask Cost: This is the NRE cost of the mask for this layer. (Or all the masks for a combined layer.)
@@ -37,6 +39,7 @@
                 - defect_density
                 - critical_area_ratio
                 - clustering_factor
+                - transistor_density
                 - litho_percent
                 - nre_mask_cost
                 - stitching_yield
@@ -48,9 +51,11 @@
     <layer name="organic_substrate"
         active="False"
         cost_per_mm2="0.0001"
+        gates_per_mm2="0.0"
         defect_density="0.0"
         critical_area_ratio="0.0"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.0"
         nre_mask_cost="0"
         stitching_yield="1.0">
@@ -59,9 +64,11 @@
     <layer name="5nm_active"
         active="True"
         cost_per_mm2="0.5"
+        gates_per_mm2="1000000000"
         defect_density="0.0007"
         critical_area_ratio="0.8"
         clustering_factor="2"
+        transistor_density="117.3"
         litho_percent="0.2"
         nre_mask_cost="10000"
         stitching_yield="0.9">
@@ -73,6 +80,7 @@
         defect_density="0.0003"
         critical_area_ratio="0.5"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.4"
         nre_mask_cost="5000"
         stitching_yield="0.95">
@@ -84,6 +92,7 @@
         defect_density="0.00005"
         critical_area_ratio="0.3"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.3"
         nre_mask_cost="1000"
         stitching_yield="0.99">
@@ -95,6 +104,7 @@
         defect_density="0.00001"
         critical_area_ratio="0.1"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.2"
         nre_mask_cost="500"
         stitching_yield="0.999">
@@ -113,6 +123,7 @@
         defect_density="0.0007"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.15"
         nre_mask_cost="100000"
         stitching_yield="0.5">
@@ -123,6 +134,7 @@
         defect_density="0.0006"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.15"
         nre_mask_cost="100000"
         stitching_yield="0.5">
@@ -134,6 +146,7 @@
         defect_density="0.00001"
         critical_area_ratio="0.3"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.10"
         nre_mask_cost="5000"
         stitching_yield="0.99">
@@ -147,6 +160,7 @@
         defect_density="0.000001"
         critical_area_ratio="0.2"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.0"
         nre_mask_cost="500"
         stitching_yield="1.0">
@@ -158,6 +172,7 @@
         defect_density="0.0016"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.25"
         nre_mask_cost="500000"
         stitching_yield="0.5">
@@ -170,6 +185,7 @@
         defect_density="0.0016"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.25"
         nre_mask_cost="500000"
         stitching_yield="0.5">
@@ -180,6 +196,7 @@
         defect_density="0.0016"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.25"
         nre_mask_cost="500000"
         stitching_yield="0.5">
@@ -190,6 +207,7 @@
         defect_density="0.001"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="91.2"
         litho_percent="0.27"
         nre_mask_cost="1000000"
         stitching_yield="0.5">
@@ -202,6 +220,7 @@
         defect_density="0.0018"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="729.6"
         litho_percent="0.27"
         nre_mask_cost="1000000"
         stitching_yield="0.5">
@@ -212,6 +231,7 @@
         defect_density="0.001"
         critical_area_ratio="0.6"
         clustering_factor="2"
+        transistor_density="117.3"
         litho_percent="0.30"
         nre_mask_cost="3000000"
         stitching_yield="0.5">
@@ -222,6 +242,7 @@
         defect_density="0.0025"
         critical_area_ratio="0.7"
         clustering_factor="2"
+        transistor_density="0"
         litho_percent="0.35"
         nre_mask_cost="5000000"
         stitching_yield="0.5">

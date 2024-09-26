@@ -1,3 +1,38 @@
+///////////////////////////////////////////////////////////////////////////
+//
+// BSD 3-Clause License
+//
+// Copyright (c) 2022, The Regents of the University of California
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// * Redistributions of source code must retain the above copyright notice, this
+//   list of conditions and the following disclaimer.
+//
+// * Redistributions in binary form must reproduce the above copyright notice,
+//   this list of conditions and the following disclaimer in the documentation
+//   and/or other materials provided with the distribution.
+//
+// * Neither the name of the copyright holder nor the names of its
+//   contributors may be used to endorse or promote products derived from
+//   this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 #include "ChipletPart.h"
 #include "Hypergraph.h"
@@ -8,6 +43,8 @@
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <chrono>
 #include <codecvt>
+#include <filesystem>
+#include <future> // For parallel fitness evaluation
 #include <iomanip>
 #include <iostream>
 #include <locale>
@@ -335,19 +372,21 @@ void ChipletPart::ReadChipletGraph(std::string hypergraph_file,
       // the remaining elements are the vertex list
       std::vector<float> hwt = {hvec[0]};
       float reach = hvec[1];
+      float io_size = hvec[2];
+      io_sizes_.push_back(io_size);
       reach_.push_back(reach);
-      std::vector<int> hyperedge(hvec.begin() + 2, hvec.end());
+      std::vector<int> hyperedge(hvec.begin() + 3, hvec.end());
       long long hash = 0;
       for (auto &value : hyperedge) {
         value--; // the vertex id starts from 1 in the hypergraph file
         hash += value * value;
       }
 
-      if (distinct_hyperedges.find(hash) != distinct_hyperedges.end()) {
+      /*if (distinct_hyperedges.find(hash) != distinct_hyperedges.end()) {
         continue;
       } else {
         distinct_hyperedges[hash] = hyperedge;
-      }
+      }*/
 
       hyperedge_weights_.push_back(hwt);
       hyperedges_.push_back(hyperedge);
@@ -381,7 +420,7 @@ void ChipletPart::ReadChipletGraph(std::string hypergraph_file,
 
   hypergraph_ = std::make_shared<Hypergraph>(
       vertex_dimensions_, hyperedge_dimensions_, hyperedges_, vertex_weights_,
-      hyperedge_weights_);
+      hyperedge_weights_, reach_, io_sizes_);
   std::cout << "[INFO] Number of IP blocks in chiplet graph: " << num_vertices_
             << std::endl;
   std::cout << "[INFO] Number of nets in chiplet graph: " << hyperedges_.size()
@@ -426,7 +465,7 @@ void ChipletPart::TechAssignPartition(
   std::vector<std::string> optimal_tech_arr;
   std::vector<int> optimal_parts_for_each_tech;
   const std::string separator(60, '-'); // Creates a separator line
-  for (auto &tech : techs) {
+  /*for (auto &tech : techs) {
     std::cout << separator << std::endl;
     std::cout << std::setw((separator.size() + 10) / 2) << "TECH: " << tech
               << std::endl;
@@ -447,7 +486,9 @@ void ChipletPart::TechAssignPartition(
     }
   }
 
-  int estimated_max_parts = techs_replicated.size();
+  int estimated_max_parts = techs_replicated.size();*/
+  // std::vector<std::string> techs_replicated = techs;
+  int estimated_max_parts = techs.size();
 
   // the heavy lifting begins here
   std::cout << separator << std::endl;
@@ -465,35 +506,31 @@ void ChipletPart::TechAssignPartition(
             << elapsed_time.count() << "s" << std::endl;
 }
 
-// implement genetic algorithm to run QuickPart and generate the best cost
-// for the given tech nodes
-
 void ChipletPart::CreateMatingPool(
     const std::vector<std::vector<std::string>> &population,
     const std::vector<float> &fitness,
     std::vector<std::vector<std::string>> &mating_pool) {
+
   mating_pool.clear(); // Clear existing entries in mating pool
   std::vector<int> indices(population.size());
   for (size_t i = 0; i < indices.size(); ++i) {
     indices[i] = i;
   }
 
-  // Sorting indices based on fitness values
+  // Sorting indices based on fitness values (ascending order)
   std::sort(indices.begin(), indices.end(), [&](const int &a, const int &b) {
     return fitness[a] < fitness[b];
   });
 
-  // Select the best individuals, aiming to fill the mating pool with
-  // sufficient individuals
-  int requiredMatingPoolSize = population_size_; // Adjust this as needed
-  int factor = requiredMatingPoolSize /
-               population.size(); // Factor of repetition for small populations
+  // Select the best individuals to fill the mating pool
+  mating_pool.reserve(population_size_);
+  int factor =
+      std::max(1, population_size_ / static_cast<int>(population.size()));
 
-  // Ensure every individual is considered and add more from the top as needed
   for (int k = 0; k < factor; ++k) {
-    for (int i = 0; i < population.size(); ++i) {
-      if (mating_pool.size() < requiredMatingPoolSize) {
-        mating_pool.push_back(population[indices[i]]);
+    for (int i : indices) {
+      if (mating_pool.size() < population_size_) {
+        mating_pool.push_back(population[i]);
       }
     }
   }
@@ -505,102 +542,84 @@ void ChipletPart::GeneticPart(
     std::string chiplet_assembly_process_file, std::string chiplet_test_file,
     std::string chiplet_netlist_file, std::string chiplet_blocks_file,
     float reach, float separation, std::vector<std::string> &tech_nodes) {
-  const std::string hseparator(60, '='); // Creates a separator line
-  std::cout << hseparator << std::endl;
-  std::cout << std::setw((hseparator.size() + 10) / 2)
-            << "RUNNING GENETIC ALGORITHM! " << std::endl;
-  std::cout << hseparator << std::endl;
-  Py_Initialize();
-  PyObject *sysPath = PySys_GetObject("path");
-  PyList_Append(sysPath,
-                PyUnicode_FromString(path_to_embedding_script_.c_str()));
 
-  // the objective of the genetic algorithm is to find
-  // a near optimal assignment of tech nodes to partitions
-  // such that the cost of the assignment is minimized
-  // the cost of running a partition with a given tech
-  // node is obtained from the function QuickPart
+  const std::string separator(60, '=');
+  std::cout << separator << std::endl
+            << std::setw((separator.size() + 10) / 2)
+            << "RUNNING GENETIC ALGORITHM!" << std::endl
+            << separator << std::endl;
 
-  // the genetic algorithm is implemented as follows:
-  // 1. generate the initial population
-  // 2. evaluate the fitness of each individual
-  // 3. select the best individuals
-  // 4. crossover the best individuals
-  // 5. mutate the best individuals
-  // 6. repeat steps 2-5 until the stopping criteria is met
-
-  // the stopping criteria is met when the number of generations
-  // is reached or the cost of the best individual does not change
-  // for a given number of generations or an early threshold is set
-
-  auto CrossOver = [this](std::vector<std::string> &parent1,
-                          std::vector<std::string> &parent2) {
+  // Genetic algorithm core functions
+  auto CrossOver = [this](const std::vector<std::string> &parent1,
+                          const std::vector<std::string> &parent2) {
     std::vector<std::string> child(parent1.size());
-    std::uniform_int_distribution<int> uni_dist(0, parent1.size() - 1);
-    int c = uni_dist(rng_);
-
-    for (int i = 0; i < parent1.size(); i++) {
-      child[i] = (i < c) ? parent1[i] : parent2[i];
-    }
+    int c = std::uniform_int_distribution<int>(0, parent1.size() - 1)(rng_);
+    std::copy(parent1.begin(), parent1.begin() + c, child.begin());
+    std::copy(parent2.begin() + c, parent2.end(), child.begin() + c);
     return child;
   };
 
   auto Mutate = [this](std::vector<std::string> &individual,
-                       std::vector<std::string> &tech_nodes) {
-    std::uniform_int_distribution<int> part_dist(0, num_parts_ - 1);
-    std::uniform_int_distribution<int> tech_dist(0, tech_nodes.size() - 1);
-    individual[part_dist(rng_)] = tech_nodes[tech_dist(rng_)];
+                       const std::vector<std::string> &tech_nodes) {
+    int part_idx = std::uniform_int_distribution<int>(0, num_parts_ - 1)(rng_);
+    int tech_idx =
+        std::uniform_int_distribution<int>(0, tech_nodes.size() - 1)(rng_);
+    individual[part_idx] = tech_nodes[tech_idx];
   };
 
-  // step 1 begins
-
+  // Initialization
+  std::vector<int> alpha_partition, best_partition;
+  std::vector<std::string> alpha_assignment, best_individual;
+  float alpha_cost = std::numeric_limits<float>::max(), best_cost = alpha_cost;
   std::vector<std::vector<std::string>> population;
-  std::vector<float> fitness;
-  std::vector<std::string> best_individual;
-  std::vector<int> best_partition;
-  float best_cost = std::numeric_limits<float>::max();
-  int num_generations = 100;
-  int num_individuals = 10;
-  // seed the random generator
-  rng_.seed(std::random_device{}());
-  num_parts_ = tech_nodes.size();
+  std::vector<float> fitness(num_individuals_, alpha_cost);
 
-  // assign the three technodes to num_parts_
-  for (int i = 0; i < num_individuals; i++) {
-    std::vector<std::string> individual;
-    for (int j = 0; j < num_parts_; j++) {
-      individual.push_back(tech_nodes[rand() % tech_nodes.size()]);
+  // Seed the random generator
+  rng_.seed(std::random_device{}());
+
+  // Generate initial population
+  population.reserve(num_individuals_);
+  for (int i = 0; i < num_individuals_; ++i) {
+    std::vector<std::string> individual(num_parts_);
+    for (auto &part : individual) {
+      part = tech_nodes[rand() % tech_nodes.size()];
     }
-    population.push_back(individual);
+    population.push_back(std::move(individual));
   }
 
-  bool done = false;
-  const std::string separator(60, '*'); // Creates a separator line
-  for (int i = 0; i < num_generations_; ++i) {
-    std::cout << separator << std::endl;
-    std::cout << "[INFO] Starting [generation " << i << "] with [population "
-              << population.size() << "]" << std::endl;
-    std::cout << separator << std::endl;
-    if (population.size() < num_individuals) {
-      std::cerr << "Error: Population size is less than the number of "
-                   "individuals"
-                << std::endl;
-      return;
-    }
-    // 1. Evaluate fitness
+  // Main loop: Genetic Algorithm
+  for (int generation = 0; generation < num_generations_; ++generation) {
+    std::cout << separator << "\n[INFO] Starting [generation " << generation
+              << "] with population " << population.size() << std::endl
+              << separator << std::endl;
+
+    // 1. Evaluate fitness (Parallelized)
+    std::vector<std::future<std::tuple<float, std::vector<int>>>> futures;
+    futures.reserve(population.size());
+
     for (int j = 0; j < population.size(); ++j) {
-      // print the individual
-      auto part_tuple =
-          QuickPart(hypergraph_file, chiplet_io_file, chiplet_layer_file,
-                    chiplet_wafer_process_file, chiplet_assembly_process_file,
-                    chiplet_test_file, chiplet_netlist_file,
-                    chiplet_blocks_file, reach, separation, population[j]);
-      float cost = std::get<0>(part_tuple);
-      fitness.push_back(cost);
+      futures.push_back(std::async(std::launch::async, [&, j]() {
+        return QuickPart(hypergraph_file, chiplet_io_file, chiplet_layer_file,
+                         chiplet_wafer_process_file,
+                         chiplet_assembly_process_file, chiplet_test_file,
+                         chiplet_netlist_file, chiplet_blocks_file, reach,
+                         separation, population[j]);
+      }));
+    }
+
+    for (int j = 0; j < population.size(); ++j) {
+      auto [cost, partition] = futures[j].get();
+      fitness[j] = cost;
+
       if (cost < best_cost) {
         best_cost = cost;
-        best_partition = std::get<1>(part_tuple);
         best_individual = population[j];
+        best_partition = std::move(partition);
+        if (best_cost < alpha_cost) {
+          alpha_cost = best_cost;
+          alpha_assignment = best_individual;
+          alpha_partition = best_partition;
+        }
       }
     }
 
@@ -610,72 +629,61 @@ void ChipletPart::GeneticPart(
 
     // 3. Crossover
     std::vector<std::vector<std::string>> new_population;
-    for (int j = 0; j < mating_pool.size() / 2; j++) {
-      std::vector<std::string> parent1 = mating_pool[2 * j];
-      std::vector<std::string> parent2 = mating_pool[2 * j + 1];
-      std::vector<std::string> child1 = CrossOver(parent1, parent2);
-      std::vector<std::string> child2 = CrossOver(parent2, parent1);
-      new_population.push_back(child1);
-      new_population.push_back(child2);
+    new_population.reserve(population_size_);
+    for (int j = 0; j < mating_pool.size() / 2; ++j) {
+      auto child1 = CrossOver(mating_pool[2 * j], mating_pool[2 * j + 1]);
+      auto child2 = CrossOver(mating_pool[2 * j + 1], mating_pool[2 * j]);
+      new_population.push_back(std::move(child1));
+      new_population.push_back(std::move(child2));
     }
 
     // 4. Mutation
     for (auto &individual : new_population) {
-      if ((float)rng_() / rng_.max() < mutation_rate_) {
+      if (std::uniform_real_distribution<float>(0.0, 1.0)(rng_) <
+          mutation_rate_) {
         Mutate(individual, tech_nodes);
       }
     }
 
-    // 5. Replace the old population with the new population
-    population = new_population;
+    // 5. Replace the old population
+    population = std::move(new_population);
 
-    // 6. Early stop condition
-    if (i > gen_threshold_) {
-      if (best_cost <= fitness[0]) {
-        done = true;
-        break;
-      }
-    }
-
-    if (done) {
+    // 6. Early stopping
+    if (generation > gen_threshold_ &&
+        std::abs(best_cost - alpha_cost) < 1e-6) {
       break;
     }
+
+    std::cout << "[INFO] Best generational cost: " << best_cost << std::endl;
   }
 
-  // write the best partition to a file
+  // Output results
+  int num_parts =
+      *std::max_element(best_partition.begin(), best_partition.end());
   std::ofstream partition_output("tech_assignment.chipletpart.parts." +
-                                 std::to_string(num_parts_));
-  for (auto &part : best_partition) {
+                                 std::to_string(num_parts));
+  for (const auto &part : best_partition) {
     partition_output << part << std::endl;
   }
   partition_output.close();
 
-  std::cout << "[INFO] Best cost " << best_cost << " for "
-            << *std::max_element(best_partition.begin(), best_partition.end()) +
-                   1
-            << " partitions" << std::endl;
-
-  std::cout << "[INFO] Best partition written to file" << std::endl;
-
-  // print the individual
-  std::cout << "[INFO] Best individual: ";
-  for (auto &tech : best_individual) {
-    std::cout << tech << " ";
-  }
-
-  std::cout << std::endl;
-
-  // write the best individual to a file
   std::ofstream tech_assignment_file("tech_assignment.chipletpart.techs." +
                                      std::to_string(num_parts_));
-  for (auto &tech : best_individual) {
+  for (const auto &tech : best_individual) {
     tech_assignment_file << tech << std::endl;
   }
-
   tech_assignment_file.close();
+
+  std::cout << "[INFO] Best cost: " << alpha_cost << " for "
+            << (std::max_element(alpha_partition.begin(),
+                                 alpha_partition.end()) -
+                alpha_partition.begin()) +
+                   1
+            << " partitions\n[INFO] Best partition and tech assignment written "
+               "to files.\n";
 }
 
-std::tuple<float, std::vector<int>> ChipletPart::QuickPart(
+std::tuple<float, std::vector<int>> ChipletPart::InitQuickPart(
     std::string hypergraph_file, std::string chiplet_io_file,
     std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
     std::string chiplet_assembly_process_file, std::string chiplet_test_file,
@@ -741,35 +749,12 @@ std::tuple<float, std::vector<int>> ChipletPart::QuickPart(
   return std::make_tuple(cost, kway_partition);
 }
 
-void ChipletPart::Partition(
+std::tuple<float, std::vector<int>> ChipletPart::QuickPart(
     std::string hypergraph_file, std::string chiplet_io_file,
     std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
     std::string chiplet_assembly_process_file, std::string chiplet_test_file,
     std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-    float reach, float separation, std::string tech) {
-  // seed the rng_ with 0
-  rng_.seed(seed_);
-  std::cout << "[INFO] Reading the chiplet graph " << hypergraph_file
-            << std::endl;
-  std::cout << "[INFO] Reading the chiplet IO file " << chiplet_io_file
-            << std::endl;
-  std::cout << "[INFO] Reading the chiplet layer file " << chiplet_layer_file
-            << std::endl;
-  std::cout << "[INFO] Reading the chiplet wafer process file "
-            << chiplet_wafer_process_file << std::endl;
-  std::cout << "[INFO] Reading the chiplet assembly process file "
-            << chiplet_assembly_process_file << std::endl;
-  std::cout << "[INFO] Reading the chiplet test file " << chiplet_test_file
-            << std::endl;
-  std::cout << "[INFO] Reading the chiplet netlist file "
-            << chiplet_netlist_file << std::endl;
-  std::cout << "[INFO] Reading the chiplet blocks file " << chiplet_blocks_file
-            << std::endl;
-  std::cout << "[INFO] Reach: " << reach << std::endl;
-  std::cout << "[INFO] Separation: " << separation << std::endl;
-  std::cout << "[INFO] Tech: " << tech << std::endl;
-
-  auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
+    float reach, float separation, std::vector<std::string> &tech_nodes) {
   Matrix<float> upper_block_balance;
   Matrix<float> lower_block_balance;
   std::vector<float> zero_vector(vertex_dimensions_, 0.0);
@@ -780,9 +765,10 @@ void ChipletPart::Partition(
   }
 
   std::vector<std::vector<int>> init_partitions;
+  num_parts_ = tech_nodes.size();
 
   // Step 1: Run spectral partition
-  std::vector<int> init_spec_partition = SpectralPartition(hypergraph_file);
+  /*std::vector<int> init_spec_partition = SpectralPartition(hypergraph_file);
   // check if init_spec_partition is empty or if any entry is -1
   bool fail_flag = false;
   if (init_spec_partition.empty() ||
@@ -803,55 +789,41 @@ void ChipletPart::Partition(
   std::vector<int> crossbars = FindCrossbars(quantile);
   std::cout << "[INFO] High-degree nodes found are: " << crossbars.size()
             << std::endl;
-  for (int i : chiplets_set_) {
+  for (int i = 1; i < tech_nodes.size(); i++) {
     if (i == 1) {
       std::vector<int> partition(hypergraph_->GetNumVertices(), 0);
       init_partitions.push_back(partition);
     } else {
+      int num_parts = tech_nodes.size();
       std::vector<int> crossbar_partition =
-          CrossBarExpansion(crossbars, num_parts_);
+          CrossBarExpansion(crossbars, num_parts);
       if (crossbar_partition.empty()) {
         continue;
       }
       init_partitions.push_back(crossbar_partition);
     }
-  }
+  }*/
 
   // Step 3: Run KWayCuts
-  for (int i : chiplets_set_) {
+  for (int i = 1; i <= tech_nodes.size(); i++) {
     if (i == 1) {
+      std::vector<int> partition(hypergraph_->GetNumVertices(), 0);
+      init_partitions.push_back(partition);
       continue;
     }
-    std::vector<int> kway_partition = KWayCuts(i);
-    init_partitions.push_back(kway_partition);
+    // std::vector<int> kway_partition = KWayCuts(i);
+    // init_partitions.push_back(kway_partition);
     std::vector<int> metis_partition = METISPart(i);
     init_partitions.push_back(metis_partition);
   }
-
   // remove all part.* files
   std::string command = "rm -f .part.*";
   int status = system(command.c_str());
-
-  std::cout << "[INIT-PART] Random and METIS partitions are obtained!"
-            << std::endl;
-
-  std::cout << "[INIT-PART] Total number of initial partitions: "
-            << init_partitions.size() << std::endl;
-
-  // check if any vertex in the hypergraph has 0 degree
-  bool zero_degree_flag = false;
-  for (int i = 0; i < hypergraph_->GetNumVertices(); i++) {
-    if (hypergraph_->GetNeighbors(i).size() == 0) {
-      zero_degree_flag = true;
-      std::cout << "[INFO] Vertex " << i << " has 0 degree!" << std::endl;
-      break;
-    }
-  }
-
-  // Step 4: Run FMRefiner
+  int refine_iters = 1;
+  int max_moves = 20;
   std::vector<int> reaches(hypergraph_->GetNumHyperedges(), reach);
   auto chiplet_refiner = std::make_shared<ChipletRefiner>(
-      num_parts_, refine_iters_, max_moves_, reaches);
+      tech_nodes.size(), refine_iters, max_moves, reaches);
   chiplet_refiner->SetReach(reach);
   chiplet_refiner->SetSeparation(separation);
   // Initialize the cost model here
@@ -862,14 +834,21 @@ void ChipletPart::Partition(
   size_t i = 0;
   std::vector<int> best_partition;
   float best_cost = std::numeric_limits<float>::max();
+
   for (size_t idx = 0; idx < init_partitions.size(); ++idx) {
     auto &partition = init_partitions[idx];
     // for (auto &partition : init_partitions) {
     int max_part = *std::max_element(partition.begin(), partition.end());
-    std::vector<std::string> tech_array(max_part + 1, tech);
+    if (max_part + 1 > tech_nodes.size()) {
+      continue;
+    }
+    std::vector<std::string> tech_array(max_part + 1);
+    // get the tech nodes for the partition
+    for (size_t i = 0; i < partition.size(); i++) {
+      tech_array[partition[i]] = tech_nodes[partition[i]];
+    }
     chiplet_refiner->SetTechArray(tech_array);
     chiplet_refiner->SetNumParts(max_part + 1);
-    // check floorplan-feasibility
     if (max_part == 0) {
       std::vector<float> aspect_ratios = {1.0};
       std::vector<float> x_locations = {0.0};
@@ -882,6 +861,7 @@ void ChipletPart::Partition(
       std::cout << "[COST-FPL-INFO] [Partition " << i++ << "] [Parts "
                 << max_part + 1 << "] [Chiplet cost " << cost << "] ";
       std::cout << "[FP feasible YES]" << std::endl;
+      exit(EXIT_SUCCESS);
       best_cost = cost;
       best_partition = partition;
     } else {
@@ -904,6 +884,7 @@ void ChipletPart::Partition(
       cost = chiplet_refiner->GetCostFromScratch(partition);
       std::cout << "[COST-FPL-INFO] [Partition " << i++ << "] [Parts "
                 << max_part + 1 << "] [Chiplet cost " << cost << "] ";
+      // exit(EXIT_SUCCESS);
       std::cout << "[FP feasible ";
       f_tuple = chiplet_refiner->RunFloorplanner(partition, hypergraph_, 2000,
                                                  500, 1.0);
@@ -919,24 +900,203 @@ void ChipletPart::Partition(
     }
   }
 
-  std::cout << "[INFO] Best partition cost: " << best_cost << std::endl;
-  // write the best partition to file
+  std::cout << "[INFO] Best cost " << best_cost << " for "
+            << *std::max_element(best_partition.begin(), best_partition.end()) +
+                   1
+            << " partitions" << std::endl;
+
+  return std::make_tuple(best_cost, best_partition);
+}
+
+void ChipletPart::Partition(
+    std::string hypergraph_file, std::string chiplet_io_file,
+    std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
+    std::string chiplet_assembly_process_file, std::string chiplet_test_file,
+    std::string chiplet_netlist_file, std::string chiplet_blocks_file,
+    float reach, float separation, std::string tech) {
+
+  rng_.seed(seed_);
+
+  // Log function (optional: consider reducing verbosity)
+  auto log_info = [](const std::string &msg) {
+    std::cout << "[INFO] " << msg << std::endl;
+  };
+
+  log_info("Reading the chiplet graph " + hypergraph_file);
+  log_info("Reading the chiplet IO file " + chiplet_io_file);
+  log_info("Reading the chiplet layer file " + chiplet_layer_file);
+  log_info("Reading the chiplet wafer process file " +
+           chiplet_wafer_process_file);
+  log_info("Reading the chiplet assembly process file " +
+           chiplet_assembly_process_file);
+  log_info("Reading the chiplet test file " + chiplet_test_file);
+  log_info("Reading the chiplet netlist file " + chiplet_netlist_file);
+  log_info("Reading the chiplet blocks file " + chiplet_blocks_file);
+  log_info("Reach: " + std::to_string(reach));
+  log_info("Separation: " + std::to_string(separation));
+  log_info("Tech: " + tech);
+
+  auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
+
+  // Pre-allocate vectors to avoid resizing
+  std::vector<std::vector<int>> init_partitions;
+  init_partitions.reserve(10); // assuming we need to store around 10 partitions
+
+  // Prepare upper and lower block balance
+  std::vector<float> total_weights = hypergraph_->GetTotalVertexWeights();
+  Matrix<float> upper_block_balance(num_parts_, total_weights);
+  Matrix<float> lower_block_balance(
+      num_parts_, std::vector<float>(vertex_dimensions_, 0.0));
+
+  // Step 1: Run spectral partition
+  std::vector<int> init_spec_partition = SpectralPartition(hypergraph_file);
+  if (!init_spec_partition.empty() &&
+      std::find(init_spec_partition.begin(), init_spec_partition.end(), -1) ==
+          init_spec_partition.end()) {
+    log_info("Spectral partition obtained!");
+    init_partitions.push_back(
+        std::move(init_spec_partition)); // Use move to avoid copying
+  } else {
+    std::cerr << "[ERROR] Spectral partition failed! Ignoring this!"
+              << std::endl;
+  }
+
+  // Step 2: Run CrossBarExpansion
+  float quantile = 0.99;
+  std::vector<int> crossbars = FindCrossbars(quantile);
+  log_info("High-degree nodes found: " + std::to_string(crossbars.size()));
+
+  for (int i : chiplets_set_) {
+    if (i == 1) {
+      init_partitions.push_back(std::vector<int>(hypergraph_->GetNumVertices(),
+                                                 0)); // create empty partition
+    } else {
+      std::vector<int> crossbar_partition =
+          CrossBarExpansion(crossbars, num_parts_);
+      if (!crossbar_partition.empty()) {
+        init_partitions.push_back(std::move(crossbar_partition));
+      }
+    }
+  }
+
+  // Step 3: Run KWayCuts
+  for (int i : chiplets_set_) {
+    if (i != 1) {
+      init_partitions.push_back(KWayCuts(i));
+      init_partitions.push_back(METISPart(i));
+    }
+  }
+
+  // Remove .part.* files safely
+  if (std::filesystem::exists(".part.*")) {
+    std::filesystem::remove_all(
+        ".part.*"); // C++17 feature, faster than system call
+  }
+
+  log_info("Random and METIS partitions obtained!");
+  log_info("Total number of initial partitions: " +
+           std::to_string(init_partitions.size()));
+
+  // Step 4: Run FMRefiner
+  auto chiplet_refiner = std::make_shared<ChipletRefiner>(
+      num_parts_, refine_iters_, max_moves_,
+      std::vector<int>(hypergraph_->GetNumHyperedges(), reach));
+  chiplet_refiner->SetReach(reach);
+  chiplet_refiner->SetSeparation(separation);
+  chiplet_refiner->InitCostModel(
+      chiplet_io_file, chiplet_layer_file, chiplet_wafer_process_file,
+      chiplet_assembly_process_file, chiplet_test_file, chiplet_netlist_file,
+      chiplet_blocks_file);
+
+  // Refactoring loops and minimizing redundant code
+  size_t best_partition_idx = 0;
+  float best_cost = std::numeric_limits<float>::max();
+
+  for (size_t idx = 0; idx < init_partitions.size(); ++idx) {
+    std::vector<int> &partition = init_partitions[idx];
+    int max_part = *std::max_element(partition.begin(), partition.end());
+    std::vector<std::string> tech_array(max_part + 1, tech);
+
+    chiplet_refiner->SetTechArray(tech_array);
+    chiplet_refiner->SetNumParts(max_part + 1);
+
+    if (max_part == 0) {
+      std::vector<float> aspect_ratios = {1.0};
+      std::vector<float> x_locations = {0.0};
+      std::vector<float> y_locations = {0.0};
+      chiplet_refiner->SetAspectRatios(aspect_ratios);
+      chiplet_refiner->SetXLocations(x_locations);
+      chiplet_refiner->SetYLocations(y_locations);
+      chiplet_refiner->InitSlopes(max_part + 1);
+      float cost = chiplet_refiner->GetCostFromScratch(partition);
+      std::cout << "[COST-FPL-INFO] [Partition " << idx << "] [Parts "
+                << max_part + 1 << "] [Chiplet cost " << cost << "] ";
+      std::cout << "[FP feasible YES]" << std::endl;
+      // exit(EXIT_SUCCESS);
+      best_cost = cost;
+      best_partition_idx = idx;
+    } else {
+      auto f_tuple = chiplet_refiner->RunFloorplanner(partition, hypergraph_,
+                                                      2000, 500, 1.0);
+      std::vector<float> aspect_ratios = std::get<0>(f_tuple);
+      std::vector<float> x_locations = std::get<1>(f_tuple);
+      std::vector<float> y_locations = std::get<2>(f_tuple);
+      chiplet_refiner->SetAspectRatios(aspect_ratios);
+      chiplet_refiner->SetXLocations(x_locations);
+      chiplet_refiner->SetYLocations(y_locations);
+      chiplet_refiner->InitSlopes(max_part + 1);
+      float cost = chiplet_refiner->GetCostFromScratch(partition);
+      chiplet_refiner->SetLegacyCost(cost);
+      // exit(EXIT_SUCCESS);
+      // do the floorplan-aware refinement here
+      chiplet_refiner->Refine(hypergraph_, upper_block_balance,
+                              lower_block_balance, partition);
+      max_part = *std::max_element(partition.begin(), partition.end());
+      cost = chiplet_refiner->GetCostFromScratch(partition, true);
+      std::cout << "[COST-FPL-INFO] [Partition " << idx << "] [Parts "
+                << max_part + 1 << "] [Chiplet cost " << cost << "] ";
+      std::cout << "[FP feasible ";
+      f_tuple = chiplet_refiner->RunFloorplanner(partition, hypergraph_, 2000,
+                                                 500, 1.0);
+      if (std::get<3>(f_tuple)) {
+        std::cout << "YES]" << std::endl;
+        if (cost < best_cost) {
+          best_cost = cost;
+          best_partition_idx = idx;
+        }
+      } else {
+        std::cout << "NO]" << std::endl;
+      }
+    }
+  }
+
+  log_info("Best partition cost: " + std::to_string(best_cost));
+
+  // Write best partition to file
   std::ofstream best_partition_file(hypergraph_file + ".chiplet.part");
-  for (auto &part : best_partition) {
+  for (const auto &part : init_partitions[best_partition_idx]) {
     best_partition_file << part << std::endl;
   }
 
-  tech_parts_ =
-      *std::max_element(best_partition.begin(), best_partition.end()) + 1;
+  tech_parts_ = *std::max_element(init_partitions[best_partition_idx].begin(),
+                                  init_partitions[best_partition_idx].end()) +
+                1;
 
   auto end_time_stamp_global = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> elapsed_time_global =
       end_time_stamp_global - start_time_stamp_global;
 
-  std::cout << "[INFO] Total time taken: " << elapsed_time_global.count()
-            << " seconds" << std::endl;
+  log_info("Total time taken: " + std::to_string(elapsed_time_global.count()) +
+           " seconds");
+  log_info("Partitioning completed!");
 
-  std::cout << "[INFO] Partitioning completed!" << std::endl;
+  float total_fplan_time = chiplet_refiner->GetTotalFloorplanTime();
+  log_info("Total floorplanning time: " + std::to_string(total_fplan_time) +
+           " seconds");
+
+  float total_cost_model_time = chiplet_refiner->GetCostModelTime();
+  log_info("Total cost model time: " + std::to_string(total_cost_model_time) +
+           " seconds");
 }
 
 void ChipletPart::EvaluatePartition(

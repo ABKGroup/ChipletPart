@@ -76,4 +76,52 @@
         nre_front_end_cost_per_mm2_analog="0.0"
         nre_back_end_cost_per_mm2_analog="0.0">
     </wafer_process>
+    <wafer_process
+        name="45nm"
+        wafer_diameter="300"
+        edge_exclusion="0.1"
+        wafer_process_yield="1.0"
+        dicing_distance="0.13"
+        reticle_x="26"
+        reticle_y="33"
+        wafer_fill_grid="True"
+        nre_front_end_cost_per_mm2_memory="0.0"
+        nre_back_end_cost_per_mm2_memory="0.0"
+        nre_front_end_cost_per_mm2_logic="0.0"
+        nre_back_end_cost_per_mm2_logic="4625.0"
+        nre_front_end_cost_per_mm2_analog="0.0"
+        nre_back_end_cost_per_mm2_analog="0.0">
+    </wafer_process>
+    <wafer_process
+        name="10nm"
+        wafer_diameter="300"
+        edge_exclusion="0.1"
+        wafer_process_yield="1.0"
+        dicing_distance="0.13"
+        reticle_x="26"
+        reticle_y="33"
+        wafer_fill_grid="True"
+        nre_front_end_cost_per_mm2_memory="0.0"
+        nre_back_end_cost_per_mm2_memory="0.0"
+        nre_front_end_cost_per_mm2_logic="0.0"
+        nre_back_end_cost_per_mm2_logic="21750.0"
+        nre_front_end_cost_per_mm2_analog="0.0"
+        nre_back_end_cost_per_mm2_analog="0.0">
+    </wafer_process>
+    <wafer_process
+        name="7nm"
+        wafer_diameter="300"
+        edge_exclusion="0.1"
+        wafer_process_yield="1.0"
+        dicing_distance="0.13"
+        reticle_x="26"
+        reticle_y="33"
+        wafer_fill_grid="True"
+        nre_front_end_cost_per_mm2_memory="0.0"
+        nre_back_end_cost_per_mm2_memory="0.0"
+        nre_front_end_cost_per_mm2_logic="0.0"
+        nre_back_end_cost_per_mm2_logic="37225.0"
+        nre_front_end_cost_per_mm2_analog="0.0"
+        nre_back_end_cost_per_mm2_analog="0.0">
+    </wafer_process>
 </wafer_processes>
