@@ -110,8 +110,10 @@ void ChipletRefiner::BuildChiplets(const HGraphPtr &hgraph) {
     std::vector<int> he(vertices.begin(), vertices.end());
     int term_a = he[0];
     int term_b = he[1];
+    float reach = hgraph->GetReach(i);
+    float io_area = hgraph->GetIoSize(i);
     bundled_nets_.push_back(
-        BundledNet(std::pair<int, int>(term_a, term_b), weight, reach_));
+        BundledNet(std::pair<int, int>(term_a, term_b), weight, reach, io_area));
   }
 
   std::vector<float> ones(hgraph->GetVertexDimensions(), 1.0);
@@ -2015,7 +2017,7 @@ HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
       io_cell_sizes);
 
   /* print the chiplet level hypergraph */
-  
+
 
   return chiplet_level_hgraph;
 }

@@ -33,39 +33,41 @@
 
 #pragma once
 
-#include <map>
-#include <random>
-#include <vector>
-#include <memory>
 #include <cmath>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <random>
+#include <vector>
 
 namespace chiplet {
 
 struct BundledNet {
-  BundledNet() { }
+  BundledNet() {}
 
-  BundledNet(std::pair<int, int> terminals_, int weight_, float reach_)
-    : terminals(terminals_), weight(weight_), reach(reach_) { }
-  
+  BundledNet(std::pair<int, int> terminals_, int weight_, float reach_,
+             float io_area_)
+      : terminals(terminals_), weight(weight_), reach(reach_),
+        io_area(io_area_) {}
   std::pair<int, int> terminals;
   int weight;
   float reach;
   float io_area = 1.0;
 };
 
+struct Chiplet {
+  Chiplet() {}
 
-struct Chiplet
-{
-  Chiplet() { }
-  
-  Chiplet(float x_, float y_, float width_, float height_, float min_area_, float halo_width_)
-    : x(x_), y(y_), width(width_), height(height_), min_area(min_area_), halo_width(halo_width_) {}
-  
-  Chiplet(Chiplet const& other)
-    : x(other.x), y(other.y), width(other.width), height(other.height), min_area(other.min_area), halo_width(other.halo_width) {}
-  
-  Chiplet& operator=(Chiplet const& other) {
+  Chiplet(float x_, float y_, float width_, float height_, float min_area_,
+          float halo_width_)
+      : x(x_), y(y_), width(width_), height(height_), min_area(min_area_),
+        halo_width(halo_width_) {}
+
+  Chiplet(Chiplet const &other)
+      : x(other.x), y(other.y), width(other.width), height(other.height),
+        min_area(other.min_area), halo_width(other.halo_width) {}
+
+  Chiplet &operator=(Chiplet const &other) {
     x = other.x;
     y = other.y;
     width = other.width;
@@ -74,7 +76,7 @@ struct Chiplet
     halo_width = other.halo_width;
     return *this;
   }
-  
+
   void setX(float x_) { x = x_; }
   void setY(float y_) { y = y_; }
 
@@ -90,7 +92,7 @@ struct Chiplet
 
   float getArea() const { return width * height; }
 
-  void setWidth(float width_) {  
+  void setWidth(float width_) {
     if (width_ <= 2 * halo_width) {
       return;
     }
@@ -107,7 +109,7 @@ struct Chiplet
     if (height_ <= 2 * halo_width) {
       return;
     }
-  
+
     float area = std::max(width * height, min_area);
     float max_height = std::sqrt(area * max_ar_);
     float min_height = std::sqrt(area * min_ar_);
@@ -115,12 +117,12 @@ struct Chiplet
     height = std::max(min_height, std::min(max_height, height));
     width = area / height;
   }
-  
+
   void setShape(float width_, float height_) {
     if (width_ <= getWidth() || height_ <= getHeight()) {
       return;
     }
-        
+
     width = width_ - 2 * halo_width;
     height = height_ - 2 * halo_width;
     float aspect_ratio = width / height;
@@ -130,10 +132,10 @@ struct Chiplet
   }
 
   float getMinArea() const { return min_area; }
-  
+
   void resizeRandomly(float aspect_ratio) {
     float area = width * height;
-    area = std::max(area, min_area);    
+    area = std::max(area, min_area);
     height = std::sqrt(area * aspect_ratio);
     width = area / height;
   }
@@ -148,183 +150,146 @@ struct Chiplet
   float max_ar_ = 5.0;
 };
 
+class SACore {
+public:
+  SACore(std::vector<Chiplet> chiplets, std::vector<BundledNet> bundled_nets,
+         // penalty parameters
+         float area_penalty_weight, float package_penalty_weight,
+         float net_penalty_weight,
+         // operation parameters
+         float pos_swap_prob, float neg_swap_prob, float double_swap_prob,
+         float resize_prob, float expand_prob,
+         // SA parameters
+         int max_num_step, int num_perturb_per_step, float cooling_rate,
+         unsigned seed, std::vector<int> &pos_seq, std::vector<int> &neg_seq);
 
-class SACore
-{
-  public:
-    SACore(
-        std::vector<Chiplet> chiplets, 
-        std::vector<BundledNet> bundled_nets,
-        // penalty parameters
-        float area_penalty_weight,
-        float package_penalty_weight,
-        float net_penalty_weight,
-        // operation parameters
-        float pos_swap_prob,
-        float neg_swap_prob,
-        float double_swap_prob,
-        float resize_prob,
-        float expand_prob,
-        // SA parameters    
-        int max_num_step,
-        int num_perturb_per_step,
-        float cooling_rate,
-        unsigned seed,
-        std::vector<int>& pos_seq,
-        std::vector<int>& neg_seq);                                
+  void run(float init_temp);
+  bool isValid() const;
+  void getMacros(std::vector<Chiplet> &macros) const;
+  void getPosSeq(std::vector<int> &pos_seq) const { pos_seq = pos_seq_; }
 
-    void run(float init_temp);
-    bool isValid() const;
-    void getMacros(std::vector<Chiplet>& macros) const;   
-    void getPosSeq(std::vector<int>& pos_seq) const {
-      pos_seq = pos_seq_;
-    }
-    
-    void getNegSeq(std::vector<int>& neg_seq) const {
-      neg_seq = neg_seq_;
-    }
+  void getNegSeq(std::vector<int> &neg_seq) const { neg_seq = neg_seq_; }
 
-    void setPosSeq(const std::vector<int>& pos_seq) {
-      pos_seq_ = pos_seq;
-    }
+  void setPosSeq(const std::vector<int> &pos_seq) { pos_seq_ = pos_seq; }
 
-    void setNegSeq(const std::vector<int>& neg_seq) {
-      neg_seq_ = neg_seq;
-    }
+  void setNegSeq(const std::vector<int> &neg_seq) { neg_seq_ = neg_seq; }
 
-    float getPackageSize() const;
-    float getCost() {
-      return calNormCost();
-    }
-  
-    float getNormAreaPenalty() const {
-      return norm_area_penalty_;
-    }
+  float getPackageSize() const;
+  float getCost() { return calNormCost(); }
 
-    float getNormPackagePenalty() const {
-      return norm_package_penalty_;
-    }
+  float getNormAreaPenalty() const { return norm_area_penalty_; }
 
-    float getNormNetPenalty() const {
-      return norm_net_penalty_;
-    }
+  float getNormPackagePenalty() const { return norm_package_penalty_; }
 
-    void setNormAreaPenalty(float norm_area_penalty) {
-      norm_area_penalty_ = norm_area_penalty;
-    }
+  float getNormNetPenalty() const { return norm_net_penalty_; }
 
-    void setNormPackagePenalty(float norm_package_penalty) {
-      norm_package_penalty_ = norm_package_penalty;
-    }
+  void setNormAreaPenalty(float norm_area_penalty) {
+    norm_area_penalty_ = norm_area_penalty;
+  }
 
-    void setNormNetPenalty(float norm_net_penalty) {
-      norm_net_penalty_ = norm_net_penalty;
-    }
+  void setNormPackagePenalty(float norm_package_penalty) {
+    norm_package_penalty_ = norm_package_penalty;
+  }
 
-    void initialize();
-    float getCoolingRate() const {
-      return cooling_rate_;
-    }
+  void setNormNetPenalty(float norm_net_penalty) {
+    norm_net_penalty_ = norm_net_penalty;
+  }
 
-    void checkViolation();
+  void initialize();
+  float getCoolingRate() const { return cooling_rate_; }
 
-  private:
-    void calPenalty();
-    float calNetPenalty() const;
-    float calAreaPenalty() const;
-    float calPackagePenalty() const;
-    float calNormCost();
+  void checkViolation();
 
-    // operations
-    void perturb();
-    void restore();
-    void packFloorplan();
+private:
+  void calPenalty();
+  float calNetPenalty() const;
+  float calAreaPenalty() const;
+  float calPackagePenalty() const;
+  float calNormCost();
 
-    float calNetViolation(const BundledNet* net) const;
+  // operations
+  void perturb();
+  void restore();
+  void packFloorplan();
 
-    // actions used
-    void singleSeqSwap(bool pos);
-    void doubleSeqSwap();
-    void resizeOneCluster();
-    // expand clusters to fill all the deadspace
-    void expandClusters();
-    void calSegmentLoc(float seg_start,
-                       float seg_end,
-                       int& start_id,
-                       int& end_id,
-                       std::vector<float>& grid);
+  float calNetViolation(const BundledNet *net) const;
 
-    /////////////////////////////////////////////
-    // private member variables
-    /////////////////////////////////////////////
-    // nets
-    std::vector<BundledNet> nets_;
-   
-    // weight for different penalty
-    float area_penalty_weight_ = 0.0;
-    float package_penalty_weight_ = 0.0;
-    float net_penalty_weight_ = 0.0;
+  // actions used
+  void singleSeqSwap(bool pos);
+  void doubleSeqSwap();
+  void resizeOneCluster();
+  // expand clusters to fill all the deadspace
+  void expandClusters();
+  void calSegmentLoc(float seg_start, float seg_end, int &start_id, int &end_id,
+                     std::vector<float> &grid);
 
-    // operation parameters
-    float pos_swap_prob_ = 0.0;
-    float neg_swap_prob_ = 0.0;
-    float double_swap_prob_ = 0.0;
-    float resize_prob_ = 0.0;
-    float expand_prob_ = 0.0;
+  /////////////////////////////////////////////
+  // private member variables
+  /////////////////////////////////////////////
+  // nets
+  std::vector<BundledNet> nets_;
 
-    // SA parameters
-    int max_num_step_ = 0;
-    int num_perturb_per_step_ = 0;
-    float cooling_rate_ = 0.0;
-    float init_temperature_ = 1.0;
-    float min_temperature_ = 1e-10;
-    unsigned seed_ = 0;
+  // weight for different penalty
+  float area_penalty_weight_ = 0.0;
+  float package_penalty_weight_ = 0.0;
+  float net_penalty_weight_ = 0.0;
 
-    // seed for reproduciabilty
-    std::mt19937 generator_;
-    std::uniform_real_distribution<float> distribution_;
+  // operation parameters
+  float pos_swap_prob_ = 0.0;
+  float neg_swap_prob_ = 0.0;
+  float double_swap_prob_ = 0.0;
+  float resize_prob_ = 0.0;
+  float expand_prob_ = 0.0;
 
-    // current solution
-    std::vector<int> pos_seq_;
-    std::vector<int> neg_seq_;
-    std::vector<Chiplet> macros_;  // here the macros can be HardMacro or SoftMacro
+  // SA parameters
+  int max_num_step_ = 0;
+  int num_perturb_per_step_ = 0;
+  float cooling_rate_ = 0.0;
+  float init_temperature_ = 1.0;
+  float min_temperature_ = 1e-10;
+  unsigned seed_ = 0;
 
-    // previous solution
-    std::vector<int> pre_pos_seq_;
-    std::vector<int> pre_neg_seq_;
-    std::vector<Chiplet> pre_macros_;  // here the macros can be HardMacro or SoftMacro
-    int macro_id_ = -1;          // the macro changed in the perturb
-    int action_id_ = -1;         // the action_id of current step
+  // seed for reproduciabilty
+  std::mt19937 generator_;
+  std::uniform_real_distribution<float> distribution_;
 
-    // metrics
-    float width_ = 0.0;
-    float height_ = 0.0;
-    float pre_width_ = 0.0;
-    float pre_height_ = 0.0;
+  // current solution
+  std::vector<int> pos_seq_;
+  std::vector<int> neg_seq_;
+  std::vector<Chiplet> macros_; // here the macros can be HardMacro or SoftMacro
 
-    float area_penalty_ = 0.0;
-    float package_penalty_ = 0.0;
-    float net_penalty_ = 0.0;
+  // previous solution
+  std::vector<int> pre_pos_seq_;
+  std::vector<int> pre_neg_seq_;
+  std::vector<Chiplet>
+      pre_macros_;     // here the macros can be HardMacro or SoftMacro
+  int macro_id_ = -1;  // the macro changed in the perturb
+  int action_id_ = -1; // the action_id of current step
 
-    float pre_area_penalty_ = 0.0;
-    float pre_package_penalty_ = 0.0;
-    float pre_net_penalty_ = 0.0;
+  // metrics
+  float width_ = 0.0;
+  float height_ = 0.0;
+  float pre_width_ = 0.0;
+  float pre_height_ = 0.0;
 
-    float norm_area_penalty_ = 0.0;
-    float norm_package_penalty_ = 0.0;
-    float norm_net_penalty_ = 0.0;
+  float area_penalty_ = 0.0;
+  float package_penalty_ = 0.0;
+  float net_penalty_ = 0.0;
 
-    float net_reach_penalty_acc_ = 0.01;
+  float pre_area_penalty_ = 0.0;
+  float pre_package_penalty_ = 0.0;
+  float pre_net_penalty_ = 0.0;
 
-    std::vector<float> cost_list_;  // store the cost in the list
-    std::vector<float> T_list_;     // store the temperature
+  float norm_area_penalty_ = 0.0;
+  float norm_package_penalty_ = 0.0;
+  float norm_net_penalty_ = 0.0;
+
+  float net_reach_penalty_acc_ = 0.01;
+
+  std::vector<float> cost_list_; // store the cost in the list
+  std::vector<float> T_list_;    // store the temperature
 };
 
 using SACorePtr = std::shared_ptr<SACore>;
 
-}  // namespace chiplet
-
-
-
-
-
+} // namespace chiplet
