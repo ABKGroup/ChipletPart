@@ -1,0 +1,10 @@
+****************************************************************
+Floorplet part
+****************************************************************
+Reading the input file:  block_definitions_ws-48_1_14_4_6400_6400.txt
+Minimum chiplet area:  500.0
+Maximum chiplet area:  1000.0
+Number of chiplets:  8
+Chiplet ID list:  [0, 1, 2, 3, 4, 5, 6, 7]
+Chiplet area list:  [654.6368, 654.6368, 654.6368, 654.6368, 996.4672, 979.8720000000001, 925.9904, 809.0176]
+Writing the output file:  block_definitions_ws-48_1_14_4_6400_6400.txt.floorplet_part
