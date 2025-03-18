@@ -1,0 +1,441 @@
+<!--
+    Filename: test_definitions.xml
+    Author: Alexander Graening
+    Affiliation: University of California, Los Angeles
+    Email: agraening@ucla.edu
+
+    Test Process Definition Format:
+        - Name: The name listed here is the name that should be referenced in the system definition.
+        - Test Self: This is a boolean value that determines if the chip is individually tested.
+            Note that self_ parameters all relate to this individual dest of the chip.
+        - Test Assembly: This is a boolean value that determines if the assembly consisting of the 
+            chip and chips stacked on it is tested before integration with the rest of the design.
+            Note that assembly_ parameters all relate to this test of the assembly.
+        - Black Box Pattern Count: This is a black box parameter that overrides the computed
+            pattern count.
+        - Black Box Scan Chain Length: This is a black box parameter that overrides the computed
+            scan chain length.
+        - Defect Coverage: This is the defect coverage of the test. This is a number between 0.0
+            and 1.0. (TODO: This would be nice to include as a computed parameter.)
+        - Time Per Test Cycle: This is the time required for a single cycle of test. Note that a single 
+            pattern with a scan chain length of 16 would have a time cost os 16x this value.
+        - Cost Per Second: This is the cost per second for testing. This is based on the time 
+            spend on the test machine and the test machine cost.
+        - Test Reuse: This is the number of times a test can be reused. For example if there are 
+            many analogous structures in a design, it is possible to pass in the test pattern once 
+            and simultaneously test all instances.
+            not used.)
+        - Gate Flop Ratio: This is the ratio of gates to flops in the design. This is used to 
+            determine the number of scan chains required for testing. Note that this also requires
+            the number of gates per unit area defined in the layer definition.
+        - Number of Scan Chains: This is the number of scan chains in the chip. This reduces 
+            the scan chain length and speeds up testing.
+        - Number of IO per Scan Chain: This is the number of IOs per scan chain. This reduces 
+            assumes total number of IOs follows ax+b where x is the number of scan chains and
+            this parameter is a.
+        - Number of Test IO Offset: This is the number of IOs that are part of testing, but 
+            do not scale with the number of scan chains. This is the b in the ax+b equation.
+
+    Description: Example test process for a chip that can be used as a template for other test
+            process definitions. The test process is defined for each chip and contains parameters
+            for testing itself and for testing the assembly consisting of the chip and all chips
+            stacked on it. Note that instead of modifying this test process, users should add
+            additional processes and treat this file as a library of test processes.
+
+    Note that each parameter is required to be set even if it is not relevant to the application.
+            If is it not used, select a relevant value that will interact correctly with the cost model.
+            If no value is selected, at least define the line as the empty string: <parameter_name="">.
+            A list of required parameters for the test_process object is below:
+                - name
+                - time_per_test_cycle
+                - cost_per_second
+
+                - test_self
+                - bb_self_pattern_count
+                - bb_self_scan_chain_length
+                - self_defect_coverage
+                - self_test_reuse
+                - self_gate_flop_ratio
+                - self_num_scan_chains
+                - self_num_io_per_scan_chain
+                - self_num_test_io_offset
+                - self_test_failure_dist (normal, uniform, exponential, or lognormal)
+
+                - test_assembly
+                - bb_assembly_pattern_count
+                - bb_assembly_scan_chain_length
+                - assembly_defect_coverage
+                - assembly_test_reuse
+                - assembly_gate_flop_ratio
+                - assembly_num_scan_chains
+                - assembly_num_io_per_scan_chain
+                - assembly_num_test_io_offset
+                - assembly_test_failure_dist (normal, uniform, exponential, or lognormal)
+-->
+
+
+<!-- Note on parameters. All test process parameters are arbitrary and set to test different things. -->
+<test_processes>
+    <test_process name="test_process_0"
+        time_per_test_cycle="0.000000001"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count=""
+        bb_self_scan_chain_length=""
+        self_defect_coverage="0.9" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="0.9"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="notest"
+        time_per_test_cycle="0.1"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="False"
+        bb_self_pattern_count=""
+        bb_self_scan_chain_length=""
+        self_defect_coverage="0" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="0"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="False"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="0"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="0"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <!-- Known Good Dies (KGD) means the dies used in an assembly are known to be good. -->
+    <!-- This does not mean yield is 100% for the full system since there is still yield associated with assembly. -->
+    <test_process name="KGD_free_test"
+        time_per_test_cycle="0.1"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="0"
+        bb_self_scan_chain_length="0"
+        self_defect_coverage="1.0" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="1.0"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="KGD_interposer_free_test"
+        time_per_test_cycle="0.1"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="0"
+        bb_self_scan_chain_length="0"
+        self_defect_coverage="1.0" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="1.0"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="free_test_1.0"
+        time_per_test_cycle="0.0000001"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="1000"
+        bb_self_scan_chain_length="100000"
+        self_defect_coverage="1.0" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="8"
+        bb_assembly_scan_chain_length="100"
+        assembly_defect_coverage="1.0"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="free_test_0.999"
+        time_per_test_cycle="0.0000001"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="0"
+        bb_self_scan_chain_length="0"
+        self_defect_coverage="0.999" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="0.999"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="free_test_0.99"
+        time_per_test_cycle="0.0000001"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="0"
+        bb_self_scan_chain_length="0"
+        self_defect_coverage="0.99" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="0.99"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="free_test_0.95"
+        time_per_test_cycle="0.0000001"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="200"
+        bb_self_scan_chain_length="100000"
+        self_defect_coverage="0.95" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="4"
+        bb_assembly_scan_chain_length="100"
+        assembly_defect_coverage="0.95"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="free_test_0.9"
+        time_per_test_cycle="0.0000001"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="100"
+        bb_self_scan_chain_length="100000"
+        self_defect_coverage="0.9" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="2"
+        bb_assembly_scan_chain_length="100"
+        assembly_defect_coverage="0.9"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="free_test_0.5"
+        time_per_test_cycle="0.0000001"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="10"
+        bb_self_scan_chain_length="100000"
+        self_defect_coverage="0.5" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="1"
+        bb_assembly_scan_chain_length="100"
+        assembly_defect_coverage="0.5"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="free_test_0.1"
+        time_per_test_cycle="0.1"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count="0"
+        bb_self_scan_chain_length="0"
+        self_defect_coverage="0.1" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="True"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="0.1"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="1"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+    <test_process name="self_test_only_KGD_free_test"
+        time_per_test_cycle="0.1"
+        samples_per_input="1"
+
+        cost_per_second="0.006"
+
+        test_self="True"
+        bb_self_pattern_count=""
+        bb_self_scan_chain_length=""
+        self_defect_coverage="1.0" 
+
+        self_test_reuse="1"
+        self_num_scan_chains="1"
+        self_num_io_per_scan_chain="2"
+        self_num_test_io_offset="1"
+
+        self_test_failure_dist="normal"
+
+        test_assembly="False"
+        bb_assembly_pattern_count="0"
+        bb_assembly_scan_chain_length="0"
+        assembly_defect_coverage="0.0"
+
+        assembly_test_reuse="1"
+        assembly_num_scan_chains="0"
+        assembly_num_io_per_scan_chain="2"
+        assembly_num_test_io_offset="1"
+        
+        assembly_test_failure_dist="normal">
+    </test_process>
+</test_processes>

@@ -1,0 +1,913 @@
+<netlist>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_0"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="core_0"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_1"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="core_1"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_2"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="core_2"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_3"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="core_3"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_4"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="core_4"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_5"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="core_5"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_6"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="core_6"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_7"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="core_7"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_8"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="core_8"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_9"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="core_9"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_10"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="core_10"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_11"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="core_11"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_12"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="core_12"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_13"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="core_13"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_14"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="core_14"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="core_15"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="core_15"
+		bb_count=""
+		bandwidth="32"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_0"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="l3_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_1"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="l3_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_2"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="l3_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="l3_3"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="l3_3"
+		bb_count=""
+		bandwidth="6.4"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_0"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_0"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_0"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_0"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_1"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_1"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_1"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_1"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_2"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_2"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_2"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_2"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_3"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_3"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_3"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_3"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_4"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_4"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_4"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_4"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_4"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_4"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_4"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_4"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_5"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_5"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_5"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_5"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_5"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_5"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_5"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_5"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_6"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_6"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_6"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_6"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_6"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_6"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_6"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_6"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+    
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_7"
+		block1="ddr_0"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_0"
+		block1="pcie_7"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_7"
+		block1="ddr_1"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_1"
+		block1="pcie_7"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_7"
+		block1="ddr_2"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_2"
+		block1="pcie_7"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="pcie_7"
+		block1="ddr_3"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="ddr_3"
+		block1="pcie_7"
+		bb_count=""
+		bandwidth="8"
+		average_bandwidth_utilization="0.5">
+	</net>
+</netlist>

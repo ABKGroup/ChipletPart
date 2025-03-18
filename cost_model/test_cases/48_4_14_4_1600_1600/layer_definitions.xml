@@ -1,0 +1,294 @@
+<!--
+    Filename: layer_definitions.xml
+    Author: Alexander Graening
+    Affiliation: University of California, Los Angeles
+    Email: agraening@ucla.edu
+
+    Layer Definition Format:
+        - Name: The name listed here is the name that should be referenced stackup in the system definition.
+        - Active: This flag indicates whether or not this is a layer with transistors. Currently unused.
+        - Cost per mm2: This is given in units of $/mm^2. This should be the cost of the wafer divided
+            by the area of the wafer. Additional factors are considered in the model to determine wafer utilization.
+        - Defect Density: This is the defect density of the layer in units of defects/mm^2.
+        - Critical Area Ratio: This is the fraction of the core area which should be considered to be critical.
+        - Clustering Factor: Parameter for the negative binomial yield model.
+        - Transistor Density: The transistor density for active layers only. Set to 0 otherwise. Values for 5nm and 7nm are
+            taken from TSMC values in https://en.wikichip.org/wiki/5_nm_lithography_process and ... (Units in MTr/mm^2)
+        - Litho Percent: This is the percentage of costs which come from time spent on the lithography tool.
+            This is used to scale the costs relative to number of exposures per wafer.
+        - NRE Mask Cost: This is the NRE cost of the mask for this layer. (Or all the masks for a combined layer.)
+            Since our handling of NRE is a bit rudimentary so far in this model, we are including these parameters
+            so users can experiment, but we do plan to add additional parameters layer on.
+        - Stitching Yield: This is the probability that a stitch will succeed. This is used for calculating cost
+            for chips or integration substrates larger than a single reticle. Note that if your process does not use
+            a reticle, you can either set a very large reticle in the wafer process definition or set the stitching
+            yield to 1.
+
+    Description: Example layer definitions including both standalone combined technology
+            layers and stackup layers for a fine-grained model. Note that the combined 
+            technology layers are generally reasonable, but the fine-grained stackup layers
+            are not. Users should replace these with the correct numbers for their process.
+ 
+    Note that each parameter is required to be set even if it is not relevant to the application.
+            If is it not used, select a relevant value that will interact correctly with the cost model.
+            If no value is selected, at least define the line as the empty string: <parameter_name="">.
+            A list of required parameters for the layer object is below:
+                - name
+                - active
+                - cost_per_mm2
+                - defect_density
+                - critical_area_ratio
+                - clustering_factor
+                - transistor_density
+                - litho_percent
+                - nre_mask_cost
+                - stitching_yield
+-->
+
+<layers>
+    <!-- Numbers here are effectively made up. (need some numbers for organic)-->
+    <!-- Numbers here are effectively made up. (need some numbers for layerwise breakdown)-->
+    <layer name="organic_substrate"
+        active="False"
+        cost_per_mm2="0.0001"
+        gates_per_mm2="0.0"
+        defect_density="0.0"
+        critical_area_ratio="0.0"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.0"
+        nre_mask_cost="0"
+        stitching_yield="1.0">
+    </layer>
+    <!-- Numbers here are effectively made up. (need some numbers for layerwise breakdown)-->
+    <layer name="5nm_active"
+        active="True"
+        cost_per_mm2="0.5"
+        gates_per_mm2="1000000000"
+        defect_density="0.005"
+        critical_area_ratio="0.8"
+        clustering_factor="2"
+        transistor_density="117.3"
+        litho_percent="0.2"
+        nre_mask_cost="10000"
+        stitching_yield="0.9">
+    </layer>
+    <!-- Numbers here are effectively made up. (need some numbers for layerwise breakdown)-->
+    <layer name="5nm_advanced_metal"
+        active="False"
+        cost_per_mm2="0.3"
+        defect_density="0.0003"
+        critical_area_ratio="0.5"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.4"
+        nre_mask_cost="5000"
+        stitching_yield="0.95">
+    </layer>
+    <!-- Numbers here are effectively made up. (need some numbers for layerwise breakdown)-->
+    <layer name="5nm_intermediate_metal"
+        active="False"
+        cost_per_mm2="0.1"
+        defect_density="0.005"
+        critical_area_ratio="0.3"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.3"
+        nre_mask_cost="1000"
+        stitching_yield="0.99">
+    </layer>
+    <!-- Numbers here are effectively made up. (need some numbers for layerwise breakdown)-->
+    <layer name="5nm_global_metal"
+        active="False"
+        cost_per_mm2="0.01"
+        defect_density="0.005"
+        critical_area_ratio="0.1"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.2"
+        nre_mask_cost="500"
+        stitching_yield="0.999">
+    </layer>
+    <!-- Below, these are one-layer approximations.
+            A stackup should not contain multiple "combined_*" layers. -->
+    <!-- Also, note that the cost per mm^2 is computed assuming a 300m^2 wafer with
+            a 3mm edge exclusion and the same wafer cost used for the DAC paper.-->
+    <!-- The one-layer approximations are largely based on a couple 300mm wafer cost estimates from some semi-analysis articles. <add reference here> -->
+    <!-- The litho percent is also from a semi-analysis article. -->
+    <!-- Mask cost, stitching yield, and critical area ratios are arbitrary. -->
+    <!-- Clustering factor is set according to a yield modelling paper <add reference> and the defect densities are set arbitrarily to give reasonable yields (need a reference). -->
+    <layer name="combined_40nm"
+        active="True"
+        cost_per_mm2="0.033497"
+        defect_density="0.005"
+        critical_area_ratio="0.5"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.15"
+        nre_mask_cost="100000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_45nm"
+        active="True"
+        cost_per_mm2="0.032171"
+        defect_density="0.005"
+        critical_area_ratio="0.6"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.15"
+        nre_mask_cost="100000"
+        stitching_yield="0.5">
+    </layer>
+    <!-- silicon interposer costs are from <add reference here> -->
+    <layer name="combined_interposer_silicon"
+        active="False"
+        cost_per_mm2="0.021905"
+        defect_density="0.00001"
+        critical_area_ratio="0.3"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.10"
+        nre_mask_cost="5000"
+        stitching_yield="0.99">
+    </layer>
+    <layer name="combined_interposer_glass"
+        active="False"
+        cost_per_mm2="0.0021905"
+        defect_density="0.00001"
+        critical_area_ratio="0.3"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.10"
+        nre_mask_cost="5000"
+        stitching_yield="0.99">
+    </layer>
+    <!-- The organic interposer really does not have the concept of reticle and reticle stitching,
+            so stitching yield is set to 1.0 and the cost per mm^2 is based on the $5 per square
+            foot number from a paper until we find a more well-supported number. -->
+    <layer name="combined_interposer_organic"
+        active="False"
+        cost_per_mm2="0.00000053820"
+        defect_density="0.000001"
+        critical_area_ratio="0.2"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.0"
+        nre_mask_cost="500"
+        stitching_yield="1.0">
+    </layer>
+    <!--This is copied from the 10nm for now.-->
+    <layer name="combined_12nm"
+        active="True"
+        cost_per_mm2="0.05636207"
+        defect_density="0.005"
+        critical_area_ratio="0.6"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.25"
+        nre_mask_cost="500000"
+        stitching_yield="0.5">
+    </layer>
+    <!-- Cost per mm2 for hbm is from 4x the 12nm cost. Other parameters are unchanged from 12nm. (Probably inaccurate) -->
+    <!-- Need an idea of how much cheaper DRAM is than logic. -->
+    <layer name="combined_hbm2_12nm"
+        active="True"
+        cost_per_mm2="0.1654538"
+        defect_density="0.005"
+        critical_area_ratio="0.6"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.25"
+        nre_mask_cost="500000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_10nm"
+        active="True"
+        cost_per_mm2="0.084769"
+        defect_density="0.005"
+        critical_area_ratio="0.62"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.25"
+        nre_mask_cost="500000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_7nm"
+        active="True"
+        cost_per_mm2="0.132219"
+        defect_density="0.005"
+        critical_area_ratio="0.64"
+        clustering_factor="2"
+        transistor_density="91.2"
+        litho_percent="0.27"
+        nre_mask_cost="1000000"
+        stitching_yield="0.5">
+    </layer>
+    <!-- Cost per mm2 for hbm is from 8x the 7nm cost. Other parameters are unchanged from 7nm. (Probably inaccurate) -->
+    <!-- Need an idea of how much cheaper DRAM is than logic. -->
+    <layer name="combined_hbm_7nm"
+        active="True"
+        cost_per_mm2="1.10136"
+        defect_density="0.005"
+        critical_area_ratio="0.6"
+        clustering_factor="2"
+        transistor_density="729.6"
+        litho_percent="0.27"
+        nre_mask_cost="1000000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_5nm"
+        active="True"
+        cost_per_mm2="0.25024"
+        defect_density="0.005"
+        critical_area_ratio="0.67"
+        clustering_factor="2"
+        transistor_density="117.3"
+        litho_percent="0.30"
+        nre_mask_cost="3000000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_3nm"
+        active="True"
+        cost_per_mm2="0.29461"
+        defect_density="0.005"
+        critical_area_ratio="0.7"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.35"
+        nre_mask_cost="5000000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_3nm_0.001"
+        active="True"
+        cost_per_mm2="0.29461"
+        defect_density="0.001"
+        critical_area_ratio="0.7"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.35"
+        nre_mask_cost="5000000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_3nm_0.005"
+        active="True"
+        cost_per_mm2="0.29461"
+        defect_density="0.005"
+        critical_area_ratio="0.7"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.35"
+        nre_mask_cost="5000000"
+        stitching_yield="0.5">
+    </layer>
+    <layer name="combined_3nm_0.01"
+        active="True"
+        cost_per_mm2="0.29461"
+        defect_density="0.01"
+        critical_area_ratio="0.7"
+        clustering_factor="2"
+        transistor_density="0"
+        litho_percent="0.35"
+        nre_mask_cost="5000000"
+        stitching_yield="0.5">
+    </layer>
+</layers>

@@ -1,0 +1,142 @@
+<netlist>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="a_0"
+        block1="c"
+        bb_count=""
+        bandwidth="652.9129224720931"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="a_0"
+        bb_count=""
+        bandwidth="652.9129224720931"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="sc_0"
+        block1="c"
+        bb_count=""
+        bandwidth="174.11011265922482"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="sc_0"
+        bb_count=""
+        bandwidth="174.11011265922482"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="a_1"
+        block1="c"
+        bb_count=""
+        bandwidth="652.9129224720931"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="a_1"
+        bb_count=""
+        bandwidth="652.9129224720931"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="sc_1"
+        block1="c"
+        bb_count=""
+        bandwidth="174.11011265922482"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="sc_1"
+        bb_count=""
+        bandwidth="174.11011265922482"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="hdmi"
+        block1="c"
+        bb_count=""
+        bandwidth="81.48353272451722"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="hdmi"
+        bb_count=""
+        bandwidth="81.48353272451722"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="usb"
+        block1="c"
+        bb_count=""
+        bandwidth="27.857618025475972"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="usb"
+        bb_count=""
+        bandwidth="27.857618025475972"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="ethernet"
+        block1="c"
+        bb_count=""
+        bandwidth="1.7411011265922482"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="ethernet"
+        bb_count=""
+        bandwidth="1.7411011265922482"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="misc_io"
+        block1="c"
+        bb_count=""
+        bandwidth="20.26641711353377"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="misc_io"
+        bb_count=""
+        bandwidth="20.26641711353377"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="l2"
+        bb_count=""
+        bandwidth="1088.1882041201552"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="l2"
+        block1="c"
+        bb_count=""
+        bandwidth="1088.1882041201552"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="c"
+        block1="ddr"
+        bb_count=""
+        bandwidth="108.81882041201551"
+        average_bandwidth_utilization="0.5">
+    </net>
+    <net type="2Gbs_100vCDM_2mm"
+        block0="ddr"
+        block1="c"
+        bb_count=""
+        bandwidth="108.81882041201551"
+        average_bandwidth_utilization="0.5">
+    </net>
+</netlist>
