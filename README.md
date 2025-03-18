@@ -167,7 +167,7 @@ Separation                    0.250000
 Population Size               50                                                
 Number of Generations         50                                                
 Mutation Rate                 0.200000                                          
-Crossover Rate                0.700000                                          
+Crossover Rate                0.650000                                          
 Min Partitions                2                                                 
 Max Partitions                8                                                 
 Output Prefix                 genetic_tech_part                                 
@@ -185,7 +185,7 @@ Random Seed                   1
 Generations                   50                  
 Population Size               50                  
 Mutation Rate                 0.200000            
-Crossover Rate                0.700000            
+Crossover Rate                0.650000            
 Min Partitions                2                   
 Max Partitions                8                   
 
