@@ -249,11 +249,6 @@ Developed by: UC San Diego and UC Los Angeles
 ------------------------------------------------------------
 
 [INFO] Evaluating partition
-[INFO] Converting netlist XML to hypergraph...
-[INFO] Created hypergraph with 45 vertices and 400 hyperedges
-[INFO] Number of IP blocks in chiplet graph: 180
-[INFO] Number of nets in chiplet graph: 400
-[INFO] Wrote vertex mapping to output.map
 [INFO] Reading chiplet files and generating hypergraph representation
 [INFO] Partition file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/manual.part
 [INFO] IO file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/io_definitions.xml
@@ -267,10 +262,9 @@ Developed by: UC San Diego and UC Los Angeles
 [INFO] Separation: 0.25
 [INFO] Tech: 7nm
 [INFO] Converting netlist XML to hypergraph...
-[INFO] Created hypergraph with 45 vertices and 400 hyperedges
-[INFO] Number of IP blocks in chiplet graph: 45
+[INFO] Created hypergraph with 180 vertices and 400 hyperedges
+[INFO] Number of IP blocks in chiplet graph: 180
 [INFO] Number of nets in chiplet graph: 400
-[INFO] Wrote vertex mapping to output.map
 [INFO] Number of partitions: 2
 [INFO] Creating ChipletRefiner with cost model files to test initialization
 [SUCCESS] Cost model was successfully initialized in the ChipletRefiner constructor
