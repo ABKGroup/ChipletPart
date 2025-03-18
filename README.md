@@ -33,9 +33,9 @@ To generate a testcase wih Z wafer scale, A tiles, B cores, C shared memories, D
 
 Some examples to run the test_case generator is below: 
 1. To generate the WS_1 netlist run ```python3 generateSystemDefinition ws-48 1 14 4 1600 1600```
-2. To generate the WS_2 netlist run ```python3 generateSystemDefinitionMemCPUScale.py ws-48 2 14 4 1600 1600```
-3. To generate the WS_3 netlist run ```python3 generateSystemDefinitionMemCPUScale.py ws-48 4 14 4 1600 1600```
-4. To generate the WS_4 netlist run ```python3generateSystemDefinitionMemCPUScale.py ws-48 8 14 4 1600 1600```
+2. To generate the WS_2 netlist run ```python3 generateSystemDefinition.py ws-48 2 14 4 1600 1600```
+3. To generate the WS_3 netlist run ```python3 generateSystemDefinition.py ws-48 4 14 4 1600 1600```
+4. To generate the WS_4 netlist run ```python3generateSystemDefinition.py ws-48 8 14 4 1600 1600```
 
 ## Building ChipletPart
 
