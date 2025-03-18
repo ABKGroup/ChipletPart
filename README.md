@@ -60,7 +60,7 @@ Ensure you have CMake 3.10 or higher and a suitable (9.3.0 or higher) C++ compil
 5. Our cost model implementation is available in the ```cost_model``` directory.
 
 ChipletPart operates in three modes: (1) homogeneous, (2) heterogeneous and (3) evaluation.
-### Homogeneous mode ###
+## Homogeneous mode ##
 In this mode ChipletPart works with a single technology node. To run in homogeneous mode do the following:
 ```./run_chiplet_test.sh ga100 --seed 1```
 To change the technology node, modify the default tech variable in run_chiplet_test.sh, e.g., ```DEFAULT_TECH="7nm"```
