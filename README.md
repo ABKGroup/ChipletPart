@@ -251,7 +251,7 @@ Developed by: UC San Diego and UC Los Angeles
 [INFO] Evaluating partition
 [INFO] Converting netlist XML to hypergraph...
 [INFO] Created hypergraph with 45 vertices and 400 hyperedges
-[INFO] Number of IP blocks in chiplet graph: 45
+[INFO] Number of IP blocks in chiplet graph: 180
 [INFO] Number of nets in chiplet graph: 400
 [INFO] Wrote vertex mapping to output.map
 [INFO] Reading chiplet files and generating hypergraph representation
