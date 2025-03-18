@@ -124,11 +124,11 @@ Total partitioning process              17.163105
 [SUCCESS] Partitioning completed successfully
 Test completed successfully!
 ```
-### Heterogeneous mode ###
+## Heterogeneous mode ##
 ChipletPart can handle multiple technology nodes -- in this case it will run the genetic algorithm. 
 ```./run_chiplet_test.sh ga100 --genetic --tech-nodes 7nm,10nm,45nm --seed 1```
 
-# Sample output #
+### Sample output ###
 ```./run_chiplet_test.sh ga100 --genetic --tech-nodes 7nm,10nm,45nm --seed 1```
 
 ```
@@ -218,12 +218,12 @@ Valid Solution                Yes
 Execution Time (seconds)      21   
 ```
 
-### Evaluation mode ### 
+## Evaluation mode ## 
 ChipletPart can also evaluate a given partition solution. It will first floorplan it and then evaluate it with its cost model. 
 ```./run_evaluator.sh ga100``` -- you can mention the partition file with the script variable ```HYPERGRAPH_PART```.
 
 
-# Sample output #
+### Sample output ###
 ```./run_evaluator.sh ga100 --seed 1```
    ```
    Running evaluator with the following parameters:
@@ -282,7 +282,7 @@ Evaluation completed successfully
 ```
 
 
-### Usage Directions
+## Usage Directions ##
   ```
 Usage: ./run_chiplet_test.sh <test_case_name> [options]
 
