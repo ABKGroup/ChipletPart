@@ -65,7 +65,7 @@ In this mode ChipletPart works with a single technology node. To run in homogene
 ```./run_chiplet_test.sh ga100 --seed 1```
 To change the technology node, modify the default tech variable in run_chiplet_test.sh, e.g., ```DEFAULT_TECH="7nm"```
 
-# Sample output #
+### Sample output ###
 ```
 Running standard partitioning for test case: adi_sku3_1x
 Tech node: 7nm
