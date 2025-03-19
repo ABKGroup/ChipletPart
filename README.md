@@ -1,7 +1,7 @@
 # ChipletPart
 
 **ChipletPart** is an efficient framework designed for partitioning driven by chiplets technology. It aids in organizing and optimizing the design and layout of chiplets within a semiconductor module.
-An example of an SoC netlist is the [Mempool testcase](https://github.com/bodhi91/ChipletPart/blob/main/MempoolGroupFromMempoolPaper.png) refered to as [34] from the our submission. 
+An example of an SoC netlist is the [Mempool testcase](https://github.com/bodhi91/ChipletPart/blob/main/MempoolGroupFromMempoolPaper.png). 
 
 ### Overall Flow ###
 The overall flow is shown below: ![shown here](https://github.com/ABKGroup/ChipletPart/blob/main/chipletpart_overall_framework.png).
