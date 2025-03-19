@@ -12,7 +12,7 @@ The overall flow is shown below: ![shown here](https://github.com/ABKGroup/Chipl
 3. The netlist generator file is implemented in the script ```generateSystemDefinition.py``` available in the directory ```test_case_gen```
 To generate a testcase wih Z wafer scale, A tiles, B cores, C shared memories, D area scale and E power scale, we run the script:
 ```python3 systemSystemDefinition.py Z A B C D E```
-4. The source codes of ChipletPart are uploaded in the directory ```graph_part```. ChipletPart has depencies on ```METIS```, ```PugiXML```, ```Eigen```, ```Boost```, ```OpenMP``` and ```GKLib```.
+4. ChipletPart has depencies on ```METIS```, ```PugiXML```, ```Eigen```, ```Boost```, ```OpenMP``` and ```GKLib```.
 5. The run scripts are uploaded in the parent directory. 
 
 ### List of testcases ###
