@@ -4,7 +4,7 @@
 An example of an SoC netlist is the [Mempool testcase](https://github.com/bodhi91/ChipletPart/blob/main/MempoolGroupFromMempoolPaper.png). 
 
 ### Overall Flow ###
-The overall flow is shown below: ![shown here](https://github.com/ABKGroup/ChipletPart/blob/main/chipletpart_overall_framework.png).
+The overall flow is shown below: ![shown here](https://github.com/ABKGroup/ChipletPart/blob/main/chipletpart_overall_v5.png).
 
 ### Review Directions ###
 1. The source codes to ChipletPart are in the directory ```graph_part```
