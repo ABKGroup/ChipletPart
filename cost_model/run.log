@@ -1,0 +1,135 @@
+Using the following files:
+  IO File: ./test_cases/48_1_14_4_1600_1600/io_definitions.xml
+  Layer File: ./test_cases/48_1_14_4_1600_1600/layer_definitions.xml
+  Assembly Process File: ./test_cases/48_1_14_4_1600_1600/assembly_process_definitions.xml
+  Wafer Process File: ./test_cases/48_1_14_4_1600_1600/wafer_process_definitions.xml
+  Test File: ./test_cases/48_1_14_4_1600_1600/test_definitions.xml
+  Netlist File: ./test_cases/48_1_14_4_1600_1600/block_level_netlist_ws-48_1_14_4_1600_1600.xml
+  Blocks File: ./test_cases/48_1_14_4_1600_1600/block_definitions_ws-48_1_14_4_1600_1600.txt
+Initializing
+Wafer processes: 2
+IOs: 26
+Layers: 20
+Assemblies: 9
+Assembly processes after loading from file:
+  organic_25_simultaneous_bonding: 0.025
+  organic_55_simultaneous_bonding: 0.055
+  organic_simultaneous_bonding: 0.11
+  silicon_45_individual_bonding: 0.045
+  silicon_individual_bonding: 0.01
+  silicon_simultaneous_bonding: 0.01
+  glass_individual_bonding: 0.01
+  w2w_hybrid_bonding: 0.001
+  dummy_assembly_process: 1
+Tests: 12
+Initialization complete
+blocks size is 48
+Max area: 163.659
+Min area: 5.2576
+Mean area: 32.9682
+Median area: 18.728
+Partition IDs: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+Number of partitions: 1
+Partition 0: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 
+Looking for assembly process: silicon_individual_bonding
+Available assembly processes: organic_25_simultaneous_bonding (0.025), organic_55_simultaneous_bonding (0.055), organic_simultaneous_bonding (0.11), silicon_45_individual_bonding (0.045), silicon_individual_bonding (0.01), silicon_simultaneous_bonding (0.01), glass_individual_bonding (0.01), w2w_hybrid_bonding (0.001), dummy_assembly_process (1), 
+Looking for assembly process: silicon_individual_bonding
+Available assembly processes: organic_25_simultaneous_bonding (0.025), organic_55_simultaneous_bonding (0.055), organic_simultaneous_bonding (0.11), silicon_45_individual_bonding (0.045), silicon_individual_bonding (0.01), silicon_simultaneous_bonding (0.01), glass_individual_bonding (0.01), w2w_hybrid_bonding (0.001), dummy_assembly_process (1), 
+True yield: 1
+Self defect coverage: 1
+Chip Name: interposer
+
+Black-Box Parameters: area = -1, cost = -1, quality = -1, power = -1. (If any of these parameters are not empty, the value will override the computed value.)
+
+Chip Wafer Process: process_1
+Chip Assembly Process: silicon_individual_bonding
+Chip Test Process: KGD_free_test
+Chip Stackup: combined_interposer_silicon, 
+
+Chip Core Area: 0
+Chip Stacked Area: 225.573
+Stacked Chips: 0, 
+Chip IO Area: 0
+Assembly Core Area: 216.651
+Chip Buried: False
+Chip Core Voltage: 1
+
+Chip Area Breakdown: memory = 0, logic = 0, analog = 1.
+Reticle is not shared.
+NRE Cost: 0.00109331
+Quantity: 100000000000
+
+Chip Power: 0
+Stack Power: 0
+Total Power: 0
+
+Number of Chip Power Pads: 0
+Number of Signal Pads: 0
+Total number of pads: 0
+
+Area of IO Cells: 0
+Area required by pads: 0.0004
+Chip Calculated Area: 0.0004
+
+Chip Self True Yield: 1
+Chip Self Test Yield: 1
+Quality Yield: 0
+Assembly Yield: 0.999
+Chip Self Quality: 1
+Chip Self Cost: 0.000493861
+Chip NRE Total Cost: 0.00109331
+Chip True Yield: 0
+Chip Tested Yield: 0
+Chip Quality: nan
+Chip Cost: 0.000493861
+>>
+Chip Name: 0
+
+Black-Box Parameters: area = -1, cost = -1, quality = -1, power = -1. (If any of these parameters are not empty, the value will override the computed value.)
+
+Chip Wafer Process: process_1
+Chip Assembly Process: silicon_individual_bonding
+Chip Test Process: KGD_free_test
+Chip Stackup: combined_7nm, 
+
+Chip Core Area: 216.651
+Chip Stacked Area: 0
+Stacked Chips: 
+Chip IO Area: 0.0004
+Assembly Core Area: 216.651
+Chip Buried: False
+Chip Core Voltage: 1
+
+Chip Area Breakdown: memory = 0, logic = 1, analog = 0.
+Reticle is not shared.
+NRE Cost: 0.00109326
+Quantity: 100000000000
+
+Chip Power: 30.7403
+Stack Power: 0
+Total Power: 30.7443
+
+Number of Chip Power Pads: 314
+Number of Signal Pads: 0
+Total number of pads: 314
+
+Area of IO Cells: 0.0004
+Area required by pads: 0.0324
+Chip Calculated Area: 216.652
+
+Chip Self True Yield: 0.551436
+Chip Self Test Yield: -2.31584e+77
+Quality Yield: 1
+Assembly Yield: 1
+Chip Self Quality: -2.31584e+77
+Chip Self Cost: 0
+Chip NRE Total Cost: 0.00109326
+Chip True Yield: 5.05923e-321
+Chip Tested Yield: 0
+Chip Quality: 0
+Chip Cost: 0
+<<
+
+Cost from scratch: 0.000493861
+Destroying database
+Database destroyed

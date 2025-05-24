@@ -1,0 +1,95 @@
+<!--
+    Filename: wafer_process_definitions.xml
+    Author: Alexander Graening
+    Affiliation: University of California, Los Angeles
+    Email: agraening@ucla.edu
+
+    Wafer Process Definition Format:
+        - Name: The name listed here is the name that should be referenced in the system definition.
+        - Wafer Diameter: This is the diameter of the wafer in mm.
+        - Edge Exclusion: This is the distance from the edge of the wafer to the first die in mm.
+        - Wafer Process Yield: This is the initial yield of the wafer before individual die testing.
+            It is possible this can be removed with the addition of the more sophisticated yield
+            and test model.
+        - Dicing Distance: This is the amount of space wasted between dies to leave room for dicing.
+        - Reticle X and Y: This defines the reticle size and shape in units of mm. There are a few
+            relatively standardized reticle sizes currently in use. For example, a 26x33 mm reticle.
+            This does provide flexibility for defining a reticle the size of a wafer for processes
+            that use one exposure per wafer or other reticle sizes currently in development.
+        - Wafer Fill Grid: If this parameter is True, the approximation for number of dies that will
+            be constrained to a grid pattern. If False, then the dies have more flexibility of
+            placement for rows stacked on rows.
+        - NRE Design Costs: This is split into back end and front end costs for logic, memory, and
+            analog. The units are USD/mm^2.
+
+    Description: Wafer process parameters for the example design. This can either be a unified place
+            to edit parameters for all chips in the design or it can be a place to define different
+            integration substrates and chips.
+
+    Note that each parameter is required to be set even if it is not relevant to the application.
+            If is it not used, select a relevant value that will interact correctly with the cost model.
+            If no value is selected, at least define the line as the empty string: <parameter_name="">.
+            A list of required parameters for the wafer_process object is below:
+                - name
+                - wafer_diameter
+                - edge_exclusion
+                - wafer_process_yield
+                - dicing_distance
+                - reticle_x
+                - reticle_y
+                - wafer_fill_grid
+                - nre_front_end_cost_per_mm2_memory
+                - nre_back_end_cost_per_mm2_memory
+                - nre_front_end_cost_per_mm2_logic
+                - nre_back_end_cost_per_mm2_logic
+                - nre_front_end_cost_per_mm2_analog
+                - nre_back_end_cost_per_mm2_analog
+-->
+
+<!-- Note on source data. 
+    wafer_diameter is set as one of the most common sizes https://www.universitywafer.com/silicon-wafer-diameters.html
+    reticle_x and reticle_y are set according to https://semiengineering.com/chipmakers-getting-serious-about-integrated-photonics/
+    edge_exclusion and dicing distance are set to arbitrary values that are somewhat reasonable. (need verification)
+    wafer_process_yield is set to 1.0 to remove it from consideration. According to <fill in source here>, this should be about 0.94.
+    nre, I have no sources on the NRE front and back end costs, but they are all set to zero in this process for now.
+    -->
+
+<!-- Note on usage.
+    Since nre design costs differ for different technology nodes, chips of different tech nodes should reference
+    different wafer_process definitions.
+     -->
+
+<wafer_processes>
+    <wafer_process
+        name="process_1"
+        wafer_diameter="300"
+        edge_exclusion="0.1"
+        wafer_process_yield="1.0"
+        dicing_distance="0.13"
+        reticle_x="26"
+        reticle_y="33"
+        wafer_fill_grid="True"
+        nre_front_end_cost_per_mm2_memory="0.0"
+        nre_back_end_cost_per_mm2_memory="0.0"
+        nre_front_end_cost_per_mm2_logic="0.0"
+        nre_back_end_cost_per_mm2_logic="500000"
+        nre_front_end_cost_per_mm2_analog="0.0"
+        nre_back_end_cost_per_mm2_analog="0.0">
+    </wafer_process>
+    <wafer_process
+        name="maskless_interposer_process"
+        wafer_diameter="600"
+        edge_exclusion="0.1"
+        wafer_process_yield="1.0"
+        dicing_distance="0.13"
+        reticle_x="200"
+        reticle_y="200"
+        wafer_fill_grid="True"
+        nre_front_end_cost_per_mm2_memory="0.0"
+        nre_back_end_cost_per_mm2_memory="0.0"
+        nre_front_end_cost_per_mm2_logic="0.0"
+        nre_back_end_cost_per_mm2_logic="0.0"
+        nre_front_end_cost_per_mm2_analog="0.0"
+        nre_back_end_cost_per_mm2_analog="0.0">
+    </wafer_process>
+</wafer_processes>

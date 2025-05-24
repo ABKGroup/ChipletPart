@@ -1,0 +1,5406 @@
+<netlist>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Router_0"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_0"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Shared_Memory_0_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_0_0"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Shared_Memory_0_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_0_1"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Shared_Memory_0_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_0_2"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Shared_Memory_0_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_0_3"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_0"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_0"
+		block1="Bus_Mux_0_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_0"
+		block1="Core_0_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_0"
+		block1="Private_Memory_0_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_0"
+		block1="Bus_Mux_0_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_1"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_1"
+		block1="Bus_Mux_0_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_1"
+		block1="Core_0_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_1"
+		block1="Private_Memory_0_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_1"
+		block1="Bus_Mux_0_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_2"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_2"
+		block1="Bus_Mux_0_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_2"
+		block1="Core_0_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_2"
+		block1="Private_Memory_0_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_2"
+		block1="Bus_Mux_0_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_3"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_3"
+		block1="Bus_Mux_0_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_3"
+		block1="Core_0_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_3"
+		block1="Private_Memory_0_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_3"
+		block1="Bus_Mux_0_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_4"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_4"
+		block1="Bus_Mux_0_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_4"
+		block1="Core_0_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_4"
+		block1="Private_Memory_0_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_4"
+		block1="Bus_Mux_0_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_5"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_5"
+		block1="Bus_Mux_0_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_5"
+		block1="Core_0_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_5"
+		block1="Private_Memory_0_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_5"
+		block1="Bus_Mux_0_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_6"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_6"
+		block1="Bus_Mux_0_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_6"
+		block1="Core_0_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_6"
+		block1="Private_Memory_0_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_6"
+		block1="Bus_Mux_0_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_7"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_7"
+		block1="Bus_Mux_0_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_7"
+		block1="Core_0_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_7"
+		block1="Private_Memory_0_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_7"
+		block1="Bus_Mux_0_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_8"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_8"
+		block1="Bus_Mux_0_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_8"
+		block1="Core_0_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_8"
+		block1="Private_Memory_0_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_8"
+		block1="Bus_Mux_0_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_9"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_9"
+		block1="Bus_Mux_0_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_9"
+		block1="Core_0_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_9"
+		block1="Private_Memory_0_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_9"
+		block1="Bus_Mux_0_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_10"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_10"
+		block1="Bus_Mux_0_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_10"
+		block1="Core_0_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_10"
+		block1="Private_Memory_0_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_10"
+		block1="Bus_Mux_0_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_11"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_11"
+		block1="Bus_Mux_0_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_11"
+		block1="Core_0_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_11"
+		block1="Private_Memory_0_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_11"
+		block1="Bus_Mux_0_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_12"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_12"
+		block1="Bus_Mux_0_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_12"
+		block1="Core_0_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_12"
+		block1="Private_Memory_0_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_12"
+		block1="Bus_Mux_0_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_0"
+		block1="Core_0_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_13"
+		block1="Master_Crossbar_0"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_0_13"
+		block1="Bus_Mux_0_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_13"
+		block1="Core_0_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_0_13"
+		block1="Private_Memory_0_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_0_13"
+		block1="Bus_Mux_0_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Router_1"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_1"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Shared_Memory_1_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_1_0"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Shared_Memory_1_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_1_1"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Shared_Memory_1_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_1_2"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Shared_Memory_1_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_1_3"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_0"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_0"
+		block1="Bus_Mux_1_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_0"
+		block1="Core_1_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_0"
+		block1="Private_Memory_1_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_0"
+		block1="Bus_Mux_1_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_1"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_1"
+		block1="Bus_Mux_1_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_1"
+		block1="Core_1_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_1"
+		block1="Private_Memory_1_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_1"
+		block1="Bus_Mux_1_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_2"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_2"
+		block1="Bus_Mux_1_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_2"
+		block1="Core_1_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_2"
+		block1="Private_Memory_1_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_2"
+		block1="Bus_Mux_1_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_3"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_3"
+		block1="Bus_Mux_1_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_3"
+		block1="Core_1_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_3"
+		block1="Private_Memory_1_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_3"
+		block1="Bus_Mux_1_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_4"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_4"
+		block1="Bus_Mux_1_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_4"
+		block1="Core_1_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_4"
+		block1="Private_Memory_1_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_4"
+		block1="Bus_Mux_1_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_5"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_5"
+		block1="Bus_Mux_1_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_5"
+		block1="Core_1_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_5"
+		block1="Private_Memory_1_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_5"
+		block1="Bus_Mux_1_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_6"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_6"
+		block1="Bus_Mux_1_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_6"
+		block1="Core_1_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_6"
+		block1="Private_Memory_1_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_6"
+		block1="Bus_Mux_1_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_7"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_7"
+		block1="Bus_Mux_1_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_7"
+		block1="Core_1_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_7"
+		block1="Private_Memory_1_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_7"
+		block1="Bus_Mux_1_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_8"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_8"
+		block1="Bus_Mux_1_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_8"
+		block1="Core_1_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_8"
+		block1="Private_Memory_1_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_8"
+		block1="Bus_Mux_1_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_9"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_9"
+		block1="Bus_Mux_1_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_9"
+		block1="Core_1_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_9"
+		block1="Private_Memory_1_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_9"
+		block1="Bus_Mux_1_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_10"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_10"
+		block1="Bus_Mux_1_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_10"
+		block1="Core_1_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_10"
+		block1="Private_Memory_1_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_10"
+		block1="Bus_Mux_1_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_11"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_11"
+		block1="Bus_Mux_1_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_11"
+		block1="Core_1_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_11"
+		block1="Private_Memory_1_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_11"
+		block1="Bus_Mux_1_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_12"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_12"
+		block1="Bus_Mux_1_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_12"
+		block1="Core_1_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_12"
+		block1="Private_Memory_1_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_12"
+		block1="Bus_Mux_1_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_1"
+		block1="Core_1_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_13"
+		block1="Master_Crossbar_1"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_1_13"
+		block1="Bus_Mux_1_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_13"
+		block1="Core_1_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_1_13"
+		block1="Private_Memory_1_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_1_13"
+		block1="Bus_Mux_1_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Router_2"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_2"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Shared_Memory_2_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_2_0"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Shared_Memory_2_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_2_1"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Shared_Memory_2_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_2_2"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Shared_Memory_2_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_2_3"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_0"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_0"
+		block1="Bus_Mux_2_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_0"
+		block1="Core_2_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_0"
+		block1="Private_Memory_2_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_0"
+		block1="Bus_Mux_2_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_1"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_1"
+		block1="Bus_Mux_2_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_1"
+		block1="Core_2_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_1"
+		block1="Private_Memory_2_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_1"
+		block1="Bus_Mux_2_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_2"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_2"
+		block1="Bus_Mux_2_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_2"
+		block1="Core_2_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_2"
+		block1="Private_Memory_2_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_2"
+		block1="Bus_Mux_2_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_3"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_3"
+		block1="Bus_Mux_2_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_3"
+		block1="Core_2_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_3"
+		block1="Private_Memory_2_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_3"
+		block1="Bus_Mux_2_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_4"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_4"
+		block1="Bus_Mux_2_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_4"
+		block1="Core_2_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_4"
+		block1="Private_Memory_2_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_4"
+		block1="Bus_Mux_2_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_5"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_5"
+		block1="Bus_Mux_2_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_5"
+		block1="Core_2_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_5"
+		block1="Private_Memory_2_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_5"
+		block1="Bus_Mux_2_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_6"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_6"
+		block1="Bus_Mux_2_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_6"
+		block1="Core_2_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_6"
+		block1="Private_Memory_2_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_6"
+		block1="Bus_Mux_2_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_7"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_7"
+		block1="Bus_Mux_2_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_7"
+		block1="Core_2_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_7"
+		block1="Private_Memory_2_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_7"
+		block1="Bus_Mux_2_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_8"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_8"
+		block1="Bus_Mux_2_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_8"
+		block1="Core_2_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_8"
+		block1="Private_Memory_2_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_8"
+		block1="Bus_Mux_2_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_9"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_9"
+		block1="Bus_Mux_2_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_9"
+		block1="Core_2_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_9"
+		block1="Private_Memory_2_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_9"
+		block1="Bus_Mux_2_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_10"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_10"
+		block1="Bus_Mux_2_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_10"
+		block1="Core_2_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_10"
+		block1="Private_Memory_2_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_10"
+		block1="Bus_Mux_2_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_11"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_11"
+		block1="Bus_Mux_2_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_11"
+		block1="Core_2_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_11"
+		block1="Private_Memory_2_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_11"
+		block1="Bus_Mux_2_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_12"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_12"
+		block1="Bus_Mux_2_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_12"
+		block1="Core_2_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_12"
+		block1="Private_Memory_2_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_12"
+		block1="Bus_Mux_2_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_2"
+		block1="Core_2_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_13"
+		block1="Master_Crossbar_2"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_2_13"
+		block1="Bus_Mux_2_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_13"
+		block1="Core_2_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_2_13"
+		block1="Private_Memory_2_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_2_13"
+		block1="Bus_Mux_2_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Router_3"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_3"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Shared_Memory_3_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_3_0"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Shared_Memory_3_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_3_1"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Shared_Memory_3_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_3_2"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Shared_Memory_3_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_3_3"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_0"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_0"
+		block1="Bus_Mux_3_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_0"
+		block1="Core_3_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_0"
+		block1="Private_Memory_3_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_0"
+		block1="Bus_Mux_3_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_1"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_1"
+		block1="Bus_Mux_3_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_1"
+		block1="Core_3_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_1"
+		block1="Private_Memory_3_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_1"
+		block1="Bus_Mux_3_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_2"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_2"
+		block1="Bus_Mux_3_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_2"
+		block1="Core_3_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_2"
+		block1="Private_Memory_3_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_2"
+		block1="Bus_Mux_3_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_3"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_3"
+		block1="Bus_Mux_3_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_3"
+		block1="Core_3_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_3"
+		block1="Private_Memory_3_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_3"
+		block1="Bus_Mux_3_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_4"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_4"
+		block1="Bus_Mux_3_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_4"
+		block1="Core_3_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_4"
+		block1="Private_Memory_3_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_4"
+		block1="Bus_Mux_3_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_5"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_5"
+		block1="Bus_Mux_3_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_5"
+		block1="Core_3_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_5"
+		block1="Private_Memory_3_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_5"
+		block1="Bus_Mux_3_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_6"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_6"
+		block1="Bus_Mux_3_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_6"
+		block1="Core_3_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_6"
+		block1="Private_Memory_3_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_6"
+		block1="Bus_Mux_3_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_7"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_7"
+		block1="Bus_Mux_3_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_7"
+		block1="Core_3_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_7"
+		block1="Private_Memory_3_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_7"
+		block1="Bus_Mux_3_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_8"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_8"
+		block1="Bus_Mux_3_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_8"
+		block1="Core_3_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_8"
+		block1="Private_Memory_3_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_8"
+		block1="Bus_Mux_3_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_9"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_9"
+		block1="Bus_Mux_3_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_9"
+		block1="Core_3_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_9"
+		block1="Private_Memory_3_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_9"
+		block1="Bus_Mux_3_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_10"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_10"
+		block1="Bus_Mux_3_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_10"
+		block1="Core_3_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_10"
+		block1="Private_Memory_3_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_10"
+		block1="Bus_Mux_3_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_11"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_11"
+		block1="Bus_Mux_3_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_11"
+		block1="Core_3_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_11"
+		block1="Private_Memory_3_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_11"
+		block1="Bus_Mux_3_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_12"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_12"
+		block1="Bus_Mux_3_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_12"
+		block1="Core_3_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_12"
+		block1="Private_Memory_3_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_12"
+		block1="Bus_Mux_3_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_3"
+		block1="Core_3_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_13"
+		block1="Master_Crossbar_3"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_3_13"
+		block1="Bus_Mux_3_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_13"
+		block1="Core_3_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_3_13"
+		block1="Private_Memory_3_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_3_13"
+		block1="Bus_Mux_3_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Router_4"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_4"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Shared_Memory_4_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_4_0"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Shared_Memory_4_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_4_1"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Shared_Memory_4_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_4_2"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Shared_Memory_4_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_4_3"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_0"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_0"
+		block1="Bus_Mux_4_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_0"
+		block1="Core_4_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_0"
+		block1="Private_Memory_4_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_0"
+		block1="Bus_Mux_4_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_1"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_1"
+		block1="Bus_Mux_4_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_1"
+		block1="Core_4_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_1"
+		block1="Private_Memory_4_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_1"
+		block1="Bus_Mux_4_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_2"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_2"
+		block1="Bus_Mux_4_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_2"
+		block1="Core_4_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_2"
+		block1="Private_Memory_4_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_2"
+		block1="Bus_Mux_4_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_3"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_3"
+		block1="Bus_Mux_4_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_3"
+		block1="Core_4_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_3"
+		block1="Private_Memory_4_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_3"
+		block1="Bus_Mux_4_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_4"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_4"
+		block1="Bus_Mux_4_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_4"
+		block1="Core_4_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_4"
+		block1="Private_Memory_4_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_4"
+		block1="Bus_Mux_4_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_5"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_5"
+		block1="Bus_Mux_4_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_5"
+		block1="Core_4_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_5"
+		block1="Private_Memory_4_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_5"
+		block1="Bus_Mux_4_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_6"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_6"
+		block1="Bus_Mux_4_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_6"
+		block1="Core_4_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_6"
+		block1="Private_Memory_4_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_6"
+		block1="Bus_Mux_4_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_7"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_7"
+		block1="Bus_Mux_4_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_7"
+		block1="Core_4_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_7"
+		block1="Private_Memory_4_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_7"
+		block1="Bus_Mux_4_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_8"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_8"
+		block1="Bus_Mux_4_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_8"
+		block1="Core_4_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_8"
+		block1="Private_Memory_4_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_8"
+		block1="Bus_Mux_4_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_9"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_9"
+		block1="Bus_Mux_4_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_9"
+		block1="Core_4_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_9"
+		block1="Private_Memory_4_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_9"
+		block1="Bus_Mux_4_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_10"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_10"
+		block1="Bus_Mux_4_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_10"
+		block1="Core_4_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_10"
+		block1="Private_Memory_4_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_10"
+		block1="Bus_Mux_4_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_11"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_11"
+		block1="Bus_Mux_4_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_11"
+		block1="Core_4_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_11"
+		block1="Private_Memory_4_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_11"
+		block1="Bus_Mux_4_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_12"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_12"
+		block1="Bus_Mux_4_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_12"
+		block1="Core_4_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_12"
+		block1="Private_Memory_4_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_12"
+		block1="Bus_Mux_4_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_4"
+		block1="Core_4_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_13"
+		block1="Master_Crossbar_4"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_4_13"
+		block1="Bus_Mux_4_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_13"
+		block1="Core_4_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_4_13"
+		block1="Private_Memory_4_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_4_13"
+		block1="Bus_Mux_4_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Router_5"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_5"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Shared_Memory_5_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_5_0"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Shared_Memory_5_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_5_1"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Shared_Memory_5_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_5_2"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Shared_Memory_5_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_5_3"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_0"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_0"
+		block1="Bus_Mux_5_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_0"
+		block1="Core_5_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_0"
+		block1="Private_Memory_5_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_0"
+		block1="Bus_Mux_5_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_1"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_1"
+		block1="Bus_Mux_5_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_1"
+		block1="Core_5_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_1"
+		block1="Private_Memory_5_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_1"
+		block1="Bus_Mux_5_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_2"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_2"
+		block1="Bus_Mux_5_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_2"
+		block1="Core_5_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_2"
+		block1="Private_Memory_5_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_2"
+		block1="Bus_Mux_5_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_3"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_3"
+		block1="Bus_Mux_5_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_3"
+		block1="Core_5_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_3"
+		block1="Private_Memory_5_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_3"
+		block1="Bus_Mux_5_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_4"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_4"
+		block1="Bus_Mux_5_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_4"
+		block1="Core_5_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_4"
+		block1="Private_Memory_5_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_4"
+		block1="Bus_Mux_5_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_5"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_5"
+		block1="Bus_Mux_5_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_5"
+		block1="Core_5_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_5"
+		block1="Private_Memory_5_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_5"
+		block1="Bus_Mux_5_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_6"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_6"
+		block1="Bus_Mux_5_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_6"
+		block1="Core_5_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_6"
+		block1="Private_Memory_5_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_6"
+		block1="Bus_Mux_5_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_7"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_7"
+		block1="Bus_Mux_5_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_7"
+		block1="Core_5_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_7"
+		block1="Private_Memory_5_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_7"
+		block1="Bus_Mux_5_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_8"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_8"
+		block1="Bus_Mux_5_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_8"
+		block1="Core_5_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_8"
+		block1="Private_Memory_5_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_8"
+		block1="Bus_Mux_5_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_9"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_9"
+		block1="Bus_Mux_5_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_9"
+		block1="Core_5_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_9"
+		block1="Private_Memory_5_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_9"
+		block1="Bus_Mux_5_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_10"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_10"
+		block1="Bus_Mux_5_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_10"
+		block1="Core_5_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_10"
+		block1="Private_Memory_5_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_10"
+		block1="Bus_Mux_5_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_11"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_11"
+		block1="Bus_Mux_5_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_11"
+		block1="Core_5_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_11"
+		block1="Private_Memory_5_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_11"
+		block1="Bus_Mux_5_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_12"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_12"
+		block1="Bus_Mux_5_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_12"
+		block1="Core_5_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_12"
+		block1="Private_Memory_5_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_12"
+		block1="Bus_Mux_5_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_5"
+		block1="Core_5_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_13"
+		block1="Master_Crossbar_5"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_5_13"
+		block1="Bus_Mux_5_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_13"
+		block1="Core_5_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_5_13"
+		block1="Private_Memory_5_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_5_13"
+		block1="Bus_Mux_5_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Router_6"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_6"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Shared_Memory_6_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_6_0"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Shared_Memory_6_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_6_1"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Shared_Memory_6_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_6_2"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Shared_Memory_6_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_6_3"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_0"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_0"
+		block1="Bus_Mux_6_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_0"
+		block1="Core_6_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_0"
+		block1="Private_Memory_6_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_0"
+		block1="Bus_Mux_6_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_1"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_1"
+		block1="Bus_Mux_6_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_1"
+		block1="Core_6_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_1"
+		block1="Private_Memory_6_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_1"
+		block1="Bus_Mux_6_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_2"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_2"
+		block1="Bus_Mux_6_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_2"
+		block1="Core_6_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_2"
+		block1="Private_Memory_6_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_2"
+		block1="Bus_Mux_6_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_3"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_3"
+		block1="Bus_Mux_6_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_3"
+		block1="Core_6_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_3"
+		block1="Private_Memory_6_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_3"
+		block1="Bus_Mux_6_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_4"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_4"
+		block1="Bus_Mux_6_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_4"
+		block1="Core_6_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_4"
+		block1="Private_Memory_6_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_4"
+		block1="Bus_Mux_6_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_5"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_5"
+		block1="Bus_Mux_6_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_5"
+		block1="Core_6_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_5"
+		block1="Private_Memory_6_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_5"
+		block1="Bus_Mux_6_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_6"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_6"
+		block1="Bus_Mux_6_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_6"
+		block1="Core_6_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_6"
+		block1="Private_Memory_6_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_6"
+		block1="Bus_Mux_6_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_7"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_7"
+		block1="Bus_Mux_6_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_7"
+		block1="Core_6_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_7"
+		block1="Private_Memory_6_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_7"
+		block1="Bus_Mux_6_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_8"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_8"
+		block1="Bus_Mux_6_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_8"
+		block1="Core_6_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_8"
+		block1="Private_Memory_6_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_8"
+		block1="Bus_Mux_6_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_9"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_9"
+		block1="Bus_Mux_6_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_9"
+		block1="Core_6_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_9"
+		block1="Private_Memory_6_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_9"
+		block1="Bus_Mux_6_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_10"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_10"
+		block1="Bus_Mux_6_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_10"
+		block1="Core_6_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_10"
+		block1="Private_Memory_6_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_10"
+		block1="Bus_Mux_6_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_11"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_11"
+		block1="Bus_Mux_6_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_11"
+		block1="Core_6_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_11"
+		block1="Private_Memory_6_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_11"
+		block1="Bus_Mux_6_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_12"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_12"
+		block1="Bus_Mux_6_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_12"
+		block1="Core_6_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_12"
+		block1="Private_Memory_6_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_12"
+		block1="Bus_Mux_6_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_6"
+		block1="Core_6_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_13"
+		block1="Master_Crossbar_6"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_6_13"
+		block1="Bus_Mux_6_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_13"
+		block1="Core_6_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_6_13"
+		block1="Private_Memory_6_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_6_13"
+		block1="Bus_Mux_6_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Router_7"
+		bb_count=""
+		bandwidth="5421.382674700915"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_7"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="5366.0624433264165"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Shared_Memory_7_0"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_7_0"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Shared_Memory_7_1"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_7_1"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Shared_Memory_7_2"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_7_2"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Shared_Memory_7_3"
+		bb_count=""
+		bandwidth="3651.135270716943"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Shared_Memory_7_3"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_0"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_0"
+		block1="Bus_Mux_7_0"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_0"
+		block1="Core_7_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_0"
+		block1="Private_Memory_7_0"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_0"
+		block1="Bus_Mux_7_0"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_1"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_1"
+		block1="Bus_Mux_7_1"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_1"
+		block1="Core_7_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_1"
+		block1="Private_Memory_7_1"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_1"
+		block1="Bus_Mux_7_1"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_2"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_2"
+		block1="Bus_Mux_7_2"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_2"
+		block1="Core_7_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_2"
+		block1="Private_Memory_7_2"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_2"
+		block1="Bus_Mux_7_2"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_3"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_3"
+		block1="Bus_Mux_7_3"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_3"
+		block1="Core_7_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_3"
+		block1="Private_Memory_7_3"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_3"
+		block1="Bus_Mux_7_3"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_4"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_4"
+		block1="Bus_Mux_7_4"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_4"
+		block1="Core_7_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_4"
+		block1="Private_Memory_7_4"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_4"
+		block1="Bus_Mux_7_4"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_5"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_5"
+		block1="Bus_Mux_7_5"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_5"
+		block1="Core_7_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_5"
+		block1="Private_Memory_7_5"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_5"
+		block1="Bus_Mux_7_5"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_6"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_6"
+		block1="Bus_Mux_7_6"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_6"
+		block1="Core_7_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_6"
+		block1="Private_Memory_7_6"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_6"
+		block1="Bus_Mux_7_6"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_7"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_7"
+		block1="Bus_Mux_7_7"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_7"
+		block1="Core_7_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_7"
+		block1="Private_Memory_7_7"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_7"
+		block1="Bus_Mux_7_7"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_8"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_8"
+		block1="Bus_Mux_7_8"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_8"
+		block1="Core_7_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_8"
+		block1="Private_Memory_7_8"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_8"
+		block1="Bus_Mux_7_8"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_9"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_9"
+		block1="Bus_Mux_7_9"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_9"
+		block1="Core_7_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_9"
+		block1="Private_Memory_7_9"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_9"
+		block1="Bus_Mux_7_9"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_10"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_10"
+		block1="Bus_Mux_7_10"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_10"
+		block1="Core_7_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_10"
+		block1="Private_Memory_7_10"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_10"
+		block1="Bus_Mux_7_10"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_11"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_11"
+		block1="Bus_Mux_7_11"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_11"
+		block1="Core_7_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_11"
+		block1="Private_Memory_7_11"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_11"
+		block1="Bus_Mux_7_11"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_12"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_12"
+		block1="Bus_Mux_7_12"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_12"
+		block1="Core_7_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_12"
+		block1="Private_Memory_7_12"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_12"
+		block1="Bus_Mux_7_12"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Master_Crossbar_7"
+		block1="Core_7_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_13"
+		block1="Master_Crossbar_7"
+		bb_count=""
+		bandwidth="3595.815039342444"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Core_7_13"
+		block1="Bus_Mux_7_13"
+		bb_count=""
+		bandwidth="7744.832392429879"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_13"
+		block1="Core_7_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Bus_Mux_7_13"
+		block1="Private_Memory_7_13"
+		bb_count=""
+		bandwidth="1770.2474039839724"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Private_Memory_7_13"
+		block1="Bus_Mux_7_13"
+		bb_count=""
+		bandwidth="3042.6127255974525"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_0"
+		block1="Router_1"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_1"
+		block1="Router_0"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_1"
+		block1="Router_2"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_2"
+		block1="Router_1"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_3"
+		block1="Router_0"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_0"
+		block1="Router_3"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_4"
+		block1="Router_1"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_1"
+		block1="Router_4"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_4"
+		block1="Router_3"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_3"
+		block1="Router_4"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_5"
+		block1="Router_2"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_2"
+		block1="Router_5"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_5"
+		block1="Router_4"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_4"
+		block1="Router_5"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_6"
+		block1="Router_3"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_3"
+		block1="Router_6"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_7"
+		block1="Router_4"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_4"
+		block1="Router_7"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_7"
+		block1="Router_6"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+	<net type="2Gbs_100vCDM_2mm"
+		block0="Router_6"
+		block1="Router_7"
+		bb_count=""
+		bandwidth="5587.343368824413"
+		average_bandwidth_utilization="0.5">
+	</net>
+</netlist>

@@ -1,0 +1,349 @@
+<!--
+    Filename: io_definitions.xml
+    Author: Alexander Graening
+    Affiliation: University of California, Los Angeles
+    Email: agraening@ucla.edu
+
+    IO Definition Format:
+        - IO Type: IO type is defined with the type parameter. This is the name
+            which must be referenced in the netlist.
+        - Area: Area is the area of the IO cell in mm^2. This is defined in terms
+            of TX and RX area for transmitter and receiver.
+        - Area for Bidirectional Cells: If there is a bidirectional IO type
+            between blocks in different technology nodes it is possible the
+            TX and RX sides will have different areas despite being functionally
+            equivalent. In this case, the TX area corresponds to the full size of
+            the IO cell on the block0 side and RX area corresponds to the full
+            size of the IO cell on the block1 side.
+        - Bandwidth: The bandwidth is defined in G-bit/s. This is the bandwidth
+            of the connection in one direction for a directional connection. If
+            the IO is bidirectional, this is the combined bandwidth in both
+            directions. This is assumed to be symmetric so 10G-bit/s would mean
+            5G-bit/s in each direction.
+        - Wire Count: The number of wires defines the total number of wires in
+            the bidirectional case or the number of wires in one direction for
+            directional connections.
+        - Reach: This is the maximum driving distance of the IO cell defined in mm.
+        - Energy per bit: Energy per bit in W. This is fairly self explanatory.
+            The energy of operation for the IO cell
+        - Shoreline: This length of the chip edge that the IO cell takes up.
+            (Right now, this is a placeholder for future planned additions that
+            will factors such as floorplan and specific IO placement into account.)
+        - Bidirectional: Set this flag to True if the IO is bidirectional. If
+            the flag is set to False, this will be assumed to be a
+            unidirectional connection.
+        
+
+    Description: Define a starter IO cell library for the example design.
+
+    Note that each parameter is required to be set even if it is not relevant to the application.
+            If is it not used, select a relevant value that will interact correctly with the cost model.
+            If no value is selected, at least define the line as the empty string: <parameter_name="">.
+            A list of required parameters for the io object is below:
+                - type
+                - tx_area
+                - rx_area
+                - shoreline
+                - bandwidth
+                - wire_count
+                - bidirectional
+                - energy_per_bit
+                - reach
+-->
+
+<ios>
+    <!-- The UCIe Standard is a serial chiplet interconnection standard that describes
+        two different types of interconnect: advanced and standard. The standard is
+        meant for large pitch IO such as on an organic substrate while the advanced is
+        meant for advanced packaging with more dense interconnect.-->
+    <!-- There are 16 wires transmitting and 16 receiving in the interface for standard
+        UCIe. -->
+    <!-- There are 22 wires supporting transmission for each direction giving 44 wires
+        total. -->
+    <!-- This means at a max rate of 32 GT/s, this is (16*2)*32 = 1024 G-bit/s -->
+    <!-- Since UCIe is defined as bidirectional, the bandwidth here is the sum of both
+        directions. -->
+    <!-- All values except energy per bit are taken from the UCIe standard. <add reference> -->
+    <io type="UCIe_standard"
+        tx_area="0.75438"
+        rx_area="0.75438"
+        shoreline="0.5715"
+        bandwidth="1024"
+        wire_count="44"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="10.0">
+    </io> 
+    <io type="UCIe_standard_1"
+        tx_area="0.75438"
+        rx_area="0.75438"
+        shoreline="0.5715"
+        bandwidth="1024"
+        wire_count="44"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="1.0">
+    </io> 
+    <io type="UCIe_standard_2"
+        tx_area="0.75438"
+        rx_area="0.75438"
+        shoreline="0.5715"
+        bandwidth="1024"
+        wire_count="44"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io> 
+    <io type="UCIe_standard_5"
+        tx_area="0.75438"
+        rx_area="0.75438"
+        shoreline="0.5715"
+        bandwidth="1024"
+        wire_count="44"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="5.0">
+    </io> 
+    <io type="UCIe_standard_10"
+        tx_area="0.75438"
+        rx_area="0.75438"
+        shoreline="0.5715"
+        bandwidth="1024"
+        wire_count="44"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="10.0">
+    </io> 
+    <io type="UCIe_standard_20"
+        tx_area="0.75438"
+        rx_area="0.75438"
+        shoreline="0.5715"
+        bandwidth="1024"
+        wire_count="44"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="20.0">
+    </io> 
+    <!-- There are 64 wires transmitting and 16 receiving in the interface for advanced
+        UCIe. -->
+    <!-- There are 70 wires supporting transmission for each direction giving 140 wires
+        total. -->
+    <!-- This means at a max rate of 32 GT/s, this is (64*2)*32 = 4096 G-bit/s -->
+    <!-- Since UCIe is defined as bidirectional, the bandwidth here is the sum of both
+        directions. -->
+    <!-- All values except energy per bit are taken from the UCIe standard. <add reference> -->
+    <io type="UCIe_advanced"
+        tx_area="0.4055184"
+        rx_area="0.4055184"
+        shoreline="0.3888"
+        bandwidth="4096"
+        wire_count="140"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="10.0">
+    </io>
+    <!-- This is an IO cell based on a previous custom design in our lab. 
+        We recommend defining IO cells using very descriptive names such as this. -->
+    <!-- Taken from UCLA custom design. -->
+    <io type="2Gbs_100vCDM_2mm"
+        tx_area="0.0002"
+        rx_area="0.0002"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="2.0">
+    </io>
+    <io type="2Gbs_100vCDM_5mm"
+        tx_area="0.0002"
+        rx_area="0.0002"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="5.0">
+    </io>
+    <io type="2Gbs_100vCDM_10mm"
+        tx_area="0.0002"
+        rx_area="0.0002"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="10.0">
+    </io>
+    <io type="2Gbs_100vCDM_20mm"
+        tx_area="0.0002"
+        rx_area="0.0002"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="20.0">
+    </io>
+    <io type="2Gbs_0vCDM_2mm"
+        tx_area="0.00004763"
+        rx_area="0.00004763"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="2.0">
+    </io>
+    <io type="2Gbs_10vCDM_2mm"
+        tx_area="0.00006265"
+        rx_area="0.00006265"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="2.0">
+    </io>
+    <io type="2Gbs_125vCDM_2mm"
+        tx_area="0.00009270"
+        rx_area="0.00009270"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="2.0">
+    </io>
+    <io type="2Gbs_250vCDM_2mm"
+        tx_area="0.00013025"
+        rx_area="0.00013025"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="2.0">
+    </io>
+    <io type="2Gbs_500vCDM_2mm"
+        tx_area="0.00019775"
+        rx_area="0.00019785"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.001"
+        reach="2.0">
+    </io>
+    <!-- This is another example of a serial protocol, but this does not
+        conform to the PCIe standard. Will go back and fix this later. -->
+    <!-- Parameters here are arbitrary and incorrect. -->
+    <io type="PCIe"
+        tx_area="2.0"
+        rx_area="2.0"
+        shoreline="1.0"
+        bandwidth="2048"
+        wire_count="140"
+        bidirectional="True"
+        energy_per_bit="0.000000000001"
+        reach="10.0">
+    </io>
+    <!--- The values given for the GPIO cell should be replaced by foundry
+        information -->
+    <!-- This is based on the UCLA custom IO but with a larger area. -->
+    <!-- Other GPIOs below are set to provide variations on this, but have not been used or updated in a while. -->
+    <io type="GPIO"
+        tx_area="0.001"
+        rx_area="0.001"
+        shoreline="0.02"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <io type="GPIO_external_small"
+        tx_area="0.001"
+        rx_area="0.001"
+        shoreline="0.04"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <io type="GPIO_external"
+        tx_area="0.003140"
+        rx_area="0.003140"
+        shoreline="0.04"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <!-- The following IO cells are examples of how IO cells might be defined
+        to test the impact of ESD protection level on the design, but the 
+        specific numbers should be replaced to evaluate a real design. -->
+    <io type="IO_100v"
+        tx_area="0.0002"
+        rx_area="0.0002"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <io type="IO_50v"
+        tx_area="0.00013"
+        rx_area="0.00013"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <io type="IO_30v"
+        tx_area="0.000116"
+        rx_area="0.000116"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <io type="IO_10v"
+        tx_area="0.000092"
+        rx_area="0.000092"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <io type="IO_3v"
+        tx_area="0.00008"
+        rx_area="0.00008"
+        shoreline="0.01"
+        bandwidth="2"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.000000000001"
+        reach="2.0">
+    </io>
+    <!-- Below was set for testing parameters. -->
+    <io type="temp_io"
+        tx_area="0.0"
+        rx_area="0.0"
+        shoreline="1.0"
+        bandwidth="1"
+        wire_count="1"
+        bidirectional="False"
+        energy_per_bit="0.0"
+        reach="10.0">
+    </io>
+</ios>
