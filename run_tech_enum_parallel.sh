@@ -170,8 +170,8 @@ run_test_case() {
     
     # Extract key metrics if successful
     if [[ "$status" == "Success" ]]; then
-        local canonical_forms=$(grep "Unique canonical assignments:" "$log_file" | tail -1 | awk '{print $NF}')
-        local best_cost=$(grep "Best Cost:" "$log_file" | tail -1 | awk '{print $NF}')
+        local canonical_forms=$(grep -i "Unique Canonical Assignments" "$log_file" | tail -1 | awk -F'|' '{gsub(/ /,"",$3); print $3}')
+        local best_cost=$(grep -i "Best cost:" "$log_file" | tail -1 | awk '{print $NF}')
         
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] METRICS: $design, Canonical Forms: ${canonical_forms:-N/A}, Best Cost: ${best_cost:-N/A}" >> "$status_file"
     fi
@@ -299,8 +299,8 @@ for design in "${DESIGNS[@]}"; do
     
     # Extract canonical assignments if successful
     if [[ "$STATUS" == "Success" ]]; then
-        CANONICAL_FORMS=$(grep "Unique canonical assignments:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
-        BEST_COST=$(grep "Best Cost:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
+        CANONICAL_FORMS=$(grep -i "Unique Canonical Assignments" "$LOG_FILE" | tail -1 | awk -F'|' '{gsub(/ /,"",$3); print $3}')
+        BEST_COST=$(grep -i "Best cost:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
         echo "$design: $STATUS, Time: ${ELAPSED_TIME}s, Canonical Forms: ${CANONICAL_FORMS:-N/A}, Best Cost: ${BEST_COST:-N/A}" >> "$SUMMARY_FILE"
     else
         echo "$design: $STATUS, Time: ${ELAPSED_TIME:-N/A}s" >> "$SUMMARY_FILE"

@@ -426,8 +426,8 @@ def evaluate_partition(test_case_dir, partition_file, tech="7nm", reach="0.50", 
                 # Extract the objective cost from the output
                 cost = None
                 for line in stdout.splitlines():
-                    if "Objective Cost:" in line:
-                        cost_match = re.search(r"Objective Cost:\s*([0-9.]+)", line)
+                    if "Best cost:" in line:
+                        cost_match = re.search(r"Best cost:\s*([0-9.]+)", line)
                         if cost_match:
                             cost = float(cost_match.group(1))
                             break

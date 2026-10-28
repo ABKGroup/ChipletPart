@@ -38,17 +38,26 @@ struct LibraryDicts {
 };
 
 // Helper function for scaling areas between technology nodes
-float area_scaling_factor(std::string initial_tech_node, std::string actual_tech_node, bool is_memory);
+float area_scaling_factor(const std::string& initial_tech_node, const std::string& actual_tech_node, bool is_memory);
 
 // Helper function for scaling power between technology nodes
-float power_scaling_factor(std::string initial_tech_node, std::string actual_tech_node);
+float power_scaling_factor(const std::string& initial_tech_node, const std::string& actual_tech_node);
 
 // Read library definitions from files
 LibraryDicts* readLibraries(std::string io_file, std::string layer_file, std::string wafer_process_file, 
                             std::string assembly_process_file, std::string test_file, std::string netlist_file);
 
-// Read block definitions from file
+// Read block definitions from file (file order)
 std::vector<block> readBlocks(std::string blocks_file);
+
+// Reorder `blocks` so that blocks[i] is the block named netlist_block_names[i].
+// The partitioner numbers vertices by first appearance in the netlist, and
+// LibraryDicts::block_names / global_adjacency_matrix use the same order, so
+// the block vector must follow it too. Blocks listed in the file but absent
+// from the netlist are dropped with a warning; a netlist block that has no
+// definition is an error and an empty vector is returned.
+std::vector<block> alignBlocksToNetlist(const std::vector<block>& blocks,
+                                        const std::vector<std::string>& netlist_block_names);
 
 // Initialize database and return library dictionaries
 LibraryDicts* init(std::string io_file, std::string layer_file, std::string wafer_process_file, 

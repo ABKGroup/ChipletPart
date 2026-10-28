@@ -6,295 +6,203 @@ An example of an SoC netlist is the [Mempool testcase](https://github.com/bodhi9
 ### Overall Flow ###
 The overall flow is shown below: ![shown here](https://github.com/ABKGroup/ChipletPart/blob/main/chipletpart_overall_v5.png).
 
-### Review Directions ###
-1. The source codes to ChipletPart are in the directory ```graph_part```
-2. The testcases are uploaded in the directory ```test_data```
-3. The netlist generator file is implemented in the script ```generateSystemDefinition.py``` available in the directory ```test_case_gen```
-To generate a testcase wih Z wafer scale, A tiles, B cores, C shared memories, D area scale and E power scale, we run the script:
-```python3 systemSystemDefinition.py Z A B C D E```
-4. ChipletPart has depencies on ```METIS```, ```PugiXML```, ```Eigen```, ```Boost```, ```OpenMP``` and ```GKLib```.
-5. The run scripts are uploaded in the parent directory. 
+### Repository layout ###
+1. `src/` – the partitioner (`ChipletPart`, FM/KL refiners, sequence-pair floorplanner, GAs, CLI in `Main.cpp`).
+2. `cost_model/` – the C++ chiplet cost model (`evaluator_cpp`, `design::*`) and its unit tests.
+3. `test_data/<case>/` – one directory per benchmark, each containing `io_definitions.xml`, `layer_definitions.xml`,
+   `wafer_process_definitions.xml`, `assembly_process_definitions.xml`, `test_definitions.xml`,
+   `block_level_netlist.xml` and `block_definitions.txt` (columns: `name area_mm2 power_W tech is_memory`).
+4. `test_case_gen/generateSystemDefinition.py` – the wafer-scale (WS) netlist generator.
+5. `run_*.sh` – run scripts (see [Usage](#usage-directions)). Results go to `results/`; `test_data/` is never written to.
+
+Dependencies: CMake ≥ 3.14, a C++17 compiler, OpenMP, Boost (headers), Eigen 3, METIS 5 (+ GKlib) and pugixml (bundled in `src/`).
 
 ### List of testcases ###
 
-| Benchmark    | # Tiles | # IP Blocks | Area (mm²)          | Area Scaling | Power Scaling |
-|--------------|---------|-------------|---------------------|--------------|---------------|
-| WS₁          | 1       | 48          | 1582 (45nm)         | 1600         | 1600          |
-| WS₂          | 2       | 96          | 3165 (45nm)         | 1600         | 1600          |
-| WS₃          | 4       | 192         | 6330 (45nm)         | 1600         | 1600          |
-| WS₄          | 8       | 384         | 12,660 (45nm)       | 1600         | 1600          |
-| MP           | 16      | 40          | 494 (45nm)          | 100          | 100           |
-| ADI₁         | N/A     | 14          | 567 (16nm)          | 16           | 16            |
-| ADI₂         | N/A     | 17          | 567 (16nm)          | 16           | 16            |
-| EPYC         | N/A     | 32          | 148 (7nm)           | 1            | 1             |
-| GA100        | N/A     | 180         | 548 (7nm)           | 1            | 1             |
+| Benchmark | Directory | # Tiles | # IP Blocks | Area (mm²) | Area Scaling | Power Scaling |
+|-----------|-----------|---------|-------------|------------|--------------|---------------|
+| WS₁ | `48_1_14_4_1600_1600` | 1 | 48  | 1582 (45nm)   | 1600 | 1600 |
+| WS₂ | `48_2_14_4_1600_1600` | 2 | 96  | 3165 (45nm)   | 1600 | 1600 |
+| WS₃ | `48_4_14_4_1600_1600` | 4 | 192 | 6330 (45nm)   | 1600 | 1600 |
+| WS₄ | `48_8_14_4_1600_1600` | 8 | 384 | 12,660 (45nm) | 1600 | 1600 |
+| MP  | `mempool_group`       | 16 | 40 | 494 (45nm)    | 100  | 100  |
+| EPYC | `epyc7282`           | N/A | 32 | 148 (7nm)     | 1    | 1    |
+| GA100 | `ga100`             | N/A | 180 | 548 (7nm)    | 1    | 1    |
 
 > **Note:** MP and WS benchmarks use tile terminology; the other benchmarks do not.
 
-Some examples to run the test_case generator is below: 
-1. To generate the WS_1 netlist run ```python3 generateSystemDefinition ws-48 1 14 4 1600 1600```
-2. To generate the WS_2 netlist run ```python3 generateSystemDefinition.py ws-48 2 14 4 1600 1600```
-3. To generate the WS_3 netlist run ```python3 generateSystemDefinition.py ws-48 4 14 4 1600 1600```
-4. To generate the WS_4 netlist run ```python3generateSystemDefinition.py ws-48 8 14 4 1600 1600```
+To generate a WS testcase with `Z` wafer scale, `A` tiles, `B` cores, `C` shared memories, `D` area scale and `E` power scale:
+```bash
+cd test_case_gen
+python3 generateSystemDefinition.py ws-48 1 14 4 1600 1600   # WS_1
+python3 generateSystemDefinition.py ws-48 2 14 4 1600 1600   # WS_2
+python3 generateSystemDefinition.py ws-48 4 14 4 1600 1600   # WS_3
+python3 generateSystemDefinition.py ws-48 8 14 4 1600 1600   # WS_4
+```
 
 ## Building ChipletPart
 
-Follow these steps to build the ChipletPart from the source:
-
 ### Prerequisites
 
-Ensure you have CMake 3.10 or higher and a suitable (9.3.0 or higher) C++ compiler installed on your system.
+CMake ≥ 3.14 and a C++17 compiler (GCC ≥ 9 or Apple clang).
+
+```bash
+# macOS
+brew install cmake libomp boost eigen metis
+# Debian / Ubuntu
+sudo apt install cmake g++ libomp-dev libboost-dev libeigen3-dev libmetis-dev
+```
+
+METIS is found automatically from Homebrew / the system (`-DMETIS_PREFIX=<prefix>` to override).
+To build METIS from source instead, `git submodule update --init` and CMake will use `METIS/` and `GKlib/`.
+`-DDISABLE_METIS=ON` builds without METIS (random initial partitions).
 
 ### Build Instructions
 
-1. **Create and Enter Build Directory:**
-   ```bash
-   mkdir build && cd build
-   ```
-2. **Generate Makefiles:**
-   ```cmake ..```
-3. Compile the Project:
-   ```make -j 40  # Adjust the number 40 according to the number of cores you wish to use for a faster build process```  
-4. Run the run-script
-   ```./run_chiplet_test.sh ga100 --seed 1```
-5. Our cost model implementation is available in the ```cost_model``` directory.
+```bash
+mkdir build && cd build
+cmake ..                      # Release by default
+make -j8
+cd ..
+./run_chiplet_test.sh ga100 --seed 1
+```
 
-ChipletPart operates in three modes: (1) homogeneous, (2) heterogeneous and (3) evaluation.
+Useful CMake options: `-DENABLE_NATIVE_ARCH=ON` (`-march=native`, binary is then not portable),
+`-DBUILD_COST_MODEL_TESTS=ON` (then `ctest` in `build/` runs the cost-model unit tests),
+`-DBUILD_COST_MODEL_EXAMPLES=ON`, `-DENABLE_OPENMP=OFF`.
+
+ChipletPart operates in four modes: (1) homogeneous, (2) heterogeneous (GA), (3) technology enumeration and (4) evaluation.
+
 ## Homogeneous mode ##
-In this mode ChipletPart works with a single technology node. To run in homogeneous mode do the following:
-```./run_chiplet_test.sh ga100 --seed 1```
-To change the technology node, modify the default tech variable in run_chiplet_test.sh, e.g., ```DEFAULT_TECH="7nm"```
-
-### Sample output ###
+A single technology node for every chiplet:
+```bash
+./run_chiplet_test.sh ga100 --seed 1            # default tech 7nm
+./run_chiplet_test.sh ga100 --tech 14nm
 ```
-Running standard partitioning for test case: adi_sku3_1x
-Tech node: 7nm
-[INFO] Random seed set to 1
+Results are written to `results/<case>/standard/` (override with `--output-dir`).
 
-------------------------------------------------------------
-            ChipletPart Partitioner / Evaluator             
-                        Version: 1.0                        
-------------------------------------------------------------
-Developed by: UC San Diego and UC Los Angeles               
-------------------------------------------------------------
-
-[INFO] Random seed set to 1
-[INFO] Partitioning using XML input files
-
-Reading Chiplet Files and Generating Hypergraph
-Parameter                     Value                                             
---------------------------------------------------------------------------------
-IO file                       /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/io_definitions.xml
-Layer file                    /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/layer_definitions.xml
-Wafer process file            /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/wafer_process_definitions.xml
-Assembly process file         /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/assembly_process_definitions.xml
-Test file                     /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/test_definitions.xml
-Netlist file                  /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/block_level_netlist.xml
-Blocks file                   /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/block_definitions.txt
-Reach                         0.500000                                          
-Separation                    0.250000                                          
-Technology                    7nm           
-[==================================================] 100%
-[SUCCESS] Parallel floorplanning and refinement completed in 17 seconds
-
-Best Partition Results
-Metric                        Value                         
-------------------------------------------------------------
-Partition index               6                             
-Number of parts               4                             
-Cost                          50.790554                     
-Feasibility                   Yes                           
-Aspect Ratios                 [4.677498, 0.338730, 0.200000, 0.200000]
-
-Top 3 Partition Results by Cost:
-Rank      Partition Index     Parts     Cost                Feasible  
-----------------------------------------------------------------------
-1         6                   4         50.790554           Yes       
-2         7                   4         51.204288           Yes       
-3         3                   2         52.260674           Yes       
-
-[SUCCESS] Best partition saved to /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/block_level_netlist.xml.cpart.4
-
-Timing Summary
-Stage                                   Time (seconds)      
-------------------------------------------------------------
-Parallel floorplanning and refinement   17                  
-Total partitioning process              17.163105           
-
-[SUCCESS] Partitioning completed successfully
-Test completed successfully!
+### Sample output (epyc7282, 7nm, seed 42) ###
 ```
++------------+----------------------+------------+----------------------+------------+
+| Rank       | Partition Index      | Parts      | Cost                 | Feasible   |
++------------+----------------------+------------+----------------------+------------+
+| 1          | 16                   | 8          | 71.835381            | Yes        |
+| 2          | 17                   | 8          | 72.034363            | Yes        |
+| 3          | 12                   | 6          | 73.213936            | Yes        |
+[INFO] Floorplanner results: Yes
+[SUCCESS] Best cost: 71.835381
+[SUCCESS] Number of partitions: 8
+[SUCCESS] Floorplan feasibility: 1
+[SUCCESS] Best partition saved to results/epyc7282/standard/block_level_netlist.xml.cpart.8
+```
+
+### Floorplan feasibility ###
+A partition is *feasible* when the sequence-pair floorplanner can place the chiplets (with the
+`<separation>` halo and the IO shoreline each inter-chiplet bundle needs) so that every bundle is
+within its IO `reach`. `Floorplanner results` / `Floorplan feasibility` report this for the final
+partition and are authoritative; the `Feasible` column is the result of the shorter per-candidate run.
+
+By default the refinement is **floorplan-aware**: every FM move and KL swap is followed by a short,
+warm-started floorplan probe of the resulting partition, each pass is rolled back to the prefix with
+the lowest reach violation (then the highest gain), and candidates are ranked feasible-first. The
+cost of the winning partition is therefore the best cost *among feasible designs*; a cheaper but
+unplaceable partition (e.g. EPYC at 70.83 with 8 chiplets) is not reported. The best arrangement the
+probes found seeds the final floorplanner, which runs `--fp-steps x --fp-perturbs` perturbations per
+walker on `--fp-workers` parallel walkers (default 1000 x 1000 on min(threads, 4) walkers).
+`--no-floorplan-aware` restores pure cost-driven refinement (faster, may be infeasible);
+`--fp-check-budget S,P` sets the probe budget (default `40,25`).
+
+Results with the default settings (7nm, reach 0.5, separation 0.25, seed 42; "cost-only" is
+`--no-floorplan-aware`):
+
+| Case | Floorplan-aware: cost / chiplets / feasible | Cost-only: cost / chiplets / feasible |
+|------|---------------------------------------------|---------------------------------------|
+| EPYC (`epyc7282`) | 71.84 / 8 / yes | 70.83 / 8 / **no** |
+| GA100 (`ga100`) | 70.31 / 8 / yes | 70.14 / 8 / **no** |
+| WS₁ (`48_1_14_4_1600_1600`) | 49.89 / 7 / yes | 49.89 / 7 / yes |
+| WS₃ (`48_4_14_4_1600_1600`) | 260.23 / 8 / yes | 260.23 / 8 / yes |
+| MP (`mempool_group`) | 5.82 / 1 / yes | 5.82 / 1 / yes |
+
 ## Heterogeneous mode ##
-ChipletPart can handle multiple technology nodes -- in this case it will run the genetic algorithm. 
-```./run_chiplet_test.sh ga100 --genetic --tech-nodes 7nm,10nm,45nm --seed 1```
-
-### Sample output ###
-```./run_chiplet_test.sh ga100 --genetic --tech-nodes 7nm,10nm,45nm --seed 1```
-
+Multiple technology nodes; partitioning and technology assignment are co-optimised by a genetic algorithm:
+```bash
+./run_chiplet_test.sh ga100 --genetic --tech-nodes 7nm,10nm,14nm --seed 1
+./run_chiplet_test.sh ga100 --canonical-ga --tech-nodes 7nm,14nm --generations 30 --population 20
 ```
-Running genetic tech partitioning for test case: adi_sku3_1x
-Tech nodes: 7nm,10nm,45nm
-Generations: 50, Population size: 50
-/home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/build/bin/chipletPart /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/io_definitions.xml /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/layer_definitions.xml /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/wafer_process_definitions.xml /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/assembly_process_definitions.xml /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/test_definitions.xml /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/block_level_netlist.xml /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/block_definitions.txt 0.50 0.25 --genetic-tech-part --tech-nodes 7nm,10nm,45nm --generations 50 --population 50 --seed 1
-[INFO] Random seed set to 1
+Both print a `Genetic Algorithm Results` table (`Best Cost`, `Number of Partitions`, per-partition technology)
+and write `*.parts.N` / `*.techs.N` files to `results/<case>/<mode>/`.
 
-------------------------------------------------------------
-            ChipletPart Partitioner / Evaluator             
-                        Version: 1.0                        
-------------------------------------------------------------
-Developed by: UC San Diego and UC Los Angeles               
-------------------------------------------------------------
-
-[INFO] Random seed set to 1
-[INFO] Converting netlist XML to hypergraph...
-[INFO] Created hypergraph with 11 vertices and 20 hyperedges
-[INFO] Number of IP blocks in chiplet graph: 11
-[INFO] Number of nets in chiplet graph: 20
-[INFO] Wrote vertex mapping to output.map
-
-Running Enhanced Genetic Algorithm for Co-optimization
-Parameter                     Value                                             
---------------------------------------------------------------------------------
-IO file                       /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/io_definitions.xml
-Layer file                    /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/layer_definitions.xml
-Wafer process file            /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/wafer_process_definitions.xml
-Assembly process file         /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/assembly_process_definitions.xml
-Test file                     /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/test_definitions.xml
-Netlist file                  /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/block_level_netlist.xml
-Blocks file                   /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/adi_sku3_1x/block_definitions.txt
-Reach                         0.500000                                          
-Separation                    0.250000                                          
-Population Size               50                                                
-Number of Generations         50                                                
-Mutation Rate                 0.200000                                          
-Crossover Rate                0.650000                                          
-Min Partitions                1                                                 
-Max Partitions                8                                                 
-Output Prefix                 genetic_tech_part                                 
-Random Seed                   1                                                 
-
-[INFO] Creating GeneticTechPartitioner with hypergraph containing 11 vertices and 20 hyperedges
-
-Genetic Tech Partitioner Initialized
-Parameter                     Value               
---------------------------------------------------
-Hypergraph Vertices           11                  
-Hypergraph Hyperedges         20                  
-Available Technologies        3                   
-Random Seed                   1                   
-Generations                   50                  
-Population Size               50                  
-Mutation Rate                 0.200000            
-Crossover Rate                0.650000            
-Min Partitions                1                   
-Max Partitions                8                   
-
-[INFO] Running genetic algorithm...
-Genetic Algorithm Results
-Metric                        Value               
---------------------------------------------------
-Best Cost                     43.749119           
-Number of Partitions          6                   
-Valid Solution                Yes                 
-Execution Time (ms)           21384               
-
-Technology Assignment
-Partition                     Technology          
---------------------------------------------------
-0                             7nm                 
-1                             7nm                 
-2                             7nm                 
-3                             10nm                
-4                             10nm                
-5                             7nm                 
-
-
-Genetic Algorithm Results
-Metric                        Value                                             
---------------------------------------------------------------------------------
-Best Cost                     43.749119                                         
-Number of Partitions          6                                                 
-Valid Solution                Yes                                               
-Execution Time (seconds)      21   
+## Technology enumeration ##
+For small numbers of technologies and chiplets the search space is tiny (e.g. 5 unique canonical assignments for
+2 technologies × ≤ 2 chiplets), so exhaustive enumeration is cheaper and deterministic compared with the GAs:
+```bash
+./run_chiplet_test.sh epyc7282 --tech-enum --tech-nodes 7nm,14nm --max-partitions 2
+```
+```
+| Total Assignments Considered   | 6      |
+| Unique Canonical Assignments   | 5      |
+| Best Number of Partitions      | 2      |
+| Best Technology Assignment     | [7nm, 14nm] |
+| Best Cost                      | 85.264297   |
+[SUCCESS] Best partition saved to results/epyc7282/tech_enum/block_level_netlist.xml.best_partition.txt
 ```
 
-## Evaluation mode ## 
-ChipletPart can also evaluate a given partition solution. It will first floorplan it and then evaluate it with its cost model. 
-```./run_evaluator.sh ga100``` -- you can mention the partition file with the script variable ```HYPERGRAPH_PART```.
-
-
-### Sample output ###
-```./run_evaluator.sh ga100 --seed 1```
-   ```
-   Running evaluator with the following parameters:
-Partition file:        /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/manual.part
-IO file:               /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/io_definitions.xml
-Layer file:            /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/layer_definitions.xml
-Wafer process file:    /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/wafer_process_definitions.xml
-Assembly process file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/assembly_process_definitions.xml
-Test file:             /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/test_definitions.xml
-Netlist file:          /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/block_level_netlist.xml
-Blocks file:           /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/block_definitions.txt
-Reach:                 0.50
-Separation:            0.25
-Technology:            7nm
-
-Executing evaluation...
-
-------------------------------------------------------------
-            ChipletPart Partitioner / Evaluator             
-                        Version: 1.0                        
-------------------------------------------------------------
-Developed by: UC San Diego and UC Los Angeles               
-------------------------------------------------------------
-
-[INFO] Evaluating partition
-[INFO] Reading chiplet files and generating hypergraph representation
-[INFO] Partition file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/manual.part
-[INFO] IO file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/io_definitions.xml
-[INFO] Layer file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/layer_definitions.xml
-[INFO] Wafer process file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/wafer_process_definitions.xml
-[INFO] Assembly process file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/assembly_process_definitions.xml
-[INFO] Test file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/test_definitions.xml
-[INFO] Netlist file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/block_level_netlist.xml
-[INFO] Blocks file: /home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/test_data/ga100/block_definitions.txt
-[INFO] Reach: 0.5
-[INFO] Separation: 0.25
-[INFO] Tech: 7nm
-[INFO] Converting netlist XML to hypergraph...
-[INFO] Created hypergraph with 180 vertices and 400 hyperedges
-[INFO] Number of IP blocks in chiplet graph: 180
-[INFO] Number of nets in chiplet graph: 400
-[INFO] Number of partitions: 2
-[INFO] Creating ChipletRefiner with cost model files to test initialization
-[SUCCESS] Cost model was successfully initialized in the ChipletRefiner constructor
-Cost: 34.6704, Power: 0
-[INFO] Cost of partition is 34.670376
-[INFO] Number of partitions is 2
+## Evaluation mode ##
+Evaluate an existing partition (one chiplet id per line, in block order): it is floorplanned first and then costed.
+```bash
+./run_evaluator.sh ga100 --partition results/ga100/standard/block_level_netlist.xml.cpart.8 --tech 7nm
+# equivalently
+./run_chiplet_test.sh ga100 --evaluate-partition results/ga100/standard/block_level_netlist.xml.cpart.8
+```
+```
+[INFO] Cost of partition is 71.915916
+[INFO] Number of partitions is 8
 [INFO] Floorplan feasibility is 1
-Evaluation completed successfully
 ```
-
+The evaluation cost is computed with the aspect ratios and locations of the final floorplan, so it is
+slightly different from the `Best cost` printed by the partitioner (which costs the partition before
+floorplanning); compare partitions within one mode.
 
 ## Usage Directions ##
   ```
 Usage: ./run_chiplet_test.sh <test_case_name> [options]
 
+Modes (pick at most one; default is standard single-technology partitioning):
+  --genetic                     Genetic tech partitioning (GeneticTechPartitioner)
+  --canonical-ga                Canonical genetic algorithm for technology assignment
+  --tech-enum                   Enumerate all canonical technology assignments
+  --evaluate-partition <file>   Evaluate an existing partition file
+
 Options:
-  --reach <value>       Specify reach value (default: 0.50)
-  --separation <value>  Specify separation value (default: 0.25)
-  --tech <node>         Specify tech node for standard partitioning (default: 7nm)
-  --seed <value>        Specify random seed (default: 42)
-  --genetic             Use genetic tech partitioning algorithm
-  --tech-nodes <nodes>  Specify comma-separated list of tech nodes for genetic partitioning
-                        Example: --tech-nodes 7nm,10nm,14nm,28nm
-  --generations <num>   Specify number of generations for genetic algorithm (default: 50)
-  --population <num>    Specify population size for genetic algorithm (default: 50)
-  --help                Display this help message
+  --reach <value>        Default IO reach for net types missing from the IO file (default: 0.50)
+  --separation <value>   Minimum chiplet spacing used by the floorplanner (default: 0.25)
+  --tech <node>          Tech node for standard partitioning / evaluation (default: 7nm)
+  --tech-nodes <list>    Comma-separated tech nodes for --genetic/--canonical-ga/--tech-enum
+                         (default: 7nm,10nm,14nm; known nodes: 45nm 16nm 14nm 10nm 7nm)
+  --seed <value>         Random seed (default: 42)
+  --generations <num>    GA generations (default: 50)
+  --population <num>     GA population size (default: 50)
+  --max-partitions <n>   Max chiplets (default: 4 for --tech-enum, 8 for the GAs)
+  --detailed-output      Extra per-assignment output for --tech-enum
+  --output-dir <dir>     Where to write results (default: results/<case>/<mode>)
+  --no-floorplan-aware   Disable feasibility-gated refinement (standard mode)
+  --fp-check-budget S,P  Per-move floorplan probe budget (default: 40,25)
+  --fp-steps <n>         Final floorplan SA steps per walker (default: 1000)
+  --fp-perturbs <n>      Final floorplan perturbations per step (default: 1000)
+  --fp-workers <n>       Final floorplan parallel walkers (default: min(threads,4))
+  --help                 Show this message
 
 Examples:
-  ./run_chiplet_test.sh design1 --tech 5nm
-  ./run_chiplet_test.sh design2 --genetic --tech-nodes 7nm,10nm,14nm --seed 123
+  ./run_chiplet_test.sh 48_1_14_4_1600_1600 --tech 7nm
+  ./run_chiplet_test.sh epyc7282 --genetic --tech-nodes 7nm,10nm,14nm --seed 123
+  ./run_chiplet_test.sh epyc7282 --canonical-ga --tech-nodes 7nm,14nm --generations 30 --population 20
+  ./run_chiplet_test.sh ga100 --tech-enum --tech-nodes 7nm,10nm,14nm --max-partitions 3
+  ./run_chiplet_test.sh ga100 --evaluate-partition results/ga100/standard/block_level_netlist.xml.cpart.8
   ```
+
+The binary itself (`build/bin/chipletPart --help`) takes the same options; per-net IO reach always
+comes from the `reach` attribute in `io_definitions.xml`, and the `<reach>` positional is only the
+fallback for net types that are not listed there. The cost model knows the technology nodes
+45nm, 16nm, 14nm, 10nm and 7nm; any other node name is rejected.
 
    

@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cmath>
+#include <cstring>
+#include <unordered_map>
 
 // Include OpenMP headers conditionally
 #if defined(ENABLE_OPENMP) && !defined(DISABLE_OPENMP) && defined(_OPENMP)
@@ -425,6 +427,38 @@ FloatType Layer::LayerCost(FloatType area, FloatType aspect_ratio, const WaferPr
     return layer_cost;
 }
 
+namespace {
+
+// Memo for the exact grid dies-per-wafer search. The result depends only on
+// the four arguments, and during partition refinement the same die dimensions
+// recur constantly (every chiplet that is not touched by a move keeps its
+// area), so the cache hit rate is very high. Thread-local: no locking, and
+// Layer objects are shared between refinement threads.
+struct GridDiesKey {
+    FloatType x, y, d, dice;
+    bool operator==(const GridDiesKey& o) const {
+        return x == o.x && y == o.y && d == o.d && dice == o.dice;
+    }
+};
+struct GridDiesKeyHash {
+    size_t operator()(const GridDiesKey& k) const {
+        auto h = [](FloatType v) {
+            unsigned long long bits;
+            static_assert(sizeof(bits) == sizeof(FloatType), "FloatType must be 64-bit");
+            std::memcpy(&bits, &v, sizeof(bits));
+            return std::hash<unsigned long long>{}(bits);
+        };
+        size_t seed = h(k.x);
+        seed ^= h(k.y) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+        seed ^= h(k.d) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+        seed ^= h(k.dice) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
+        return seed;
+    }
+};
+constexpr size_t kGridDiesCacheMax = 1 << 16;
+
+} // namespace
+
 IntType Layer::ComputeGridDiesPerWafer(FloatType x_dim, FloatType y_dim, FloatType usable_wafer_diameter, FloatType dicing_distance) const {
    // Run approximate calculation if the flag is set
    if (approx_ == true) {
@@ -439,6 +473,21 @@ IntType Layer::ComputeGridDiesPerWafer(FloatType x_dim, FloatType y_dim, FloatTy
     if (x_dim <= 0 || y_dim <= 0 || usable_wafer_diameter <= 0) {
         return 0;
     }
+
+    thread_local std::unordered_map<GridDiesKey, IntType, GridDiesKeyHash> cache;
+    const GridDiesKey key{x_dim, y_dim, usable_wafer_diameter, dicing_distance};
+    if (auto it = cache.find(key); it != cache.end()) {
+        return it->second;
+    }
+    const IntType result = ComputeGridDiesPerWaferUncached(x_dim, y_dim, usable_wafer_diameter, dicing_distance);
+    if (cache.size() >= kGridDiesCacheMax) {
+        cache.clear();
+    }
+    cache.emplace(key, result);
+    return result;
+}
+
+IntType Layer::ComputeGridDiesPerWaferUncached(FloatType x_dim, FloatType y_dim, FloatType usable_wafer_diameter, FloatType dicing_distance) const {
 
     // Precompute constants to avoid repeated calculations
     const FloatType r = usable_wafer_diameter * 0.5;

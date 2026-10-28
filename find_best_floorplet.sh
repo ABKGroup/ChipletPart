@@ -76,7 +76,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 # Define paths
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 TEST_DATA_DIR="${BASE_DIR}/test_data/${TEST_CASE_NAME}"
 FLOORPLET_DIR="${TEST_DATA_DIR}/floorplet"
 

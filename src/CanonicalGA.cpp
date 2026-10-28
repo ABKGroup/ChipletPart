@@ -616,18 +616,14 @@ void CanonicalGA::PrintGenerationStats(int generation, float best_cost, float av
     Console::TableRow({"Cache Size", std::to_string(fitness_cache_.size())}, widths);
     std::cout << std::endl;
     
-    // Log timing information to a file
-    static bool header_written = false;
-    std::ofstream timing_log("ga_generations_timing.log", header_written ? std::ios::app : std::ios::out);
-    
-    if (timing_log.is_open()) {
-        if (!header_written) {
+    // Make sure the per-generation CSV exists with a header; rows are
+    // appended by Run() once the generation's timings are known.
+    if (!generation_log_header_written_) {
+        std::ofstream timing_log(output_prefix_ + ".generations_timing.csv", std::ios::out);
+        if (timing_log.is_open()) {
             timing_log << "Generation,BestCost,AvgCost,CacheSize,SelectionTime(ms),CrossoverTime(ms),MutationTime(ms),EvaluationTime(ms),TotalGenerationTime(ms)" << std::endl;
-            header_written = true;
         }
-        
-        // We'll append the timing data when we have it, so we keep the file open
-        timing_log.close();
+        generation_log_header_written_ = true;
     }
 }
 
@@ -648,7 +644,7 @@ CanonicalSolution CanonicalGA::Run(
         Console::Header("Running Canonical Genetic Algorithm");
         
         // Set up timing measurements
-        std::ofstream timing_log("ga_operations_timing.log");
+        std::ofstream timing_log(output_prefix_ + ".operations_timing.log");
         if (timing_log.is_open()) {
             timing_log << "Canonical GA Operations Timing Log" << std::endl;
             timing_log << "-------------------------------" << std::endl;
@@ -658,18 +654,13 @@ CanonicalSolution CanonicalGA::Run(
         // Initialize a timer for overall execution
         auto start_time_total = std::chrono::high_resolution_clock::now();
         
-        // Optimize GA parameters for combinatorial optimization
-        // These are effective parameters for technology assignment problems
-        min_partitions_ = 1;    // Allow as few as 1 partition
-        max_partitions_ = 8;    // Allow up to 8 partitions
-        population_size_ = 50;  // Good balance of diversity vs computation (30-100 is ideal)
-        num_generations_ = 250; // Sufficient for convergence (200-500 is ideal)
-        crossover_rate_ = 0.9;  // High crossover rate encourages exploration
-        mutation_rate_ = 0.08;  // Moderate-high mutation helps avoid local optima
-        tournament_size_ = 3;   // Tournament selection with k=3 for selection pressure
+        // GA parameters come from the constructor (i.e. from the CLI:
+        // --population, --generations, --max-partitions). They used to be
+        // overwritten here with fixed values, which silently ignored the
+        // user's settings.
         int elite_count = 2;    // Preserve top 2 solutions between generations
         
-        Console::Info("Using optimized GA parameters:");
+        Console::Info("Using GA parameters:");
         Console::Info("- Min/Max partitions: " + std::to_string(min_partitions_) + "/" + std::to_string(max_partitions_));
         Console::Info("- Population size: " + std::to_string(population_size_));
         Console::Info("- Generations: " + std::to_string(num_generations_));
@@ -1058,8 +1049,15 @@ CanonicalSolution CanonicalGA::Run(
             auto duration_gen = std::chrono::duration_cast<std::chrono::milliseconds>(
                 end_time_gen - start_time_gen).count();
             
-            // Log generation timing
-            std::ofstream gen_timing_log("ga_generations_timing.log", std::ios::app);
+            // Log generation timing (header first, then one CSV row per generation)
+            if (!generation_log_header_written_) {
+                std::ofstream header_out(output_prefix_ + ".generations_timing.csv", std::ios::out);
+                if (header_out.is_open()) {
+                    header_out << "Generation,BestCost,AvgCost,CacheSize,SelectionTime(ms),CrossoverTime(ms),MutationTime(ms),EvaluationTime(ms),TotalGenerationTime(ms)" << std::endl;
+                }
+                generation_log_header_written_ = true;
+            }
+            std::ofstream gen_timing_log(output_prefix_ + ".generations_timing.csv", std::ios::app);
             if (gen_timing_log.is_open()) {
                 gen_timing_log << gen+1 << "," 
                               << gen_best_fitness << "," 
@@ -1126,26 +1124,17 @@ CanonicalSolution CanonicalGA::Run(
             reach,
             separation,
             best_tech,
-            "canonical_ga_result"
+            output_prefix_ + "_result"
         );
         
         return solution;
     } catch (const std::exception& e) {
+        // Do not fabricate a result: a made-up tech assignment / partition
+        // with cost 100 would be written to the output files and treated as a
+        // valid answer by downstream scripts. Propagate the failure instead
+        // (Main.cpp catches it and reports the error).
         Console::Error("Error in Canonical GA: " + std::string(e.what()));
-        
-        // Create a basic fallback solution with 7nm, 10nm, and 14nm
-        std::vector<std::string> tech_assignment;
-        tech_assignment.push_back(std::string("7nm"));
-        tech_assignment.push_back(std::string("10nm"));
-        tech_assignment.push_back(std::string("14nm"));
-        
-        std::vector<int> partition(5, 0);
-        for (int i = 0; i < 5; i++) {
-            partition[i] = i % 3;
-        }
-        
-        Console::Warning("Using fallback solution due to error: " + std::string(e.what()));
-        return CanonicalSolution(tech_assignment, partition, 100.0f);
+        throw;
     }
 }
 

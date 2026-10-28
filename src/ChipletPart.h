@@ -82,22 +82,51 @@ public:
   // Get the current random seed
   int GetSeed() const { return seed_; }
 
-  // Original method that reads from a hypergraph file
-  void ReadChipletGraph(std::string hypergraph_file,
-                        std::string chiplet_io_file);
-                        
+  // Reach used for nets whose IO type has no 'reach' attribute in the IO
+  // definitions file. Per-net reach always comes from the IO file first;
+  // this is the fallback (the <reach> CLI argument).
+  void SetDefaultReach(float reach) { default_reach_ = reach; }
+  float GetDefaultReach() const { return default_reach_; }
+
+  // Minimum spacing (halo) between chiplets used by the floorplanner
+  // (the <separation> CLI argument). Applied to every refiner we create.
+  void SetSeparation(float separation) { separation_ = separation; }
+  float GetSeparation() const { return separation_; }
+
+  // Directory that receives every file this run writes (partitions, tech
+  // assignments, logs). Created if missing. Default: current directory.
+  void SetOutputDir(const std::string& dir);
+  const std::string& GetOutputDir() const { return output_dir_; }
+
+  // Floorplan-feasibility-aware refinement (standard mode). When enabled,
+  // every FM move / KL swap is gated on a short floorplan probe so the
+  // reach violation never increases, candidates are ranked feasible-first,
+  // and the reported partition is the best one the final floorplanner can
+  // actually place. Costs no worse than the paper's I/O-feasible designs.
+  void SetFloorplanAware(bool aware) { floorplan_aware_ = aware; }
+  bool IsFloorplanAware() const { return floorplan_aware_; }
+  // Budget of the per-move probe (SA steps x perturbations per step).
+  void SetFloorplanCheckBudget(int steps, int perturbs) {
+    fp_check_steps_ = steps;
+    fp_check_perturbs_ = perturbs;
+  }
+  // Budget of the final floorplan of the winning partition, per walker.
+  void SetFinalFloorplanBudget(int steps, int perturbs) {
+    final_fp_steps_ = steps;
+    final_fp_perturbs_ = perturbs;
+  }
+  // Number of parallel SA walkers (GWTW) for the final floorplan; 0 = auto.
+  void SetFloorplanWorkers(int workers) { fp_workers_ = workers; }
+
+  // Join output_dir_ with a file name. `file_name` may be a path; only its
+  // basename is used so inputs under test_data/ never get polluted.
+  std::string OutputPath(const std::string& file_name) const;
+
   // New method that creates a hypergraph from XML files directly
   void ReadChipletGraphFromXML(std::string chiplet_io_file,
                               std::string chiplet_netlist_file,
                               std::string chiplet_blocks_file);
 
-  void TechAssignPartition(
-      std::string chiplet_io_file,
-      std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
-      std::string chiplet_assembly_process_file, std::string chiplet_test_file,
-      std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-      float reach, float separation, std::vector<std::string> techs);
-      
   void Partition(std::string chiplet_io_file,
                  std::string chiplet_layer_file,
                  std::string chiplet_wafer_process_file,
@@ -115,14 +144,6 @@ public:
       std::string chiplet_netlist_file, std::string chiplet_blocks_file,
       float reach, float separation, std::string tech);
       
-  void GeneticPart(std::string chiplet_io_file,
-                   std::string chiplet_layer_file,
-                   std::string chiplet_wafer_process_file,
-                   std::string chiplet_assembly_process_file,
-                   std::string chiplet_test_file,
-                   std::string chiplet_netlist_file,
-                   std::string chiplet_blocks_file, float reach,
-                   float separation, std::vector<std::string> &tech_nodes);
   
   // Enhanced genetic algorithm for co-optimizing partitioning and technology assignment
   void GeneticTechPart(std::string chiplet_io_file,
@@ -224,23 +245,6 @@ private:
   void ConvertXMLToHypergraph(const std::string& netlist_file,
                              const std::string& block_def_file);
                              
-  void CreateMatingPool(const std::vector<std::vector<std::string>> &population,
-                        const std::vector<float> &fitness,
-                        std::vector<std::vector<std::string>> &mating_pool);
-  std::tuple<float, std::vector<int>> InitQuickPart(
-      std::string chiplet_io_file,
-      std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
-      std::string chiplet_assembly_process_file, std::string chiplet_test_file,
-      std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-      float reach, float separation, std::vector<std::string> &tech_nodes);
-      
-  std::tuple<float, std::vector<int>> QuickPart(
-      std::string chiplet_io_file,
-      std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
-      std::string chiplet_assembly_process_file, std::string chiplet_test_file,
-      std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-      float reach, float separation, std::vector<std::string> &tech_nodes);
-      
   std::vector<int> FindCrossbars(float &quantile);
   std::vector<int> CrossBarExpansion(std::vector<int> &crossbars,
                                      int &num_parts);
@@ -273,7 +277,18 @@ private:
   void assignRemainingVerticesParallel(std::vector<int>& partition, 
                                     const std::unordered_map<int, int>& vertex_to_partition,
                                     int num_parts);
-  float ub_factor_ = 1.0; // balance constraint
+  // Max fraction of total block area a single chiplet may hold; 1.0 means no
+  // balance constraint (see BuildBalanceBounds in FMRefiner.h).
+  float ub_factor_ = 1.0;
+  float default_reach_ = 2.0f;   // fallback reach for IO types missing from the IO file
+  float separation_ = 0.1f;      // chiplet halo passed to every refiner/floorplanner
+  std::string output_dir_ = "."; // where result files are written
+  bool floorplan_aware_ = true;  // gate refinement moves on floorplan feasibility
+  int fp_check_steps_ = 40;      // per-move probe: SA steps
+  int fp_check_perturbs_ = 25;   // per-move probe: perturbations per step
+  int final_fp_steps_ = 1000;    // final floorplan: SA steps per walker
+  int final_fp_perturbs_ = 1000; // final floorplan: perturbations per step
+  int fp_workers_ = 0;           // final floorplan walkers (0 = auto)
   int num_parts_ = 8;     // number of partitions
   int refine_iters_ = 2;  // number of refinement iterations
   int max_moves_ = 50;
@@ -297,7 +312,11 @@ private:
   // Final solution
   std::vector<int> solution_; // store the part_id for each vertex
   // Create a hash map to store io type and reach value
-  std::unordered_map<std::string, float> io_map_;
+  std::unordered_map<std::string, float> io_map_;  // io type -> reach (mm)
+  // io type -> area of one IO cell pair (tx + rx, mm^2) and per-cell bandwidth,
+  // used to size the IO cells of each net for the floorplanner.
+  struct IoCellInfo { float cell_area = 0.0f; float cell_bandwidth = 0.0f; };
+  std::unordered_map<std::string, IoCellInfo> io_cell_info_;
   std::vector<float> reach_;
   std::vector<float> io_sizes_;
   // Map to store vertex names (for debugging and output)

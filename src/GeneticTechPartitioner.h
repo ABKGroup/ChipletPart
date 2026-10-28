@@ -92,7 +92,9 @@ public:
     /**
      * @brief Constructor
      * @param hypergraph The hypergraph to partition
-     * @param ub_factor imbalance factor for balance constraints
+     * @param ub_factor max fraction of the total block area a single
+     *        chiplet may hold (1.0 = no balance constraint); see
+     *        BuildBalanceBounds in FMRefiner.h
      * @param available_tech_nodes The available technology nodes
      * @param seed Random seed for reproducibility
      * @param num_generations Number of generations to run
@@ -218,10 +220,18 @@ private:
     std::vector<GeneticSolution> population_;
     GeneticSolution best_solution_;
     std::shared_ptr<ChipletRefiner> refiner_;
+    // One refiner per OpenMP thread for the parallel fitness evaluation.
+    // ChipletRefiner is stateful (tech array, aspect ratios, sequence pairs,
+    // running cost), so the single shared refiner_ forced the whole fitness
+    // loop body into one critical section; refiner_ stays as the
+    // sequential-path instance (and is thread_refiners_[0]).
+    std::vector<std::shared_ptr<ChipletRefiner>> thread_refiners_;
+    std::shared_ptr<ChipletRefiner> RefinerForThisThread();
     int tournament_size_ = 3; // Default tournament size
     
     // Mutex for thread safety
     mutable std::mutex cache_mutex_;
+    std::mutex refiner_mutex_;  // guards refiner_ when a thread has no own refiner
 };
 
 } // namespace chiplet 

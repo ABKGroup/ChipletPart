@@ -17,14 +17,25 @@ This document describes the integration of the Go-With-The-Winners (GWTW) floorp
    - Setter methods for GWTW parameters added to allow customization.
    - Performance tracking for floorplanning runtime added.
 
-4. **Key GWTW Parameters**:
-   - `gwtw_iter_` - Number of GWTW iterations (default: 2)
-   - `gwtw_max_temp_` - Initial temperature (default: 100.0)
-   - `gwtw_min_temp_` - Final temperature (default: 1e-12)
-   - `gwtw_sync_freq_` - Synchronization frequency (default: 0.1)
+4. **Key GWTW Parameters** (see `ChipletRefiner::Floorplanner`):
+   - `gwtw_iter_` - Number of GWTW segments; after each segment (except the
+     last) the workers are ranked and the winners are copied onto the rest
+     (default: 2)
    - `gwtw_top_k_` - Number of top solutions to propagate (default: 2)
-   - `gwtw_temp_derate_factor_` - Temperature reduction factor (default: 1.0)
-   - `gwtw_top_k_ratio_` - Distribution of workers for each top solution (default: {0.5, 0.5})
+   - `gwtw_top_k_ratio_` - Share of the non-winning workers assigned to each
+     winner (default: {0.5, 0.5})
+   - `gwtw_temp_derate_factor_` - Multiplier applied to every worker's
+     temperature after a synchronisation; 1.0 = unchanged (default: 1.0)
+   - `gwtw_min_temp_` - Floor for the derated temperature (default: 1e-12)
+   - `gwtw_max_temp_`, `gwtw_sync_freq_` - currently unused (the SA starts at
+     `SACore::init_temperature_` and synchronises `gwtw_iter_` times)
+
+   Workers are independent `SACore` instances with their own RNG and cooling
+   rate (spread between `min_cooling_rate_` and `max_cooling_rate_`); a
+   segment runs them in parallel with OpenMP when not already inside a
+   parallel region. Synchronisation copies the sequence pair and chiplet
+   shapes (`SACore::adoptSolution`), ranking valid solutions first and then
+   by normalised cost.
 
 ## Benefits of GWTW vs. Previous SA
 

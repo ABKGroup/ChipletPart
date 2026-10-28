@@ -6,11 +6,13 @@
 #include <map>
 #include <cmath>
 #include <algorithm>
+#include <unordered_map>
 
 // Scale Areas Function based on the Area Scaling Factors from the "Scaling Equations for the Accurate Prediction of CMOS Device Performance from 180nm to 7nm" paper.
-float area_scaling_factor(std::string initial_tech_node, std::string actual_tech_node, bool is_memory) {
-    // Define the scaling factors for the area.
-    std::vector<std::vector<float>> area_scaling_factors = {
+float area_scaling_factor(const std::string& initial_tech_node, const std::string& actual_tech_node, bool is_memory) {
+    // Define the scaling factors for the area (static: these tables were
+    // rebuilt on every call, i.e. once per block per cost evaluation).
+    static const std::vector<std::vector<float>> area_scaling_factors = {
         {1, 0.53, 0.35, 0.16, 0.075, 0.067, 0.061, 0.036, 0.021},
         {1.9, 1, 0.66, 0.31, 0.14, 0.13, 0.12, 0.068, 0.039},
         {2.8, 1.5, 1, 0.46, 0.21, 0.19, 0.17, 0.1, 0.059},
@@ -21,7 +23,7 @@ float area_scaling_factor(std::string initial_tech_node, std::string actual_tech
         {28, 15, 9.8, 4.5, 2.1, 1.9, 1.7, 1, 0.58},
         {48, 25, 17, 7.8, 3.6, 3.2, 2.9, 1.7, 1}
     };
-    std::vector<std::vector<float>> memory_area_scaling_factors = {
+    static const std::vector<std::vector<float>> memory_area_scaling_factors = {
         {1, 0.53, 0.43, 0.19, 0.1, 0.12, 0.1, 0.096, 0.077},
         {1.9, 1, 0.836, 0.372, 0.187, 0.238, 0.2, 0.18, 0.143},
         {2.2, 1.18, 1, 0.44, 0.22, 0.275, 0.22, 0.21, 0.17},
@@ -33,7 +35,7 @@ float area_scaling_factor(std::string initial_tech_node, std::string actual_tech
         {13, 6.8, 5.9, 2.5, 1.3, 1.6, 1.3, 1.2, 1}
     };
     // Tech Nodes
-    std::vector<std::string> tech_nodes = {
+    static const std::vector<std::string> tech_nodes = {
         "90nm", "65nm", "45nm", "32nm", "20nm", "16nm", "14nm", "10nm", "7nm"
     };
     
@@ -61,11 +63,11 @@ float area_scaling_factor(std::string initial_tech_node, std::string actual_tech
 }
 
 // Scale Power Function based on the Power Scaling Factors for Inverter
-float power_scaling_factor(std::string initial_tech_node, std::string actual_tech_node) {
+float power_scaling_factor(const std::string& initial_tech_node, const std::string& actual_tech_node) {
     // Define the scaling factors for the power.
-    std::vector<float> power_scaling_factors = {105, 26.1, 13.0, 8.58, 5.19, 2.47, 1.51, 1.28, 0.995, 0.866, 0.789};
+    static const std::vector<float> power_scaling_factors = {105, 26.1, 13.0, 8.58, 5.19, 2.47, 1.51, 1.28, 0.995, 0.866, 0.789};
     // Tech Nodes
-    std::vector<std::string> tech_nodes = {
+    static const std::vector<std::string> tech_nodes = {
         "180nm", "130nm", "90nm", "65nm", "45nm", "32nm", "20nm", "16nm", "14nm", "10nm", "7nm"
     };
     // Find the index of the initial_tech_node and actual_tech_node in the tech_nodes vector.
@@ -127,9 +129,13 @@ std::vector<block> readBlocks(std::string blocks_file) {
         float power;
         std::string tech;
         bool is_memory;
+        if (line.find_first_not_of(" \t\r\n") == std::string::npos) {
+            continue; // blank line
+        }
         if (!(iss >> name >> area >> power >> tech >> is_memory)) {
-            std::cout << "Error reading blocks file" << std::endl;
-            break;
+            std::cerr << "[WARN] readBlocks: skipping malformed line in " << blocks_file
+                      << ": '" << line << "'" << std::endl;
+            continue;
         }
         block newBlock;
         newBlock.name = name;
@@ -141,6 +147,71 @@ std::vector<block> readBlocks(std::string blocks_file) {
     }
 
     return blocks;
+}
+
+std::vector<block> alignBlocksToNetlist(const std::vector<block>& blocks,
+                                        const std::vector<std::string>& netlist_block_names) {
+    std::unordered_map<std::string, const block*> by_name;
+    by_name.reserve(blocks.size());
+    for (const block& b : blocks) {
+        if (!by_name.emplace(b.name, &b).second) {
+            std::cerr << "[WARN] alignBlocksToNetlist: duplicate block definition for '"
+                      << b.name << "', keeping the first one" << std::endl;
+        }
+    }
+
+    std::vector<block> aligned;
+    aligned.reserve(netlist_block_names.size());
+    std::vector<std::string> missing;
+    for (const std::string& name : netlist_block_names) {
+        auto it = by_name.find(name);
+        if (it == by_name.end()) {
+            missing.push_back(name);
+            continue;
+        }
+        aligned.push_back(*it->second);
+    }
+
+    if (!missing.empty()) {
+        std::cerr << "[ERROR] alignBlocksToNetlist: " << missing.size()
+                  << " netlist block(s) have no block definition:";
+        for (size_t i = 0; i < missing.size() && i < 10; ++i) {
+            std::cerr << " " << missing[i];
+        }
+        if (missing.size() > 10) std::cerr << " ...";
+        std::cerr << std::endl;
+        return {};
+    }
+
+    // The cost model is (re)initialised many times per run, so only report
+    // the ordering diagnostics once per process.
+    static bool reported = false;
+    if (!reported) {
+        reported = true;
+        if (aligned.size() != blocks.size()) {
+            std::cerr << "[WARN] alignBlocksToNetlist: " << (blocks.size() - aligned.size())
+                      << " block definition(s) do not appear in the netlist and were dropped" << std::endl;
+        }
+
+        // Report whether the file order already matched, so users know when a
+        // previously computed result was affected by the ordering.
+        size_t first_mismatch = aligned.size();
+        for (size_t i = 0; i < aligned.size() && i < blocks.size(); ++i) {
+            if (aligned[i].name != blocks[i].name) {
+                first_mismatch = i;
+                break;
+            }
+        }
+        if (first_mismatch != aligned.size() || aligned.size() != blocks.size()) {
+            std::cout << "[INFO] Block definitions reordered to match netlist vertex order"
+                      << (first_mismatch != aligned.size()
+                              ? " (first difference at index " + std::to_string(first_mismatch) + ")"
+                              : "")
+                      << std::endl;
+        }
+    }
+
+    return aligned;
 }
 
 // Initialize database and return library dictionaries

@@ -79,6 +79,7 @@ SACore::SACore(
   max_num_step_ = max_num_step;
   num_perturb_per_step_ = num_perturb_per_step;
   cooling_rate_ = cooling_rate;
+  temperature_ = init_temperature_;
   // generate random
   std::mt19937 rand_gen(seed);
   generator_ = rand_gen;
@@ -172,11 +173,11 @@ void SACore::singleSeqSwap(bool pos)
     return;
   }
 
-  const int index1
-      = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  const int n = static_cast<int>(macros_.size());
+  const int index1 = randIndex(n);
+  int index2 = randIndex(n);
   while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+    index2 = randIndex(n);
   }
 
   if (pos) {
@@ -192,11 +193,11 @@ void SACore::doubleSeqSwap()
     return;
   }
 
-  const int index1
-      = (int) (std::floor(distribution_(generator_) * macros_.size()));
-  int index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+  const int n = static_cast<int>(macros_.size());
+  const int index1 = randIndex(n);
+  int index2 = randIndex(n);
   while (index1 == index2) {
-    index2 = (int) (std::floor(distribution_(generator_) * macros_.size()));
+    index2 = randIndex(n);
   }
 
   std::swap(pos_seq_[index1], pos_seq_[index2]);
@@ -206,8 +207,10 @@ void SACore::doubleSeqSwap()
 
 void SACore::resizeOneCluster()
 {
-  const int idx = static_cast<int>(
-      std::floor(distribution_(generator_) * pos_seq_.size()));
+  if (macros_.empty()) {
+    return;
+  }
+  const int idx = randIndex(static_cast<int>(macros_.size()));
   macro_id_ = idx;
   Chiplet& src_macro = macros_[idx];
 
@@ -217,9 +220,13 @@ void SACore::resizeOneCluster()
   const float uy = ly + src_macro.getHeight();
 
   if (distribution_(generator_) < 0.2) {
-    float aspect_ratio = distribution_(generator_);
-    aspect_ratio = std::min(0.2f, aspect_ratio);
-    aspect_ratio = std::max(5.0f, aspect_ratio);
+    // Draw a random aspect ratio inside the chiplet's allowed range
+    // [min_ar_, max_ar_]. (The previous min/max pair was inverted and always
+    // produced 5.0.) Log-uniform so that 0.5 and 2.0 are equally likely.
+    const float lo = std::log(src_macro.min_ar_);
+    const float hi = std::log(src_macro.max_ar_);
+    const float aspect_ratio =
+        std::exp(lo + distribution_(generator_) * (hi - lo));
     src_macro.resizeRandomly(aspect_ratio);
     return;
   }
@@ -285,7 +292,12 @@ void SACore::calSegmentLoc(float seg_start,
 {
   start_id = -1;
   end_id = -1;
-  for (int i = 0; i < grid.size() - 1; i++) {
+  if (grid.size() < 2) {
+    start_id = 0;
+    end_id = 0;
+    return;
+  }
+  for (int i = 0; i < static_cast<int>(grid.size()) - 1; i++) {
     if ((grid[i] <= seg_start) && (grid[i + 1] > seg_start)) {
       start_id = i;
     }
@@ -303,264 +315,182 @@ void SACore::calSegmentLoc(float seg_start,
 
 void SACore::expandClusters()
 {
-  // Step1 : Divide the entire floorplan into grids
-  std::set<float> x_point;
-  std::set<float> y_point;
-  for (auto& macro_id : pos_seq_) {
-    x_point.insert(macros_[macro_id].getX());
-    x_point.insert(macros_[macro_id].getX() + macros_[macro_id].getWidth());
-    y_point.insert(macros_[macro_id].getY());
-    y_point.insert(macros_[macro_id].getY() + macros_[macro_id].getHeight());
-  }
-  // create grid
-  std::vector<float> x_grid(x_point.begin(), x_point.end());
-  std::vector<float> y_grid(y_point.begin(), y_point.end());
-  // create grid in a row-based manner
-  std::vector<std::vector<int>> grids;  // store the macro id
-  const int num_x = x_grid.size() - 1;
-  const int num_y = y_grid.size() - 1;
-  for (int j = 0; j < num_y; j++) {
-    std::vector<int> macro_ids(num_x, -1);
-    grids.push_back(macro_ids);
+  // Expand the chiplet with the largest reach violation into the dead space
+  // around it, growing only towards the sinks it violates and by at most the
+  // excess wirelength of those nets. Growing a chiplet shortens the gap to
+  // its neighbours (reach) at the price of area, which the area/package
+  // penalties and the SA acceptance test trade off.
+  if (macros_.empty() || nets_.empty()) {
+    return;
   }
 
-  // identify the macro with heighest priority
+  // Step 1: per-net excess length and per-macro accumulated violation.
   std::vector<float> netViolationVec(macros_.size(), 0.0);
   std::vector<float> netExpandVec(nets_.size(), 0.0);
-  for (const auto& net : nets_) {
-    /*
-    const float lx_a = macros_[net.terminals.first].getRealX();
-    const float ly_a = macros_[net.terminals.first].getRealY();
-    const float ux_a = lx_a + macros_[net.terminals.first].getRealWidth();
-    const float uy_a = ly_a + macros_[net.terminals.first].getRealHeight();
-
-    const float lx_b = macros_[net.terminals.second].getRealX();
-    const float ly_b = macros_[net.terminals.second].getRealY();
-    const float ux_b = lx_b + macros_[net.terminals.second].getRealWidth();
-    const float uy_b = ly_b + macros_[net.terminals.second].getRealHeight();
-
-    float HPWL = 0.0;
-    // vertical overlap
-    if(std::min(uy_a, uy_b) > std::max(ly_a, ly_b)) {
-      HPWL = std::max(lx_a, lx_b) - std::min(ux_a, ux_b);
-    } else if (std::min(ux_a, ux_b) > std::max(lx_a, lx_b)) {
-      // horizontal overlap
-      HPWL = std::max(ly_a, ly_b) - std::min(uy_a, uy_b);
-    } else {
-      const float cx_a = (lx_a + ux_a) / 2.0;
-      const float cy_a = (ly_a + uy_a) / 2.0;
-      const float cx_b = (lx_b + ux_b) / 2.0;
-      const float cy_b = (ly_b + uy_b) / 2.0;
-
-      const float width = (ux_a - lx_a + ux_b - lx_b) / 2.0;
-      const float height = (uy_a - ly_a + uy_b - ly_b) / 2.0;
-
-      HPWL = std::abs(cx_a - cx_b) + std::abs(cy_a - cy_b) - width - height;
-    }
-
-    const float penalty = net.weight * std::max(0.0f, HPWL - net.reach);
-    */
+  float total_violation = 0.0f;
+  for (size_t n = 0; n < nets_.size(); ++n) {
+    const BundledNet& net = nets_[n];
     const float penalty = calNetViolation(&net);
-    netExpandVec.push_back(penalty / net.weight);    
+    netExpandVec[n] = (net.weight > 0.0f) ? penalty / net.weight : 0.0f;
     netViolationVec[net.terminals.first] += penalty;
     netViolationVec[net.terminals.second] += penalty;
+    total_violation += penalty;
   }
-  
-  auto min_element_iter = std::min_element(netViolationVec.begin(), netViolationVec.end());
-  int src_macro = min_element_iter - netViolationVec.begin();
+  if (total_violation <= 0.0f) {
+    return;  // every reach is met; expansion could only add area
+  }
+  const int src_macro = static_cast<int>(
+      std::max_element(netViolationVec.begin(), netViolationVec.end())
+      - netViolationVec.begin());
 
+  // Step 2: how far may src_macro grow in each direction?
   float left_expand_max = 0.0;
   float right_expand_max = 0.0;
   float top_expand_max = 0.0;
-  float down_expand_max = 0.0;  
+  float down_expand_max = 0.0;
 
-  auto src_lx = macros_[src_macro].getX();
-  auto src_ly = macros_[src_macro].getY();
-  auto src_ux = src_lx + macros_[src_macro].getWidth();
-  auto src_uy = src_ly + macros_[src_macro].getHeight();
+  const float src_lx = macros_[src_macro].getX();
+  const float src_ly = macros_[src_macro].getY();
+  const float src_ux = src_lx + macros_[src_macro].getWidth();
+  const float src_uy = src_ly + macros_[src_macro].getHeight();
 
-  for (int i = 0; i < nets_.size(); i++) {
+  for (size_t i = 0; i < nets_.size(); i++) {
     if (nets_[i].terminals.first != src_macro && nets_[i].terminals.second != src_macro) {
       continue;
     }
-    
-    // check the relative location 
-    float sink_lx = 0.0;
-    float sink_ly = 0.0;
-    float sink_ux = 0.0;
-    float sink_uy = 0.0;
-
-    if (nets_[i].terminals.first == src_macro) {
-      sink_lx = macros_[nets_[i].terminals.second].getX();
-      sink_ly = macros_[nets_[i].terminals.second].getY();
-      sink_ux = sink_lx + macros_[nets_[i].terminals.second].getWidth();
-      sink_uy = sink_ly + macros_[nets_[i].terminals.second].getHeight();
-    } else {
-      sink_lx = macros_[nets_[i].terminals.first].getX();
-      sink_ly = macros_[nets_[i].terminals.first].getY();
-      sink_ux = sink_lx + macros_[nets_[i].terminals.first].getWidth();
-      sink_uy = sink_ly + macros_[nets_[i].terminals.first].getHeight();
+    if (netExpandVec[i] <= 0.0f) {
+      continue;
     }
+    const int sink = (nets_[i].terminals.first == src_macro)
+                         ? nets_[i].terminals.second
+                         : nets_[i].terminals.first;
+    const float sink_lx = macros_[sink].getX();
+    const float sink_ly = macros_[sink].getY();
+    const float sink_ux = sink_lx + macros_[sink].getWidth();
+    const float sink_uy = sink_ly + macros_[sink].getHeight();
 
-
-    if (src_lx > sink_ux) {
-      left_expand_max = std::max(left_expand_max, netExpandVec[i]);
-    }
-
+    // Only growth towards +x / +y is meaningful: the sequence-pair packing
+    // anchors every macro at its lower-left corner, so a macro enlarged to
+    // the left or bottom would simply be re-packed and grow to the right/top
+    // instead, pushing the wrong neighbours away.
+    (void)sink_ux;
+    (void)sink_uy;
     if (src_ux < sink_lx) {
       right_expand_max = std::max(right_expand_max, netExpandVec[i]);
     }
-
-    if (src_ly > sink_uy) {
-      down_expand_max = std::max(down_expand_max, netExpandVec[i]);
-    }
-
     if (src_uy < sink_ly) {
       top_expand_max = std::max(top_expand_max, netExpandVec[i]);
     }
   }
+  if (left_expand_max <= 0.0f && right_expand_max <= 0.0f &&
+      top_expand_max <= 0.0f && down_expand_max <= 0.0f) {
+    return;
+  }
 
+  // Step 3: grid of all macro boundaries, with EVERY macro marked, so that a
+  // free cell really is dead space.
+  std::set<float> x_point;
+  std::set<float> y_point;
+  for (const auto& macro : macros_) {
+    x_point.insert(macro.getX());
+    x_point.insert(macro.getX() + macro.getWidth());
+    y_point.insert(macro.getY());
+    y_point.insert(macro.getY() + macro.getHeight());
+  }
+  std::vector<float> x_grid(x_point.begin(), x_point.end());
+  std::vector<float> y_grid(y_point.begin(), y_point.end());
+  const int num_x = static_cast<int>(x_grid.size()) - 1;
+  const int num_y = static_cast<int>(y_grid.size()) - 1;
+  if (num_x <= 0 || num_y <= 0) {
+    return;  // degenerate floorplan (all macros zero-sized)
+  }
+  std::vector<std::vector<int>> grids(num_y, std::vector<int>(num_x, -1));
 
-  for (int macro_id = src_macro; macro_id <= src_macro; macro_id++) {
-    int x_start = 0;
-    int x_end = 0;
+  auto macro_cells = [&](int macro_id, int& x_start, int& x_end, int& y_start, int& y_end) {
     calSegmentLoc(macros_[macro_id].getX(),
                   macros_[macro_id].getX() + macros_[macro_id].getWidth(),
-                  x_start,
-                  x_end,
-                  x_grid);
-    int y_start = 0;
-    int y_end = 0;
+                  x_start, x_end, x_grid);
     calSegmentLoc(macros_[macro_id].getY(),
                   macros_[macro_id].getY() + macros_[macro_id].getHeight(),
-                  y_start,
-                  y_end,
-                  y_grid);
+                  y_start, y_end, y_grid);
+    x_start = std::max(0, x_start);
+    y_start = std::max(0, y_start);
+    x_end = std::min(num_x, x_end);
+    y_end = std::min(num_y, y_end);
+  };
+
+  for (int macro_id = 0; macro_id < static_cast<int>(macros_.size()); ++macro_id) {
+    if (macros_[macro_id].getWidth() <= 0 || macros_[macro_id].getHeight() <= 0) {
+      continue;
+    }
+    int x_start, x_end, y_start, y_end;
+    macro_cells(macro_id, x_start, x_end, y_start, y_end);
     for (int j = y_start; j < y_end; j++) {
       for (int i = x_start; i < x_end; i++) {
         grids[j][i] = macro_id;
       }
     }
   }
-  for (int order = 0; order <= 1; order++) {
-    std::vector<int> macro_ids;
 
-    if (order == 0) {
-      macro_ids = pos_seq_;
-    } else {
-      macro_ids = neg_seq_;
-    }
-    
-    for (int macro_id : macro_ids) {
-      int x_start = 0;
-      int x_end = 0;
-      calSegmentLoc(macros_[macro_id].getX(),
-                    macros_[macro_id].getX() + macros_[macro_id].getWidth(),
-                    x_start,
-                    x_end,
-                    x_grid);
-      int y_start = 0;
-      int y_end = 0;
-      calSegmentLoc(macros_[macro_id].getY(),
-                    macros_[macro_id].getY() + macros_[macro_id].getHeight(),
-                    y_start,
-                    y_end,
-                    y_grid);
-      int x_start_new = x_start;
-      int x_end_new = x_end;
-      int y_start_new = y_start;
-      int y_end_new = y_end;
-      // propagate left first
-      for (int i = x_start - 1; i >= 0; i--) {
-        bool flag = true;
-        for (int j = y_start; j < y_end; j++) {
-          if (grids[j][i] != -1) {
-            flag = false;  // we cannot extend the current cluster
-            break;
-          }           // end if
-        }             // end y
-        if (!flag) {  // extension done
-          break;
-        }
-        x_start_new--;  // extend left
-        for (int j = y_start; j < y_end; j++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end left
-      x_start = x_start_new;
-      // propagate top second
-      for (int j = y_end; j < num_y; j++) {
-        bool flag = true;
-        for (int i = x_start; i < x_end; i++) {
-          if (grids[j][i] != -1) {
-            flag = false;  // we cannot extend the current cluster
-            break;
-          }           // end if
-        }             // end y
-        if (!flag) {  // extension done
-          break;
-        }
-        y_end_new++;  // extend top
-        for (int i = x_start; i < x_end; i++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end top
-      y_end = y_end_new;
-      // propagate right third
-      for (int i = x_end; i < num_x; i++) {
-        bool flag = true;
-        for (int j = y_start; j < y_end; j++) {
-          if (grids[j][i] != -1) {
-            flag = false;  // we cannot extend the current cluster
-            break;
-          }           // end if
-        }             // end y
-        if (!flag) {  // extension done
-          break;
-        }
-        x_end_new++;  // extend right
-        for (int j = y_start; j < y_end; j++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end right
-      x_end = x_end_new;
-      // propagate down second
-      for (int j = y_start - 1; j >= 0; j--) {
-        bool flag = true;
-        for (int i = x_start; i < x_end; i++) {
-          if (grids[j][i] != -1) {
-            flag = false;  // we cannot extend the current cluster
-            break;
-          }           // end if
-        }             // end y
-        if (!flag) {  // extension done
-          break;
-        }
-        y_start_new--;  // extend down
-        for (int i = x_start; i < x_end; i++) {
-          grids[j][i] = macro_id;
-        }
-      }  // end down
-      y_start = y_start_new;
-      // update the location of cluster
-      float left_start = std::max(x_grid[x_start], macros_[macro_id].getX() - left_expand_max);
-      float down_start = std::max(y_grid[y_start], macros_[macro_id].getY() - down_expand_max);
-      //macros_[macro_id].setX(std::max(x_grid[x_start], macros_[macro_id].getX() - left_expand_max));
-      //macros_[macro_id].setY(std::max(y_grid[y_start], macros_[macro_id].getY() - down_expand_max));
-      float right_end = std::min(x_grid[x_end], macros_[macro_id].getX() + macros_[macro_id].getWidth() + right_expand_max);
-      float top_end = std::min(y_grid[y_end], macros_[macro_id].getY() + macros_[macro_id].getHeight() + top_expand_max);
-      macros_[macro_id].setX(left_start);
-      macros_[macro_id].setY(down_start);
-      macros_[macro_id].setShape(right_end - macros_[macro_id].getX(),
-                                 top_end - macros_[macro_id].getY());
-      //macros_[macro_id].setShape(x_grid[x_end] - x_grid[x_start],
-      //                           y_grid[y_end] - y_grid[y_start]);
-    }
+  // Step 4: propagate src_macro into adjacent free cells (left, top, right,
+  // down), each direction only as far as its expand budget allows.
+  int x_start, x_end, y_start, y_end;
+  macro_cells(src_macro, x_start, x_end, y_start, y_end);
+  if (x_start >= x_end || y_start >= y_end) {
+    return;
   }
+
+  auto row_free = [&](int j, int i0, int i1) {
+    for (int i = i0; i < i1; i++) {
+      if (grids[j][i] != -1) return false;
+    }
+    return true;
+  };
+  auto col_free = [&](int i, int j0, int j1) {
+    for (int j = j0; j < j1; j++) {
+      if (grids[j][i] != -1) return false;
+    }
+    return true;
+  };
+
+  const float min_x = src_lx - left_expand_max;
+  const float max_x = src_ux + right_expand_max;
+  const float min_y = src_ly - down_expand_max;
+  const float max_y = src_uy + top_expand_max;
+
+  // left
+  for (int i = x_start - 1; i >= 0 && left_expand_max > 0.0f; i--) {
+    if (x_grid[i] < min_x || !col_free(i, y_start, y_end)) break;
+    x_start = i;
+  }
+  // top
+  for (int j = y_end; j < num_y && top_expand_max > 0.0f; j++) {
+    if (y_grid[j + 1] > max_y || !row_free(j, x_start, x_end)) break;
+    y_end = j + 1;
+  }
+  // right
+  for (int i = x_end; i < num_x && right_expand_max > 0.0f; i++) {
+    if (x_grid[i + 1] > max_x || !col_free(i, y_start, y_end)) break;
+    x_end = i + 1;
+  }
+  // down
+  for (int j = y_start - 1; j >= 0 && down_expand_max > 0.0f; j--) {
+    if (y_grid[j] < min_y || !row_free(j, x_start, x_end)) break;
+    y_start = j;
+  }
+
+  const float new_lx = x_grid[x_start];
+  const float new_ly = y_grid[y_start];
+  const float new_ux = x_grid[x_end];
+  const float new_uy = y_grid[y_end];
+  if (new_ux - new_lx <= 0.0f || new_uy - new_ly <= 0.0f) {
+    return;
+  }
+  macro_id_ = src_macro;
+  macros_[src_macro].setX(new_lx);
+  macros_[src_macro].setY(new_ly);
+  macros_[src_macro].setShape(new_ux - new_lx, new_uy - new_ly);
 }
-
-
-
 
 /*
 void SACore::expandClusters()
@@ -852,7 +782,7 @@ bool SACore::checkViolation()
     if (penalty > 0.0) {
       std::cout << "Violation:  net.src = " << net.terminals.first << "  "
                 << "net.sink = " << net.terminals.second << "  "
-                << "net_length = " << penalty / net.weight << "  "
+                << "excess_length = " << (net.weight > 0.0f ? penalty / net.weight : penalty) << "  "
                 << "reach = " << net.reach << "  "
                 << std::endl;
       return true;
@@ -862,6 +792,36 @@ bool SACore::checkViolation()
   return false;
 }
 
+
+int SACore::reportViolations(std::ostream& os, int max_lines) const
+{
+  int num_violations = 0;
+  float worst_excess = 0.0f;
+  for (const auto& net : nets_) {
+    const float penalty = calNetViolation(&net);
+    if (penalty <= 0.0f) continue;
+    const float excess = (net.weight > 0.0f) ? penalty / net.weight : penalty;
+    worst_excess = std::max(worst_excess, excess);
+    if (num_violations < max_lines) {
+      const Chiplet& a = macros_[net.terminals.first];
+      const Chiplet& b = macros_[net.terminals.second];
+      os << "  net " << net.terminals.first << "->" << net.terminals.second
+         << " reach=" << net.reach << " excess=" << excess
+         << " io_area=" << net.io_area
+         << " | A: " << a.getRealWidth() << "x" << a.getRealHeight()
+         << " @(" << a.getRealX() << "," << a.getRealY() << ")"
+         << " | B: " << b.getRealWidth() << "x" << b.getRealHeight()
+         << " @(" << b.getRealX() << "," << b.getRealY() << ")\n";
+    }
+    ++num_violations;
+  }
+  if (num_violations > 0) {
+    os << "  " << num_violations << "/" << nets_.size()
+       << " nets violate reach; worst excess = " << worst_excess
+       << "; package = " << width_ << "x" << height_ << "\n";
+  }
+  return num_violations;
+}
 
 void SACore::perturb()
 {
@@ -1041,6 +1001,112 @@ float SACore::calNormCost()
 
 void SACore::run()
 {
+  runSteps(max_num_step_);
+}
+
+void SACore::evaluateCurrent()
+{
+  packFloorplan();
+  calPenalty();
+  if (norm_area_penalty_ <= 0.0) norm_area_penalty_ = std::max(1e-6f, width_ * height_);
+  if (norm_package_penalty_ <= 0.0) norm_package_penalty_ = std::max(1e-6f, width_ * height_);
+  if (norm_net_penalty_ <= 0.0) norm_net_penalty_ = std::max(1e-6f, width_ + height_);
+  trackViolation();
+}
+
+void SACore::trackViolation()
+{
+  if (net_penalty_ < min_net_penalty_seen_) {
+    min_net_penalty_seen_ = net_penalty_;
+    min_pos_seq_ = pos_seq_;
+    min_neg_seq_ = neg_seq_;
+    min_macros_ = macros_;
+  }
+  if (net_penalty_ <= net_reach_penalty_acc_) {
+    seen_valid_ = true;
+    valid_pos_seq_ = pos_seq_;
+    valid_neg_seq_ = neg_seq_;
+    valid_macros_ = macros_;
+  }
+}
+
+void SACore::getMinSeed(FloorplanSeed& seed) const
+{
+  seed.pos_seq = min_pos_seq_;
+  seed.neg_seq = min_neg_seq_;
+  seed.aspect_ratios.clear();
+  seed.aspect_ratios.reserve(min_macros_.size());
+  for (const auto& m : min_macros_) {
+    seed.aspect_ratios.push_back(m.getRealWidth() > 0.0f
+                                     ? m.getRealHeight() / m.getRealWidth()
+                                     : 1.0f);
+  }
+}
+
+void SACore::applySeed(const FloorplanSeed& seed)
+{
+  if (seed.pos_seq.size() != macros_.size() || seed.neg_seq.size() != macros_.size()) {
+    return;
+  }
+  pos_seq_ = seed.pos_seq;
+  neg_seq_ = seed.neg_seq;
+  if (seed.aspect_ratios.size() == macros_.size()) {
+    for (size_t i = 0; i < macros_.size(); ++i) {
+      const float ar = std::clamp(seed.aspect_ratios[i], macros_[i].min_ar_, macros_[i].max_ar_);
+      macros_[i].resizeRandomly(ar);
+    }
+  }
+}
+
+void SACore::restoreMin()
+{
+  if (min_pos_seq_.empty()) {
+    return;
+  }
+  pos_seq_ = min_pos_seq_;
+  neg_seq_ = min_neg_seq_;
+  macros_ = min_macros_;
+  packFloorplan();
+  calPenalty();
+}
+
+void SACore::quench(int num_perturbs)
+{
+  if (macros_.size() <= 1) {
+    return;
+  }
+  packFloorplan();
+  calPenalty();
+  trackViolation();
+  for (int i = 0; i < num_perturbs && net_penalty_ > net_reach_penalty_acc_; ++i) {
+    perturb();
+    calPenalty();
+    if (net_penalty_ <= pre_net_penalty_) {
+      trackViolation();
+    } else {
+      restore();
+    }
+  }
+}
+
+bool SACore::restoreValid()
+{
+  if (!seen_valid_) {
+    return false;
+  }
+  if (isValid()) {
+    return true;
+  }
+  pos_seq_ = valid_pos_seq_;
+  neg_seq_ = valid_neg_seq_;
+  macros_ = valid_macros_;
+  packFloorplan();
+  calPenalty();
+  return isValid();
+}
+
+void SACore::runSteps(int steps)
+{
   packFloorplan();
 
   if (norm_area_penalty_ <= 0.0) {
@@ -1059,49 +1125,32 @@ void SACore::run()
   float cost = calNormCost();
   float pre_cost = cost;
   float delta_cost = 0.0;
-  int step = 1;
-  //float temperature = init_temperature_;
-  //const float t_factor
-  //    = std::exp(std::log(min_temperature_ / init_temperature_) / max_num_step_);
-  
-  auto startTimeStamp = std::chrono::high_resolution_clock::now();
-  
-  // SA process
-  while (step <= max_num_step_) {
+
+  // The schedule continues from the current temperature (so successive
+  // runSteps() calls form one annealing run) and never drops below
+  // min_temperature_, which keeps exp(-delta / T) finite.
+  for (int step = 0; step < steps; ++step) {
+    const float T = std::max(temperature_, min_temperature_);
     for (int i = 0; i < num_perturb_per_step_; i++) {
       perturb();
       cost = calNormCost();
       delta_cost = cost - pre_cost;
       const float num = distribution_(generator_);
       const float prob
-          = (delta_cost > 0.0) ? exp((-1) * delta_cost / init_temperature_) : 1;
+          = (delta_cost > 0.0) ? std::exp(-delta_cost / T) : 1.0f;
       if (num < prob) {
         pre_cost = cost;
+        trackViolation();
       } else {
         restore();
       }
-    };
-    init_temperature_ *= cooling_rate_;
-    cost_list_.push_back(pre_cost);
-    T_list_.push_back(init_temperature_);
-    // increase step
-    step++;
-    if (false) {
-      std::cout << "step: " << step << "  "
-                << "width = " << width_ << "  "
-                << "height = " << height_ << "  "
-                << std::endl;
     }
-    //std::cout << "step: " << step << " cost: " << pre_cost << " temperature: " << temperature << std::endl;
-  }  // end while
-  
-  auto endTimeStamp = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTimeStamp - startTimeStamp);
-  //std::cout << "SA duration: " << duration.count() << " ms" << std::endl;
-  //std::cout << "average runtime per perturbation: " << duration.count() * 1.0 / (max_num_step_ * num_perturb_per_step_) << " ms" << std::endl;
-  
+    temperature_ = std::max(temperature_ * cooling_rate_, min_temperature_);
+    cost_list_.push_back(pre_cost);
+    T_list_.push_back(temperature_);
+  }
+
   // update the final results
   packFloorplan();
   calPenalty();
 }
-

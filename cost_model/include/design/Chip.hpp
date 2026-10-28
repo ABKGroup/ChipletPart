@@ -645,8 +645,11 @@ private:
     long long quantity_;
     BoolType static_;
     
-    // Additional member variables for hierarchical chip properties
-    std::shared_ptr<Chip> parent_chip_;
+    // Additional member variables for hierarchical chip properties.
+    // weak_ptr: the parent owns its children through chips_, so a shared_ptr
+    // here formed a reference cycle and leaked every chip model built
+    // (one per gain evaluation during refinement).
+    std::weak_ptr<Chip> parent_chip_;
     std::map<String, std::vector<std::vector<IntType>>> global_adjacency_matrix_;
     std::map<String, std::vector<std::vector<FloatType>>> average_bandwidth_utilization_;
     std::vector<String> block_names_;

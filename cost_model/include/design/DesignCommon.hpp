@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <stdexcept>
 #include <limits>
-#include <boost/multiprecision/cpp_dec_float.hpp>
 
 namespace design {
 
@@ -39,43 +38,19 @@ inline String BoolToString(bool value) {
     return value ? "True" : "False";
 }
 
-// Custom power function that mimics Python's math.pow behavior using Boost
+// Power function with Python math.pow semantics for the cases the cost model
+// uses (yield^n with 0 <= yield <= 1 and n >= 0).
+//
+// Python's math.pow is the C library pow() on doubles, so std::pow on long
+// double matches it to within a ulp. The previous implementation routed every
+// call through a 50-digit boost::multiprecision type and sat on the per-move
+// hot path (AssemblyYield), costing more than the whole floorplanner.
 inline long double python_pow(double base, double exponent) {
-    // Use boost multiprecision for high precision calculations
-    typedef boost::multiprecision::cpp_dec_float_50 float_type;
-    float_type b = static_cast<float_type>(base);
-    float_type e = static_cast<float_type>(exponent);
-    
-    // Special handling for integer exponents for better precision
-    if (std::floor(exponent) == exponent) {
-        float_type result = 1.0;
-        float_type b_pow = b;
-        long long exp = static_cast<long long>(exponent);
-        
-        // Handle negative exponents
-        if (exp < 0) {
-            if (base == 0) {
-                throw std::domain_error("0 cannot be raised to a negative power");
-            }
-            b_pow = 1.0 / b;
-            exp = -exp;
-        }
-        
-        // Exponentiation by squaring for integer powers
-        while (exp > 0) {
-            if (exp & 1) {
-                result *= b_pow;
-            }
-            b_pow *= b_pow;
-            exp >>= 1;
-        }
-        
-        return static_cast<long double>(result);
+    if (exponent < 0.0 && base == 0.0) {
+        throw std::domain_error("0 cannot be raised to a negative power");
     }
-    
-    // For non-integer exponents, use boost's pow
-    float_type result = boost::multiprecision::pow(b, e);
-    return static_cast<long double>(result);
+    return std::pow(static_cast<long double>(base),
+                    static_cast<long double>(exponent));
 }
 
 } // namespace design

@@ -345,8 +345,22 @@ GeneticSolution GeneticTechPartitioner::Run(
       Console::Error("Failed to validate best solution for elitism");
     }
 
-    // Fill the rest of the population with offspring
+    // Fill the rest of the population with offspring. Every iteration that
+    // fails validation `continue`s, so bound the number of attempts to avoid
+    // spinning forever on a degenerate population; any remaining slots are
+    // filled with copies of the best solution.
+    const size_t max_offspring_attempts = 20 * population_size_ + 100;
+    size_t offspring_attempts = 0;
     while (new_population.size() < population_size_) {
+      if (++offspring_attempts > max_offspring_attempts) {
+        Console::Warning("Offspring generation hit the attempt limit (" +
+                         std::to_string(max_offspring_attempts) +
+                         "); filling remaining slots with the best solution");
+        while (new_population.size() < population_size_) {
+          new_population.push_back(best_solution_);
+        }
+        break;
+      }
       // Select parents
       std::vector<int> parent_indices = SelectParents();
 
@@ -506,11 +520,32 @@ void GeneticTechPartitioner::InitializePopulation(
       chiplet_netlist_file,          // netlist_file
       chiplet_blocks_file            // blocks_file
   );
+  refiner_->SetSeparation(separation);
 
   // Check if cost model is initialized
   if (!refiner_->IsCostModelInitialized()) {
     Console::Error("Cost model initialization failed!");
     return;
+  }
+
+  // Per-thread refiners for the parallel fitness evaluation (see header).
+  thread_refiners_.clear();
+  thread_refiners_.push_back(refiner_);
+  const int num_threads = std::max(1, omp_utils::get_max_threads());
+  for (int t = 1; t < num_threads; ++t) {
+    auto r = std::make_shared<ChipletRefiner>(
+        max_partitions_, 2,
+        static_cast<int>(hypergraph_->GetNumVertices() * 0.05), reaches, true,
+        chiplet_io_file, chiplet_layer_file, chiplet_wafer_process_file,
+        chiplet_assembly_process_file, chiplet_test_file, chiplet_netlist_file,
+        chiplet_blocks_file);
+    r->SetSeparation(separation);
+    if (!r->IsCostModelInitialized()) {
+      Console::Warning("Cost model initialization failed for a worker refiner; "
+                       "fitness evaluation will use fewer threads");
+      break;
+    }
+    thread_refiners_.push_back(r);
   }
 
   // Generate initial partitions
@@ -570,22 +605,8 @@ void GeneticTechPartitioner::InitializePopulation(
       refiner_->SetTechArray(tech_assignment);
       refiner_->SetNumParts(num_parts);
       // run the refiner
-      Matrix<float> upper_block_balance(
-          num_parts,
-          std::vector<float>(hypergraph_->GetVertexDimensions(), 0.0));
-      Matrix<float> lower_block_balance(
-          num_parts,
-          std::vector<float>(hypergraph_->GetVertexDimensions(), 0.0));
-      std::vector<float> total_weights = hypergraph_->GetTotalVertexWeights();
-      // Calculate total weights for this specific partition
-      for (int j = 0; j < hypergraph_->GetVertexDimensions(); j++) {
-        for (int k = 0; k < num_parts; k++) {
-          upper_block_balance[k][j] =
-              std::accumulate(total_weights.begin(), total_weights.end(),
-                              0.0f) *
-              ub_factor_ / num_parts;
-        }
-      }
+      auto [upper_block_balance, lower_block_balance] =
+          BuildBalanceBounds(hypergraph_, num_parts, ub_factor_);
       refiner_->Refine(hypergraph_, upper_block_balance, lower_block_balance,
                        partition);
       // adjust the num_parts and tech assignment
@@ -602,6 +623,17 @@ void GeneticTechPartitioner::InitializePopulation(
 }
 
 // Evaluate fitness for a solution
+std::shared_ptr<ChipletRefiner> GeneticTechPartitioner::RefinerForThisThread() {
+  if (thread_refiners_.empty()) {
+    return refiner_;
+  }
+  const int t = omp_utils::get_thread_num();
+  if (t >= 0 && t < static_cast<int>(thread_refiners_.size())) {
+    return thread_refiners_[t];
+  }
+  return nullptr;  // more threads than refiners: caller serialises
+}
+
 float GeneticTechPartitioner::EvaluateFitness(GeneticSolution &solution) {
   // If we already have the fitness value, return it
   if (solution.cost != 0.0 &&
@@ -767,8 +799,17 @@ float GeneticTechPartitioner::EvaluateFitness(GeneticSolution &solution) {
     return solution.cost;
   }
 
-// Thread safety for accessing the refiner
-#pragma omp critical(refiner_access)
+  // Each OpenMP thread evaluates with its own refiner; the critical section
+  // is only entered when a thread has no refiner of its own.
+  std::shared_ptr<ChipletRefiner> refiner = RefinerForThisThread();
+  const bool need_lock = (refiner == nullptr);
+  if (need_lock) {
+    refiner = refiner_;
+  }
+  std::unique_lock<std::mutex> refiner_lock(refiner_mutex_, std::defer_lock);
+  if (need_lock) {
+    refiner_lock.lock();
+  }
   {
     try {
       // Validate tech nodes one more time before setting in refiner
@@ -785,7 +826,7 @@ float GeneticTechPartitioner::EvaluateFitness(GeneticSolution &solution) {
       }
 
       // Set technology array in refiner - CRITICAL!
-      refiner_->SetTechArray(solution.tech_nodes);
+      refiner->SetTechArray(solution.tech_nodes);
 
       // Setup balance constraints
       Matrix<float> upper_block_balance;
@@ -799,18 +840,18 @@ float GeneticTechPartitioner::EvaluateFitness(GeneticSolution &solution) {
       }
 
       // TEMPORARILY DISABLE FLOORPLANNER
-      // auto floor_result = refiner_->RunFloorplanner(solution.partition,
+      // auto floor_result = refiner->RunFloorplanner(solution.partition,
       // hypergraph_, 100, 100, 0.00001); std::vector<float>
       // result_aspect_ratios = std::get<0>(floor_result); std::vector<float>
       // result_x_locations = std::get<1>(floor_result); std::vector<float>
       // result_y_locations = std::get<2>(floor_result); bool success =
       // std::get<3>(floor_result);
-      // refiner_->SetAspectRatios(result_aspect_ratios);
-      // refiner_->SetXLocations(result_x_locations);
-      // refiner_->SetYLocations(result_y_locations);
+      // refiner->SetAspectRatios(result_aspect_ratios);
+      // refiner->SetXLocations(result_x_locations);
+      // refiner->SetYLocations(result_y_locations);
 
       // CRITICAL: Set tech array again right before cost calculation
-      refiner_->SetTechArray(solution.tech_nodes);
+      refiner->SetTechArray(solution.tech_nodes);
 
       // ADD DEBUG LOGGING
       // std::cout << "[Fitness Debug] Evaluating solution with " <<
@@ -835,42 +876,28 @@ float GeneticTechPartitioner::EvaluateFitness(GeneticSolution &solution) {
         }
 
         // One more tech array set for safety
-        auto floor_result = refiner_->RunFloorplanner(
+        auto floor_result = refiner->RunFloorplanner(
             solution.partition, hypergraph_, 100, 100, 0.00001);
         std::vector<float> result_aspect_ratios = std::get<0>(floor_result);
         std::vector<float> result_x_locations = std::get<1>(floor_result);
         std::vector<float> result_y_locations = std::get<2>(floor_result);
         success = std::get<3>(floor_result);
-        refiner_->SetAspectRatios(result_aspect_ratios);
-        refiner_->SetXLocations(result_x_locations);
-        refiner_->SetYLocations(result_y_locations);
-        refiner_->SetTechArray(solution.tech_nodes);
-        refiner_->SetNumParts(solution.num_partitions);
+        refiner->SetAspectRatios(result_aspect_ratios);
+        refiner->SetXLocations(result_x_locations);
+        refiner->SetYLocations(result_y_locations);
+        refiner->SetTechArray(solution.tech_nodes);
+        refiner->SetNumParts(solution.num_partitions);
         // run the refiner
-        Matrix<float> upper_block_balance(
-            solution.num_partitions,
-            std::vector<float>(hypergraph_->GetVertexDimensions(), 0.0));
-        Matrix<float> lower_block_balance(
-            solution.num_partitions,
-            std::vector<float>(hypergraph_->GetVertexDimensions(), 0.0));
-        std::vector<float> total_weights = hypergraph_->GetTotalVertexWeights();
-        // Calculate total weights for this specific partition
-        for (int j = 0; j < hypergraph_->GetVertexDimensions(); j++) {
-          for (int k = 0; k < solution.num_partitions; k++) {
-            upper_block_balance[k][j] =
-                std::accumulate(total_weights.begin(), total_weights.end(),
-                                0.0f) *
-                ub_factor_ / solution.num_partitions;
-          }
-        }
-        refiner_->Refine(hypergraph_, upper_block_balance, lower_block_balance,
+        auto [upper_block_balance, lower_block_balance] =
+            BuildBalanceBounds(hypergraph_, solution.num_partitions, ub_factor_);
+        refiner->Refine(hypergraph_, upper_block_balance, lower_block_balance,
                          solution.partition);
         // adjust the num_parts and tech assignment
         solution.num_partitions = *std::max_element(solution.partition.begin(),
                                                     solution.partition.end()) +
                                   1;
         // Get the cost
-        cost = refiner_->GetCostFromScratch(solution.partition);
+        cost = refiner->GetCostFromScratch(solution.partition);
 
         // Sanity check on cost
         if (std::isinf(cost) || std::isnan(cost)) {
@@ -942,7 +969,9 @@ std::vector<int> GeneticTechPartitioner::SelectParents() {
 
 #pragma omp critical(rng_access)
   {
-    local_rng = rng_; // Make a thread-local copy of the RNG
+    // Seed the thread-local RNG from the shared one (and thereby advance the
+    // shared state). A plain copy would replay the same sequence every call.
+    local_rng.seed(rng_());
   }
 
   for (int i = 0; i < 2; ++i) { // Select two parents
@@ -1044,7 +1073,9 @@ GeneticTechPartitioner::Crossover(const GeneticSolution &parent1,
 
 #pragma omp critical(rng_access)
   {
-    local_rng = rng_; // Make a thread-local copy of the RNG
+    // Seed the thread-local RNG from the shared one (and thereby advance the
+    // shared state). A plain copy would replay the same sequence every call.
+    local_rng.seed(rng_());
   }
 
   // Randomly decide which crossover method to use
@@ -1313,8 +1344,11 @@ void GeneticTechPartitioner::Mutate(GeneticSolution &solution) {
     // std::cout << std::endl;
   }
 
-  // Thread-local RNG to avoid contention
-  std::mt19937 local_rng = rng_;
+  // Thread-local RNG to avoid contention; seeded from (and advancing) the
+  // shared RNG so successive calls do not replay the same sequence.
+  std::mt19937 local_rng;
+#pragma omp critical(rng_access)
+  { local_rng.seed(rng_()); }
 
   // Randomly decide which mutation method to use
   int method;

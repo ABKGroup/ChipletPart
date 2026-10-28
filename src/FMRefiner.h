@@ -49,8 +49,32 @@ namespace chiplet {
 using Partition = std::vector<int>;
 using GainCell = std::shared_ptr<VertexGain>; // for abbreviation
 
-class HyperedgeGain;
-using HyperedgeGainPtr = std::shared_ptr<HyperedgeGain>;
+// Build the block-balance bounds consumed by ChipletRefiner::Refine.
+//
+// Chiplet partitioning is cost-driven, not balance-driven, so the only
+// constraint expressed here is a cap on how large a single chiplet may grow:
+// every partition may hold at most `max_part_fraction` of the total vertex
+// weight (per weight dimension). `max_part_fraction == 1.0` therefore means
+// "no balance constraint"; e.g. 0.6 forbids any chiplet from exceeding 60% of
+// the total block area. The lower bound is always zero (a partition may empty
+// out; the netlist generator drops empty partitions).
+inline std::pair<Matrix<float>, Matrix<float>>
+BuildBalanceBounds(const HGraphPtr &hgraph, int num_parts,
+                   float max_part_fraction) {
+  const int dims = hgraph->GetVertexDimensions();
+  std::vector<float> upper = hgraph->GetTotalVertexWeights();
+  upper.resize(dims, 0.0f);
+  const float frac = (max_part_fraction > 0.0f && max_part_fraction <= 1.0f)
+                         ? max_part_fraction
+                         : 1.0f;
+  for (auto &w : upper) {
+    w *= frac;
+  }
+  const int rows = std::max(num_parts, 1);
+  return {Matrix<float>(rows, upper),
+          Matrix<float>(rows, std::vector<float>(dims, 0.0f))};
+}
+
 
 // Priority-queue based gain bucket
 using GainBucket = std::shared_ptr<PriorityQueue>;
@@ -62,30 +86,6 @@ struct cblock {
   float power;
   std::string tech;
   bool is_memory;
-};
-
-// Hyperedge Gain.
-// Compared to VertexGain, there is no source_part_
-// Because this hyperedge spans multiple blocks
-class HyperedgeGain {
-public:
-  HyperedgeGain(int hyperedge_id, int destination_part, float gain);
-
-  float GetGain() const { return gain_; }
-  void SetGain(float gain) { gain_ = gain; }
-
-  int GetHyperedge() const { return hyperedge_id_; }
-
-  int GetDestinationPart() const { return destination_part_; }
-
-private:
-  const int hyperedge_id_ = -1;
-  const int destination_part_ = -1; // the destination block id
-  float gain_ = 0.0;
-
-  // The updated DELTA path cost after moving vertex the path_cost
-  // will change because we will dynamically update the the weight of
-  // the path based on the number of the cut on the path
 };
 
 class ChipletRefiner {
@@ -370,20 +370,7 @@ public:
   std::vector<int> GetGlobalPosSeq() const { return global_pos_seq_; }
   std::vector<int> GetGlobalNegSeq() const { return global_neg_seq_; }
 
-  bool CheckFloorPlanFeasible(const HGraphPtr hgraph, int max_steps,
-                              int perturbations,
-                              float cooling_acceleration_factor,
-                              int v,        // vertex id
-                              int to_pid,   // to block id
-                              int from_pid, // from block_id
-                              std::vector<int> &top_partition);
-  void InitFloorPlan(const HGraphPtr hgraph, int max_steps, int perturbations,
-                     float cooling_acceleration_factor,
-                     std::vector<int> &solution);
   void BuildChiplets(const HGraphPtr &hgraph);
-  void RunSA(std::shared_ptr<SACore> sa) { sa->run(); }
-  // Helper function to run a segment of simulated annealing steps
-  void RunSASegment(std::shared_ptr<SACore> sa, float cooling_acceleration_factor, int steps);
   std::tuple<std::vector<float>, std::vector<float>, std::vector<float>, bool>
   Floorplanner(int max_steps, int perturbations,
                float cooling_acceleration_factor, bool local = false);
@@ -396,8 +383,6 @@ public:
   void SetRefineIters(int refiner_iters);
   void SetReaches(const std::vector<int> &reaches) { reaches_ = reaches; }
   int GetNetReach(int net_id) const { return reaches_[net_id]; }
-
-  void RestoreDefaultParameters();
 
   float Pass(const HGraphPtr &hgraph, const Matrix<float> &upper_block_balance,
              const Matrix<float> &lower_block_balance,
@@ -415,17 +400,64 @@ public:
 
   float GetCostModelTime() const { return total_cost_model_time_; }
 
+  void SetFloorplanVerbose(bool verbose) { floorplan_verbose_ = verbose; }
+
+  // ---- Floorplan-feasibility-aware refinement -----------------------------
+  // When enabled, every FM move (and every KL swap, via IsFloorplanAcceptable)
+  // is followed by a short warm-started floorplan probe of the resulting
+  // partition, and each pass is rolled back to the prefix with the lowest
+  // reach violation and, among those, the highest gain. Starting from a
+  // feasible partition the refinement therefore stays feasible (moves that
+  // would break feasibility are skipped); starting from an infeasible one it
+  // first follows the cost gains and switches to violation-guided moves when
+  // those stop reducing the violation. The best arrangement found is kept as
+  // a seed (GetFloorplanSeed) for the full floorplanner.
+  void SetFloorplanAware(bool aware) { floorplan_aware_ = aware; }
+  bool IsFloorplanAware() const { return floorplan_aware_; }
+  // Budget of the per-move probe (steps x perturbations, one SA walker).
+  void SetFloorplanCheckBudget(int steps, int perturbs) {
+    fp_check_steps_ = std::max(1, steps);
+    fp_check_perturbs_ = std::max(1, perturbs);
+  }
+  // Number of GWTW walkers used by Floorplanner(); 0 = min(threads, 4).
+  void SetFloorplanWorkers(int workers) { num_fp_workers_ = workers; }
+  // Total reach violation (sum over nets of weight x excess length, 0 when
+  // feasible) of the best floorplan found by a short probe of `partition`.
+  float FloorplanViolation(const HGraphPtr &hgraph, const std::vector<int> &partition);
+  // Record `partition` as the current baseline for IsFloorplanAcceptable().
+  void SetFloorplanBaseline(const HGraphPtr &hgraph, const std::vector<int> &partition);
+  float GetFloorplanBaselineViolation() const { return current_violation_; }
+  // True when `partition` does not violate the reach constraints more than
+  // the baseline does (always true when not floorplan-aware).
+  bool IsFloorplanAcceptable(const HGraphPtr &hgraph, const std::vector<int> &partition);
+  // Best floorplan arrangement known for the current partition; seeds the
+  // next probe and the full floorplanner.
+  const FloorplanSeed& GetFloorplanSeed() const { return fp_warm_; }
+  void SetFloorplanSeed(const FloorplanSeed& seed) { fp_warm_ = seed; }
+  // Forget the warm start and probe counter (call before refining a new,
+  // unrelated partition so results do not depend on what the refiner saw
+  // before, e.g. on the thread a candidate landed on).
+  void ResetFloorplanProbeState() {
+    fp_warm_.clear();
+    last_probe_.clear();
+    fp_probe_count_ = 0;
+    current_violation_ = 0.0f;
+    last_probe_violation_ = 0.0f;
+  }
+  // Make the result of the last probe (IsFloorplanAcceptable / 
+  // FloorplanViolation) the new baseline and seed, once the probed partition
+  // has been adopted.
+  void CommitFloorplanProbe() {
+    current_violation_ = last_probe_violation_;
+    fp_warm_ = last_probe_;
+  }
   void SetGWTWIterations(int iter) { gwtw_iter_ = iter; }
-  void SetGWTWMaxTemp(float temp) { gwtw_max_temp_ = temp; }
   void SetGWTWMinTemp(float temp) { gwtw_min_temp_ = temp; }
-  void SetGWTWSyncFreq(float freq) { gwtw_sync_freq_ = freq; }
   void SetGWTWTopK(int k) { gwtw_top_k_ = k; }
   void SetGWTWTempDerateFactor(float factor) { gwtw_temp_derate_factor_ = factor; }
   void SetGWTWTopKRatio(const std::vector<float>& ratio) { gwtw_top_k_ratio_ = ratio; }
 
 private:
-  bool Terminate(std::deque<float> &history, float &new_cost);
-  void InitSlopes(int num_parts);
   void InitializeSingleGainBucket(
       GainBuckets &buckets,
       int to_pid, // move the vertex into this block (block_id = to_pid)
@@ -480,16 +512,6 @@ private:
                        const std::vector<int> &solution,
                        const std::pair<int, int> &partition_pair) const;
                        
-  std::vector<int>
-  FindNeighbors(const HGraphPtr &hgraph, int vertex_id,
-                const std::vector<bool> &visited_vertices_flag) const;
-
-  std::vector<int>
-  FindNeighbors(const HGraphPtr &hgraph, int vertex_id,
-                const std::vector<bool> &visited_vertices_flag,
-                const std::vector<int> &solution,
-                const std::pair<int, int> &partition_pair) const;
-
   // Functions related to move a vertex and hyperedge
   // -----------------------------------------------------------
   // The most important function for refinent
@@ -531,36 +553,6 @@ private:
                                const Matrix<float> &upper_block_balance,
                                const Matrix<float> &lower_block_balance) const;
 
-  // Calculate the possible gain of moving a entire hyperedge.
-  // We can view the process of moving the vertices in hyperege
-  // one by one, then restore the moving sequence to make sure that
-  // the current status is not changed. Solution should not be const
-  // calculate the possible gain of moving a hyperedge
-  HyperedgeGainPtr CalculateHyperedgeGain(int hyperedge_id, int to_pid,
-                                          const HGraphPtr &hgraph,
-                                          std::vector<int> &solution,
-                                          const Matrix<int> &net_degs);
-
-  // check if we can move the hyperegde into some block
-  bool
-  CheckHyperedgeMoveLegality(int e,      // hyperedge id
-                             int to_pid, // to block id
-                             const HGraphPtr &hgraph,
-                             const std::vector<int> &solution,
-                             const Matrix<float> &curr_block_balance,
-                             const Matrix<float> &upper_block_balance,
-                             const Matrix<float> &lower_block_balance) const;
-
-  // accpet the hyperedge gain
-  void AcceptHyperedgeGain(const HyperedgeGainPtr &hyperedge_gain,
-                           const HGraphPtr &hgraph, float &total_delta_gain,
-                           std::vector<int> &solution,
-                           Matrix<float> &cur_block_balance,
-                           Matrix<int> &net_degs) const;
-
-  // Note that there is no RollBackHyperedgeGain
-  // Because we only use greedy hyperedge refinement
-
   // user specified parameters
   int num_parts_ = 2;     // number of blocks in the partitioning
   int refiner_iters_ = 2; // number of refinement iterations
@@ -585,14 +577,39 @@ private:
   SACorePtr sa_core_ = nullptr;
   // SA specific:
   // define the parameters here
+  // Penalty weights of the normalised SA cost. The floorplanner's job here
+  // is primarily to find a REACH-FEASIBLE arrangement (the cost model only
+  // consumes aspect ratios / positions and the feasibility flag), so reach
+  // violations are weighted well above package area: on an 8-chiplet test
+  // instance net weight 10 raised the valid-solution rate ~8x for ~3% more
+  // package area than weight 1.
   float area_penalty_weight_ = 1.0;
   float package_penalty_weight_ = 1.0;
-  float net_penalty_weight_ = 1.0;
-  float pos_swap_prob_ = 0.2;
-  float neg_swap_prob_ = 0.2;
-  float double_swap_prob_ = 0.2;
-  float resize_prob_ = 0.2;
-  float expand_prob_ = 0.2;
+  float net_penalty_weight_ = 10.0;
+  // Move probabilities. SACore::perturb() uses them as cumulative thresholds,
+  // so "expand" receives whatever is left (1 - sum of the other four);
+  // expand_prob_ itself is informational. Expansion is kept rare: it is a
+  // correct but costly move (it grows chiplet area) and measured roughly
+  // neutral for feasibility.
+  float pos_swap_prob_ = 0.2375;
+  float neg_swap_prob_ = 0.2375;
+  float double_swap_prob_ = 0.2375;
+  float resize_prob_ = 0.2375;
+  float expand_prob_ = 0.05;
+  // Print a violation summary when the floorplanner ends infeasible
+  // (enabled by SetFloorplanVerbose; off by default because the floorplanner
+  // runs many times per partition).
+  bool floorplan_verbose_ = false;
+  bool floorplan_aware_ = false;
+  int fp_check_steps_ = 40;
+  int fp_check_perturbs_ = 25;
+  int num_fp_workers_ = 0;
+  float current_violation_ = 0.0f;       // baseline for IsFloorplanAcceptable
+  bool fp_repair_mode_ = false;          // violation-guided move selection (set by Refine)
+  float last_probe_violation_ = 0.0f;    // result of the last probe
+  FloorplanSeed last_probe_;             // best arrangement found by the last probe
+  FloorplanSeed fp_warm_;                // best arrangement for the current partition
+  int fp_probe_count_ = 0;               // statistics
   int max_num_step_ = 2000;
   int num_perturb_per_step_ = 500;
   int num_oscillations_ = 4; // number of oscillations allowed in FM
@@ -612,10 +629,6 @@ private:
   float powerConfidenceInterval_ = -1.0;
   float cost_coefficient_ = 1.0;
   float power_coefficient_ = 0.0;
-  std::vector<float> areaSlopes_;
-  std::vector<float> powerAreaSlopes_;
-  std::vector<float> costBandwidthSlopes_;
-  std::vector<float> powerBandwidthSlopes_;
   std::vector<std::string> tech_array_;
   std::vector<float> aspect_ratios_;
   std::vector<float> x_locations_;
@@ -631,9 +644,7 @@ private:
   
   // GWTW parameters
   int gwtw_iter_ = 2;
-  float gwtw_max_temp_ = 100.0;
   float gwtw_min_temp_ = 1e-12;
-  float gwtw_sync_freq_ = 0.1;
   int gwtw_top_k_ = 2;
   float gwtw_temp_derate_factor_ = 1.0;
   std::vector<float> gwtw_top_k_ratio_ = {0.5, 0.5};

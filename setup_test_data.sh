@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Define the base directory and paths
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 TEST_DATA_DIR="${BASE_DIR}/test_data"
 COST_MODEL_TEST_CASE_DIR="${BASE_DIR}/cost_model/test_cases/48_1_14_4_1600_1600"
 

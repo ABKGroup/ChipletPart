@@ -1006,7 +1006,7 @@ IntType Chip::GetChipsLen() const {
 }
 
 std::shared_ptr<Chip> Chip::GetParentChip() const {
-    return parent_chip_;
+    return parent_chip_.lock();
 }
 
 FloatType Chip::GetWaferDiameter() const {
@@ -1286,8 +1286,9 @@ FloatType Chip::ComputeCost() const {
     // Add costs of all component chips
     for (const auto& chip : chips_) {
         if (chip != nullptr) {
-            stack_cost += chip->ComputeCost();
-            cost += chip->ComputeCost();
+            const FloatType child_cost = chip->ComputeCost();  // evaluate once
+            stack_cost += child_cost;
+            cost += child_cost;
         }
     }
 

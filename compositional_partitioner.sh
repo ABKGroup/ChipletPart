@@ -16,7 +16,8 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Define base directory and other paths
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$BASE_DIR"
 BUILD_DIR="${BASE_DIR}/build"
 EXECUTABLE="${BUILD_DIR}/bin/chipletPart"
 RESULTS_DIR="${BASE_DIR}/results/compositional"
@@ -63,9 +64,15 @@ function verify_test_cases {
     echo -e "${CYAN}Verifying existing test cases...${NC}"
     
     # Check if all required test cases exist
+    # 48_1 .. 48_8 are checked in under test_data/; 48_16 is optional (it
+    # is not part of the repository) and only needed for compose-48_16.
     local all_cases_exist=true
     for test_case in "48_1_14_4_1600_1600" "48_2_14_4_1600_1600" "48_4_14_4_1600_1600" "48_8_14_4_1600_1600" "48_16_14_4_1600_1600"; do
         if [ ! -d "${TEST_DATA_DIR}/${test_case}" ]; then
+            if [ "$test_case" = "48_16_14_4_1600_1600" ]; then
+                echo -e "${YELLOW}Optional test case ${test_case} not present; compose-48_16 will be unavailable.${NC}"
+                continue
+            fi
             echo -e "${RED}Error: Test case directory ${TEST_DATA_DIR}/${test_case} does not exist.${NC}"
             all_cases_exist=false
         else
@@ -111,33 +118,28 @@ function run_chiplet_part {
     # Run the ChipletPart executable using the existing script
     echo -e "Running: ./run_chiplet_test.sh ${test_case} --tech ${tech} --reach ${reach} --separation ${separation} --seed ${seed}"
     
-    ./run_chiplet_test.sh "${test_case}" --tech "${tech}" --reach "${reach}" --separation "${separation}" --seed "${seed}" | tee "${output_dir}/run.log"
-    
-    # Check if the execution was successful
-    if [ $? -ne 0 ]; then
+    # run_chiplet_test.sh writes everything (run.log, *.cpart.N) into --output-dir
+    if ! ./run_chiplet_test.sh "${test_case}" --tech "${tech}" --reach "${reach}" --separation "${separation}" --seed "${seed}" --output-dir "${output_dir}"; then
         echo -e "${RED}Error: ChipletPart execution failed for ${test_case}${NC}"
         return 1
     fi
     
-    # Copy partition results from the test data directory to the output directory
-    local partition_file="${TEST_DATA_DIR}/${test_case}/block_level_netlist.xml.cpart.4"
-    if [ -f "${partition_file}" ]; then
-        cp "${partition_file}" "${output_dir}/partition.txt"
-        echo -e "${GREEN}Found partition file: ${partition_file}${NC}"
-    else
-        echo -e "${YELLOW}Warning: Could not find expected partition file at ${partition_file}${NC}"
-        # Look for other cpart files
-        for cpart_file in ${TEST_DATA_DIR}/${test_case}/*.cpart.*; do
+    # Pick up the partition file written by the run
+    local found_partition=""
+    for cpart_file in "${output_dir}"/*.cpart.*; do
         if [ -f "$cpart_file" ]; then
-                cp "$cpart_file" "${output_dir}/partition.txt"
+            cp "$cpart_file" "${output_dir}/partition.txt"
             echo -e "${GREEN}Found partition file: $cpart_file${NC}"
-                break
+            found_partition="$cpart_file"
+            break
         fi
     done
+    if [ -z "$found_partition" ]; then
+        echo -e "${YELLOW}Warning: no *.cpart.* file produced in ${output_dir}${NC}"
     fi
     
-    # Extract and store the objective cost from the log file
-    local cost=$(grep "Objective Cost:" "${output_dir}/run.log" | tail -1 | awk '{print $NF}')
+    # Extract and store the best cost from the log file
+    local cost=$(grep -o "Best cost: [0-9.]*" "${output_dir}/run.log" | tail -1 | awk '{print $NF}')
     if [ -n "$cost" ]; then
         echo "$cost" > "${output_dir}/objective_cost.txt"
         echo -e "${GREEN}ChipletPart completed for ${test_case}. Objective cost: ${cost}${NC}"
@@ -745,6 +747,15 @@ function compose_48_8 {
 
 # Function to evaluate the composition of 48_16 test case
 function compose_48_16 {
+    if [ ! -d "${TEST_DATA_DIR}/48_16_14_4_1600_1600" ]; then
+        echo -e "${YELLOW}Skipping compose-48_16: ${TEST_DATA_DIR}/48_16_14_4_1600_1600 is not present.${NC}"
+        echo -e "${YELLOW}Generate it with test_case_gen/generateSystemDefinition.py (see README_compositional.md).${NC}"
+        return 0
+    fi
+    if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+        echo -e "${RED}compose-48_16 needs bash >= 4 (associative arrays); macOS ships 3.2 - run with Homebrew bash.${NC}"
+        return 1
+    fi
     echo -e "${CYAN}Evaluating compositional strategies for 48_16_14_4_1600_1600...${NC}"
     
     local reach=${1:-$DEFAULT_REACH}

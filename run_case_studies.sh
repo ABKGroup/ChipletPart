@@ -1,4 +1,5 @@
 #!/bin/bash
+set -uo pipefail
 
 # Set colors for better output
 RED='\033[0;31m'
@@ -50,7 +51,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 # Define the base directory where the executable and case studies are located
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BUILD_DIR="${BASE_DIR}/build"
 EXECUTABLE="${BUILD_DIR}/bin/chipletPart"
 CASE_STUDIES_DIR="${BASE_DIR}/ChipletPartCaseStudies"
@@ -225,9 +226,10 @@ for CASE_STUDY_DIR in $CASE_STUDY_DIRS; do
     echo -e "Command executed:\n$CMD_STRING" >> "$LOG_FILE"
     echo -e "\n\nFull output log:" >> "$LOG_FILE"
     
-    # Run the executable with standard partitioning and capture both stdout and stderr
-    # Save both to the log file and also save to a temporary variable for extraction
-    output=$("$EXECUTABLE" \
+    # Run the executable with standard partitioning; write stdout+stderr to
+    # the log file. (PIPESTATUS is not available after `output=$(...)`, so
+    # the exit code is captured directly and the result file gets a copy.)
+    "$EXECUTABLE" \
         "$IO" \
         "$LAYER" \
         "$WAFER" \
@@ -238,24 +240,25 @@ for CASE_STUDY_DIR in $CASE_STUDY_DIRS; do
         "$REACH" \
         "$SEPARATION" \
         "$TECH" \
-        --seed "$DEFAULT_SEED" 2>&1 | tee -a "$LOG_FILE")
-    
-    # Save the output to the result file as well
-    echo -e "$output" >> "$RESULT_FILE"
-    
-    exit_code=${PIPESTATUS[0]}
+        --seed "$DEFAULT_SEED" \
+        --output-dir "$RESULTS_DIR" > "${LOG_FILE}.run" 2>&1
+    exit_code=$?
+    cat "${LOG_FILE}.run" >> "$LOG_FILE"
+    cat "${LOG_FILE}.run" >> "$RESULT_FILE"
+    rm -f "${LOG_FILE}.run"
+
     if [ $exit_code -eq 0 ]; then
         echo -e "${GREEN}Case completed successfully!${NC}"
         
-        # Extract and display key results
-        COST=$(grep -o "Cost of partition is [0-9.]*" "$LOG_FILE" | awk '{print $NF}')
-        PARTITIONS=$(grep -o "Number of partitions is [0-9]*" "$LOG_FILE" | awk '{print $NF}')
-        FEASIBILITY=$(grep -o "Floorplan feasibility is [0-1]" "$LOG_FILE" | awk '{print $NF}')
+        # Extract and display key results (summary lines printed by Partition())
+        COST=$(grep -o "Best cost: [0-9.]*" "$LOG_FILE" | tail -1 | awk '{print $NF}')
+        PARTITIONS=$(grep -o "Number of partitions: [0-9]*" "$LOG_FILE" | tail -1 | awk '{print $NF}')
+        FEASIBILITY=$(grep -o "Floorplan feasibility: [0-1]" "$LOG_FILE" | tail -1 | awk '{print $NF}')
         
         echo -e "${BLUE}Results:${NC}"
         echo -e "${BLUE}  - Cost: ${YELLOW}$COST${NC}"
         echo -e "${BLUE}  - Partitions: ${YELLOW}$PARTITIONS${NC}"
-        if [ "$FEASIBILITY" -eq 1 ]; then
+        if [ "${FEASIBILITY:-0}" -eq 1 ]; then
             echo -e "${BLUE}  - Floorplan feasibility: ${GREEN}YES${NC}"
         else
             echo -e "${BLUE}  - Floorplan feasibility: ${RED}NO${NC}"
@@ -263,8 +266,8 @@ for CASE_STUDY_DIR in $CASE_STUDY_DIRS; do
         
         # Copy the partition file if it exists
         if [ ! -z "$PARTITIONS" ] && [ -n "$PARTITIONS" ]; then
-            # The partition file is named as per ChipletPart.cpp: netlist_file + ".cpart." + best_result.num_parts
-            PARTITION_FILE="${NETLIST}.cpart.${PARTITIONS}"
+            # The partition file is named as per ChipletPart.cpp: <output-dir>/basename(netlist_file).cpart.<num_parts>
+            PARTITION_FILE="${RESULTS_DIR}/$(basename "$NETLIST").cpart.${PARTITIONS}"
             
             # Check if partition file exists
             if [ -f "$PARTITION_FILE" ]; then
@@ -322,3 +325,6 @@ echo -e "${BLUE}Skipped: ${YELLOW}$SKIPPED_CASES${NC}"
 echo -e "${BLUE}Results directory: ${YELLOW}$RESULTS_DIR${NC}"
 echo -e "${BLUE}Logs directory: ${YELLOW}$LOGS_DIR${NC}"
 echo -e "${CYAN}${BOLD}=========================================================${NC}" 
+
+# Non-zero exit if any case failed, so CI / wrappers can detect it
+[ "$FAILED_CASES" -eq 0 ]

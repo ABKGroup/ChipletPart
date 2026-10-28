@@ -1,0 +1,32 @@
+# Build output
+build/
+
+# Run outputs produced by run_chiplet_test.sh / --output-dir
+results/
+
+# Python virtual environment
+.venv/
+
+# Result files written next to the current directory when --output-dir is not given
+*.cpart.*
+*.best_partition.txt
+*.best_tech_assignment.txt
+*.canonical_forms.log
+*.map
+*.parts.[0-9]*
+*.techs.[0-9]*
+*.summary.txt
+*.timing.txt
+*_timing.log
+*_timing.csv
+
+# macOS
+.DS_Store
+
+# AppleDouble sidecar files
+._*
+
+# logs
+logs/
+*.log
+__pycache__/

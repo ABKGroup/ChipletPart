@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Script to run technology enumeration on all test designs
-# Author: AI Assistant
-# Date: $(date +%F)
+set -uo pipefail
 
 # Colors for terminal output
 GREEN='\033[0;32m'
@@ -11,7 +10,9 @@ RED='\033[1;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration
+# Configuration (paths are relative to this script, not to $PWD)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 SCRIPT="./run_chiplet_test.sh"
 LOG_DIR="logs"
 TECH_NODES="7nm,10nm,14nm"  # Default technology nodes
@@ -75,7 +76,21 @@ if [[ ! -d "test_data" ]]; then
 fi
 
 # Get all design directories
-DESIGNS=($(ls -d test_data/* | xargs -n1 basename))
+DESIGNS=()
+for d in test_data/*/; do
+    DESIGNS+=("$(basename "$d")")
+done
+
+# Portable timeout: GNU `timeout` exists on Linux (coreutils) and as
+# `gtimeout` from Homebrew coreutils on macOS; otherwise run without a limit.
+if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(timeout "$TIMEOUT")
+elif command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(gtimeout "$TIMEOUT")
+else
+    echo -e "${YELLOW}Warning:${NC} no 'timeout' command found (brew install coreutils); running without a time limit"
+    TIMEOUT_CMD=()
+fi
 
 # Display summary before starting
 echo -e "${BLUE}=== Technology Enumeration Test Suite ===${NC}"
@@ -120,14 +135,16 @@ for design in "${DESIGNS[@]}"; do
     # Start timer for this specific test case
     TEST_START_TIME=$(date +%s)
     
-    # Run the command with timeout
-    if timeout $TIMEOUT $SCRIPT "$design" --tech-enum --tech-nodes "$TECH_NODES" --max-partitions "$MAX_PARTITIONS" 2>&1 | tee -a "$LOG_FILE"; then
+    # Run the command with timeout. `pipefail` makes the pipeline status the
+    # command's status (not tee's), so timeouts (124) are detected.
+    "${TIMEOUT_CMD[@]}" "$SCRIPT" "$design" --tech-enum --tech-nodes "$TECH_NODES" --max-partitions "$MAX_PARTITIONS" 2>&1 | tee -a "$LOG_FILE"
+    EXIT_CODE=$?
+    if [[ $EXIT_CODE -eq 0 ]]; then
         STATUS="Success"
-        ((SUCCESS_COUNT++))
+        SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
     else
-        EXIT_CODE=$?
         STATUS="Failed"
-        ((FAIL_COUNT++))
+        FAIL_COUNT=$((FAIL_COUNT + 1))
         if [[ $EXIT_CODE -eq 124 ]]; then
             echo -e "\n${RED}[TIMEOUT]${NC} Test case $design timed out after $TIMEOUT seconds" | tee -a "$LOG_FILE"
             STATUS="Timeout"
@@ -155,12 +172,12 @@ END_TIME=$(date +%s)
 ELAPSED=$((END_TIME - START_TIME))
 HOURS=$((ELAPSED / 3600))
 MINUTES=$(((ELAPSED % 3600) / 60))
-SECONDS=$((ELAPSED % 60))
+SECS=$((ELAPSED % 60))
 
 echo -e "\n${BLUE}=== Test Run Complete ===${NC}"
 echo -e "${GREEN}Successfully completed:${NC} $SUCCESS_COUNT/${#DESIGNS[@]} designs"
 echo -e "${RED}Failed:${NC} $FAIL_COUNT/${#DESIGNS[@]} designs"
-echo -e "${BLUE}Total time:${NC} ${HOURS}h ${MINUTES}m ${SECONDS}s"
+echo -e "${BLUE}Total time:${NC} ${HOURS}h ${MINUTES}m ${SECS}s"
 echo -e "${BLUE}Log files are available in:${NC} $LOG_DIR/"
 
 # Generate a summary file
@@ -172,7 +189,7 @@ echo "Max Partitions: $MAX_PARTITIONS" >> "$SUMMARY_FILE"
 echo "Total Designs: ${#DESIGNS[@]}" >> "$SUMMARY_FILE"
 echo "Successful: $SUCCESS_COUNT" >> "$SUMMARY_FILE"
 echo "Failed: $FAIL_COUNT" >> "$SUMMARY_FILE"
-echo "Total Runtime: ${HOURS}h ${MINUTES}m ${SECONDS}s" >> "$SUMMARY_FILE"
+echo "Total Runtime: ${HOURS}h ${MINUTES}m ${SECS}s" >> "$SUMMARY_FILE"
 echo >> "$SUMMARY_FILE"
 echo "Individual Test Results:" >> "$SUMMARY_FILE"
 
@@ -194,8 +211,8 @@ for design in "${DESIGNS[@]}"; do
     
     # Extract canonical assignments if successful
     if [[ "$STATUS" == "Success" ]]; then
-        CANONICAL_FORMS=$(grep "Unique canonical assignments:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
-        BEST_COST=$(grep "Best Cost:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
+        CANONICAL_FORMS=$(grep -i "Unique Canonical Assignments" "$LOG_FILE" | tail -1 | awk -F'|' '{gsub(/ /,"",$3); print $3}')
+        BEST_COST=$(grep -i "Best cost:" "$LOG_FILE" | tail -1 | awk '{print $NF}')
         echo "$design: $STATUS, Time: ${ELAPSED_TIME}s, Canonical Forms: ${CANONICAL_FORMS:-N/A}, Best Cost: ${BEST_COST:-N/A}" >> "$SUMMARY_FILE"
     else
         echo "$design: $STATUS, Time: ${ELAPSED_TIME:-N/A}s" >> "$SUMMARY_FILE"

@@ -72,7 +72,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 # Define the base directory where the executable and test data are located
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BUILD_DIR="${BASE_DIR}/build"
 EXECUTABLE="${BUILD_DIR}/bin/chipletPart"
 TEST_DATA_DIR="${BASE_DIR}/test_data/${TEST_CASE_NAME}"

@@ -17,11 +17,11 @@ fi
 TEST_CASE_FOLDER="$1"
 
 # Define the base directories
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Now TEST_DATA_DIR adapts to the test case name, e.g. ./test_data/48_1_14_4_1600_1600
 TEST_DATA_DIR="${BASE_DIR}/test_data/${TEST_CASE_FOLDER}"
-# Use the given parent directory for cost model test cases
-COST_MODEL_PARENT="/home/fetzfs_projects/TritonPart/bodhi/branch_chiplet/branch_JETCAS/ChipletPart/cost_model/test_cases"
+# Cost-model test cases shipped in this repository (override with COST_MODEL_PARENT=...)
+COST_MODEL_PARENT="${COST_MODEL_PARENT:-${BASE_DIR}/cost_model/test_cases}"
 COST_MODEL_TEST_CASE_DIR="${COST_MODEL_PARENT}/${TEST_CASE_FOLDER}"
 
 echo -e "${YELLOW}Setting up test data in ${TEST_DATA_DIR}...${NC}"

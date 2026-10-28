@@ -2,22 +2,28 @@
 
 This document describes the Canonical Genetic Algorithm (CanonicalGA) implementation for chiplet technology assignment in ChipletPart.
 
-## Current Status
+## When to use it
 
-The Canonical Genetic Algorithm is now fully implemented and operational! The string creation bug (`basic_string::_M_create` error) has been fixed by implementing safer string handling throughout the codebase. The fix includes:
+The GA searches over *canonical* technology assignments: for `T` technologies and at most `P` chiplets the
+number of distinct assignments is small (164 for `T = 3, P = 8`; 5 for `T = 2, P = 2`). With the default
+`--generations 50 --population 50` the GA performs up to 2,500 evaluations (fitness caching removes exact
+repeats), i.e. far more than the size of the space it searches. For `T·P` of this order prefer
 
-1. Safe string copying using c_str() to create proper memory-managed string copies
-2. Pre-allocation of memory with reserve() to avoid reallocation failures
-3. Extra validation for string operations and proper error handling
-4. Guards against empty strings and null references
+```bash
+./run_chiplet_test.sh <case> --tech-enum --tech-nodes 7nm,10nm,14nm --max-partitions 8
+```
 
-The full CanonicalGA implementation includes:
-- Advanced genetic algorithm that optimizes technology assignments for chiplets
-- Canonicalization of technology assignments to avoid redundant evaluations 
-- Fitness caching for efficient evaluation and faster convergence
+which evaluates every canonical assignment exactly once and is deterministic. The GA is the right tool when the
+number of technologies or chiplets makes enumeration impractical (hundreds of thousands of canonical forms), or
+when you want to co-optimise the partition itself (`--genetic`, see `GeneticTechPartitioner`).
+
+## Features
+
+- Canonicalization of technology assignments to avoid redundant evaluations
+- Fitness caching
 - Customizable genetic operators (crossover, mutation)
 - Support for variable numbers of chiplets
-- Integration with cost models for full evaluation
+- Integration with the cost model for full evaluation
 
 ## Using the Canonical GA
 
@@ -25,15 +31,15 @@ You can run the canonical GA mode using the provided scripts:
 
 ```bash
 # Using the test script with a specific test case
-./run_chiplet_test.sh ga100 --canonical-ga --tech-nodes 7nm,14nm,28nm
+./run_chiplet_test.sh ga100 --canonical-ga --tech-nodes 7nm,10nm,14nm
 
-# Using the dedicated canonical GA script
-./run_canonical_ga.sh --tech-nodes 7nm,14nm,28nm
+# Using the dedicated canonical GA script (default test case: ga100)
+./run_canonical_ga.sh --test-case ga100 --tech-nodes 7nm,10nm,14nm
 ```
 
 You can customize the genetic algorithm parameters:
 ```bash
-./run_canonical_ga.sh --tech-nodes 7nm,14nm,28nm --generations 50 --population 50
+./run_canonical_ga.sh --tech-nodes 7nm,10nm,14nm --generations 50 --population 50
 ```
 
 ## Output Files

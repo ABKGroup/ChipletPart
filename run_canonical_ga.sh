@@ -1,13 +1,16 @@
 #!/bin/bash
+# Run the canonical GA (--canonical-ga) on one test case.
+set -euo pipefail
 
 # Default parameters
-TECH_NODES="7nm,14nm,28nm"
+TECH_NODES="7nm,10nm,14nm"
 GENERATIONS=50
 POPULATION=50
 SEED=42
-REACH=5.0
-SEPARATION=10.0
-OUTPUT_PREFIX="canonical_ga_result"
+REACH=0.5
+SEPARATION=0.25
+TEST_CASE="ga100"
+OUTPUT_DIR=""
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -37,21 +40,26 @@ while [[ $# -gt 0 ]]; do
       SEPARATION="$2"
       shift 2
       ;;
-    --output-prefix)
-      OUTPUT_PREFIX="$2"
+    --test-case)
+      TEST_CASE="$2"
+      shift 2
+      ;;
+    --output-dir)
+      OUTPUT_DIR="$2"
       shift 2
       ;;
     --help)
       echo "Usage: $0 [options]"
       echo ""
       echo "Options:"
-      echo "  --tech-nodes <list>     Comma-separated list of technology nodes (default: 7nm,14nm,28nm)"
+      echo "  --tech-nodes <list>     Comma-separated list of technology nodes (default: 7nm,10nm,14nm)"
       echo "  --generations <num>     Number of generations (default: 50)"
       echo "  --population <num>      Population size (default: 50)"
       echo "  --seed <num>            Random seed for reproducibility (default: 42)"
-      echo "  --reach <num>           Reach parameter (default: 5.0)"
-      echo "  --separation <num>      Separation parameter (default: 10.0)"
-      echo "  --output-prefix <n>  Prefix for output files (default: canonical_ga_result)"
+      echo "  --reach <num>           Reach parameter in mm (default: 0.5)"
+      echo "  --separation <num>      Separation parameter in mm (default: 0.25)"
+      echo "  --test-case <name>      Directory under test_data/ (default: ga100)"
+      echo "  --output-dir <dir>      Where result files go (default: results/canonical_ga/<test-case>)"
       echo "  --help                  Display this help message"
       exit 0
       ;;
@@ -99,40 +107,26 @@ if [ ! -f "${BIN_DIR}/chipletPart" ]; then
 fi
 
 # Locate test files
-IO_FILE="${DATA_DIR}/test_io.xml"
-LAYER_FILE="${DATA_DIR}/test_layer.xml"
-WAFER_PROCESS_FILE="${DATA_DIR}/test_wafer_process.xml"
-ASSEMBLY_PROCESS_FILE="${DATA_DIR}/test_assembly_process.xml"
-TEST_FILE="${DATA_DIR}/test_test.xml"
-NETLIST_FILE="${DATA_DIR}/test_netlist.xml"
-BLOCKS_FILE="${DATA_DIR}/test_blocks.xml"
+CASE_DIR="${DATA_DIR}/${TEST_CASE}"
+IO_FILE="${CASE_DIR}/io_definitions.xml"
+LAYER_FILE="${CASE_DIR}/layer_definitions.xml"
+WAFER_PROCESS_FILE="${CASE_DIR}/wafer_process_definitions.xml"
+ASSEMBLY_PROCESS_FILE="${CASE_DIR}/assembly_process_definitions.xml"
+TEST_FILE="${CASE_DIR}/test_definitions.xml"
+NETLIST_FILE="${CASE_DIR}/block_level_netlist.xml"
+BLOCKS_FILE="${CASE_DIR}/block_definitions.txt"
 
-# Check that all test files exist
-for file in "${IO_FILE}" "${LAYER_FILE}" "${WAFER_PROCESS_FILE}" "${ASSEMBLY_PROCESS_FILE}" "${TEST_FILE}" "${NETLIST_FILE}" "${BLOCKS_FILE}"; do
-  if [ ! -f "${file}" ]; then
-    echo -e "${YELLOW}Warning: Test file not found: ${file}${NC}"
-    echo -e "${YELLOW}Using ga100 test files instead.${NC}"
-    # Try using ga100 test files
-    DATA_DIR="${SCRIPT_DIR}/test_data/ga100"
-    IO_FILE="${DATA_DIR}/io_definitions.xml"
-    LAYER_FILE="${DATA_DIR}/layer_definitions.xml"
-    WAFER_PROCESS_FILE="${DATA_DIR}/wafer_process_definitions.xml"
-    ASSEMBLY_PROCESS_FILE="${DATA_DIR}/assembly_process_definitions.xml"
-    TEST_FILE="${DATA_DIR}/test_definitions.xml"
-    NETLIST_FILE="${DATA_DIR}/block_level_netlist.xml"
-    BLOCKS_FILE="${DATA_DIR}/block_definitions.txt"
-    break
-  fi
-done
-
-# Check again that all files exist
 for file in "${IO_FILE}" "${LAYER_FILE}" "${WAFER_PROCESS_FILE}" "${ASSEMBLY_PROCESS_FILE}" "${TEST_FILE}" "${NETLIST_FILE}" "${BLOCKS_FILE}"; do
   if [ ! -f "${file}" ]; then
     echo -e "${RED}Error: Required file not found: ${file}${NC}"
-    echo -e "${YELLOW}Please create sample test files first.${NC}"
     exit 1
   fi
 done
+
+if [ -z "${OUTPUT_DIR}" ]; then
+  OUTPUT_DIR="${SCRIPT_DIR}/results/canonical_ga/${TEST_CASE}"
+fi
+mkdir -p "${OUTPUT_DIR}"
 
 # Print the configuration
 echo -e "${BLUE}Running Canonical GA with the following parameters:${NC}"
@@ -142,31 +136,21 @@ echo -e "  Population Size: ${POPULATION}"
 echo -e "  Random Seed:     ${SEED}"
 echo -e "  Reach:           ${REACH}"
 echo -e "  Separation:      ${SEPARATION}"
-echo -e "  Output Prefix:   ${OUTPUT_PREFIX}"
+echo -e "  Test Case:       ${TEST_CASE}"
+echo -e "  Output Dir:      ${OUTPUT_DIR}"
 echo
 
-# Execute the ChipletPart binary with canonical GA
-cd "${BIN_DIR}"
-
-# Run with smaller values for testing
-GENERATIONS=3
-POPULATION=3
-
-./chipletPart "${IO_FILE}" "${LAYER_FILE}" "${WAFER_PROCESS_FILE}" "${ASSEMBLY_PROCESS_FILE}" \
+if "${BIN_DIR}/chipletPart" "${IO_FILE}" "${LAYER_FILE}" "${WAFER_PROCESS_FILE}" "${ASSEMBLY_PROCESS_FILE}" \
               "${TEST_FILE}" "${NETLIST_FILE}" "${BLOCKS_FILE}" \
-              ${REACH} ${SEPARATION} --canonical-ga \
+              "${REACH}" "${SEPARATION}" --canonical-ga \
               --tech-nodes "${TECH_NODES}" \
-              --generations ${GENERATIONS} \
-              --population ${POPULATION} \
-              --seed ${SEED}
-
-# Check the exit status
-if [ $? -eq 0 ]; then
+              --generations "${GENERATIONS}" \
+              --population "${POPULATION}" \
+              --seed "${SEED}" \
+              --output-dir "${OUTPUT_DIR}"; then
   echo -e "${GREEN}Canonical GA completed successfully!${NC}"
-  
-  # List output files
   echo -e "${BLUE}Generated output files:${NC}"
-  ls -la canonical_ga_result*
+  ls -la "${OUTPUT_DIR}"
 else
   echo -e "${RED}Canonical GA failed!${NC}"
   exit 1

@@ -101,11 +101,16 @@ def convertXMLtoHypergraph(netlist_file:str, block_def_file:str, io_def_file:str
     # Master_Crossbar_0 0.041655 0.03
     # vertex area is 0.041655 * 0.03
         
+    # block_definitions.txt columns: <name> <area_mm2> <power_W> <tech> [<is_memory>]
+    # (the 5th column was added later; older files have four columns)
     vertex_area = {}
-    f = open(block_def_file, 'r')
-    for line in f:
-        vertex, area, power, tech = line.split()
-        vertex_area[vertex] = float(area)  
+    with open(block_def_file, 'r') as f:
+        for line in f:
+            fields = line.split()
+            if len(fields) < 4:
+                continue
+            vertex, area = fields[0], fields[1]
+            vertex_area[vertex] = float(area)
 
     vertex_index_to_name = {v:k for k,v in vertices_to_index.items()}
     # write out a map of vertex indices to vertex names 

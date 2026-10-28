@@ -7,7 +7,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Define the base directory where the executable and test data are located
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BUILD_DIR="${BASE_DIR}/build"
 EXECUTABLE="${BUILD_DIR}/bin/chipletPart"
 TEST_DATA_PARENT="${BASE_DIR}/test_data"

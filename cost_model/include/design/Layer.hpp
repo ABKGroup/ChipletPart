@@ -171,6 +171,8 @@ public:
      * @return Number of dies per wafer
      */
     IntType ComputeGridDiesPerWafer(FloatType x_dim, FloatType y_dim, FloatType usable_wafer_diameter, FloatType dicing_distance) const;
+    // Exact search without the memo (see ComputeGridDiesPerWafer).
+    IntType ComputeGridDiesPerWaferUncached(FloatType x_dim, FloatType y_dim, FloatType usable_wafer_diameter, FloatType dicing_distance) const;
     
     /**
      * @brief Compute the number of dies per wafer without using a grid layout

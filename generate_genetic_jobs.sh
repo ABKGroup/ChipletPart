@@ -8,7 +8,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Define base directories and files
-BASE_DIR="$(pwd)"
+BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BUILD_DIR="${BASE_DIR}/build"
 EXECUTABLE="${BUILD_DIR}/bin/chipletPart"
 TEST_DATA_PARENT="${BASE_DIR}/test_data"

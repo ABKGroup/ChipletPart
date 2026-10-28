@@ -179,74 +179,69 @@ std::tuple<
     std::map<std::string, std::vector<std::vector<double>>> combined_adjacency_matrix;
     std::map<std::string, std::vector<std::vector<double>>> combined_average_bandwidth_utilization;
     
+    const size_t num_partitions = block_combinations.size();
+
+    // Map every block index to the partition that contains it. Blocks that are
+    // not assigned to any partition (should not happen) map to -1 and are
+    // ignored, which matches the old behaviour of silently skipping them.
+    std::vector<int> partition_of(block_names.size(), -1);
+    for (size_t p = 0; p < num_partitions; ++p) {
+        for (int block : block_combinations[p]) {
+            if (block >= 0 && static_cast<size_t>(block) < partition_of.size()) {
+                partition_of[block] = static_cast<int>(p);
+            }
+        }
+    }
+
     // Create a combined adjacency matrix for the new block
     for (const auto& [io_type, adjacency_matrix] : global_adjacency_matrix) {
-        // Initialize the combined matrices with ones, matching numpy's behavior
+        const auto& bw_matrix = average_bandwidth_utilization.at(io_type);
+
+        // Start from zero: a chiplet pair with no block-level connection must
+        // end up with zero IOs. (The previous version initialised with 1.0,
+        // which added a phantom connection between every pair of chiplets and
+        // biased the bandwidth-weighted averages.)
         std::vector<std::vector<double>> combined_matrix(
-            block_combinations.size(), 
-            std::vector<double>(block_combinations.size(), 1.0)
-        );
-        
-        std::vector<std::vector<double>> combined_ave_bw(
-            block_combinations.size(), 
-            std::vector<double>(block_combinations.size(), 1.0)
-        );
-        
-        // Process each partition
-        int partition_number = 0;
-        for (const auto& partition : block_combinations) {
-            for (int block : partition) {
-                for (const std::string& block_name : block_names) {
-                    // Get the index of block_name in block_names
-                    auto it = std::find(block_names.begin(), block_names.end(), block_name);
-                    if (it != block_names.end()) {
-                        int index_block_name = std::distance(block_names.begin(), it);
-                        
-                        // Check if index_block_name is not in current partition
-                        if (std::find(partition.begin(), partition.end(), index_block_name) == partition.end()) {
-                            // Find which partition block_number is in
-                            int block_number = index_block_name;
-                            int other_partition_number = 0;
-                            
-                            for (const auto& other_partition : block_combinations) {
-                                if (std::find(other_partition.begin(), other_partition.end(), block_number) != other_partition.end()) {
-                                    // Get the values from the original matrices
-                                    double adj_value = 0.0;
-                                    double bw_value = 0.0;
-                                    if (block < adjacency_matrix.size() && block_number < adjacency_matrix[block].size()) {
-                                        adj_value = adjacency_matrix[block][block_number];
-                                    }
-                                    
-                                    const auto& bw_matrix = average_bandwidth_utilization.at(io_type);
-                                    if (block < bw_matrix.size() && block_number < bw_matrix[block].size()) {
-                                        bw_value = bw_matrix[block][block_number];
-                                    }
-                                    
-                                    if (combined_matrix[partition_number][other_partition_number] == 0) {
-                                        combined_ave_bw[partition_number][other_partition_number] = bw_value;
-                                        combined_matrix[partition_number][other_partition_number] = adj_value;
-                                    } else {
-                                        double old_ave_bw_scaled = combined_ave_bw[partition_number][other_partition_number] * 
-                                                                  combined_matrix[partition_number][other_partition_number];
-                                        double new_ave_bw_scaled = bw_value * adj_value;
-                                        
-                                        combined_matrix[partition_number][other_partition_number] += adj_value;
-                                        
-                                        // Avoid division by zero
-                                        if (combined_matrix[partition_number][other_partition_number] != 0) {
-                                            combined_ave_bw[partition_number][other_partition_number] = 
-                                                (old_ave_bw_scaled + new_ave_bw_scaled) / 
-                                                combined_matrix[partition_number][other_partition_number];
-                                        }
-                                    }
-                                }
-                                other_partition_number++;
-                            }
-                        }
+            num_partitions, std::vector<double>(num_partitions, 0.0));
+        // Running sum of (utilisation * io_count); converted to a weighted
+        // average once all block pairs have been accumulated.
+        std::vector<std::vector<double>> bw_weighted_sum(
+            num_partitions, std::vector<double>(num_partitions, 0.0));
+
+        for (size_t p = 0; p < num_partitions; ++p) {
+            for (int block : block_combinations[p]) {
+                if (block < 0 || static_cast<size_t>(block) >= adjacency_matrix.size()) {
+                    continue;
+                }
+                const auto& adj_row = adjacency_matrix[block];
+                for (size_t other = 0; other < adj_row.size(); ++other) {
+                    const int q = other < partition_of.size() ? partition_of[other] : -1;
+                    if (q < 0 || static_cast<size_t>(q) == p) {
+                        continue; // unassigned block or same chiplet
                     }
+                    const double adj_value = adj_row[other];
+                    if (adj_value == 0.0) {
+                        continue;
+                    }
+                    double bw_value = 0.0;
+                    if (static_cast<size_t>(block) < bw_matrix.size() &&
+                        other < bw_matrix[block].size()) {
+                        bw_value = bw_matrix[block][other];
+                    }
+                    combined_matrix[p][q] += adj_value;
+                    bw_weighted_sum[p][q] += bw_value * adj_value;
                 }
             }
-            partition_number++;
+        }
+
+        std::vector<std::vector<double>> combined_ave_bw(
+            num_partitions, std::vector<double>(num_partitions, 0.0));
+        for (size_t p = 0; p < num_partitions; ++p) {
+            for (size_t q = 0; q < num_partitions; ++q) {
+                if (combined_matrix[p][q] != 0.0) {
+                    combined_ave_bw[p][q] = bw_weighted_sum[p][q] / combined_matrix[p][q];
+                }
+            }
         }
         
         // set diagonal elements to 0

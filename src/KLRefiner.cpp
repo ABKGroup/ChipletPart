@@ -41,6 +41,8 @@
 #include <chrono>
 #include <iostream>
 #include <limits>
+#include <cstdlib>
+#include <iostream>
 #include <numeric>
 #include <unordered_map>
 #include <unordered_set>
@@ -105,12 +107,7 @@ KLRefiner::KLRefiner(int num_parts, int refiner_iters, int max_swaps, bool floor
     : num_parts_(num_parts), 
       refiner_iters_(refiner_iters), 
       max_swaps_(max_swaps),
-      floorplanner_(floorplanner) {
-  
-  // Get available threads for parallel processing
-  int available_threads = omp_utils::get_max_threads();
-  num_fp_workers_ = std::max(2, std::min(available_threads / 2, 4));
-}
+      floorplanner_(floorplanner) {}
 
 // Main refinement method
 void KLRefiner::Refine(const HGraphPtr& hgraph,
@@ -148,11 +145,7 @@ void KLRefiner::Refine(const HGraphPtr& hgraph,
     
     // Use floorplanner if enabled
     if (floorplanner_) {
-      
-      // Run floorplanner (local=true for finer granularity)
-      auto fp_result = RunFloorplanner(solution, hgraph, max_fp_steps_, max_fp_perturbations_, 0.95);
-      
-      bool success = std::get<3>(fp_result);
+      RunFloorplanner(solution, hgraph, max_fp_steps_, max_fp_perturbations_, 0.95);
     }
     
     // Save the current max_swaps_ value
@@ -190,7 +183,6 @@ float KLRefiner::KLPass(const HGraphPtr& hgraph,
                         Partition& solution) {
   
   // Clear the gain cache at the beginning of each pass
-  gain_cache_.clear();
   
   const int num_vertices = hgraph->GetNumVertices();
   
@@ -212,6 +204,31 @@ float KLRefiner::KLPass(const HGraphPtr& hgraph,
   // Counter for consecutive non-positive gain swaps
   int consecutive_non_positive_swaps = 0;
   const int max_consecutive_non_positive = 3; // Stop after this many consecutive non-positive swaps
+
+  // Floorplan-feasibility gate (see ChipletRefiner::SetFloorplanAware): a
+  // swap is only executed if the resulting partition does not increase the
+  // reach violation. Rejected pairs have their first vertex locked for the
+  // rest of the pass so the search moves on.
+  const bool fp_aware = cost_evaluator_ && cost_evaluator_->IsFloorplanAware();
+  if (fp_aware) {
+    cost_evaluator_->SetFloorplanBaseline(hgraph, solution);
+  }
+  const int max_fp_rejects = 4 * max_swaps_ + 8;
+  int fp_rejects = 0;
+  // Best prefix of swaps is chosen lexicographically: lowest reach violation
+  // first, then highest cumulative gain (same policy as ChipletRefiner::Pass).
+  const float start_violation =
+      fp_aware ? cost_evaluator_->GetFloorplanBaselineViolation() : 0.0f;
+  float best_violation = start_violation;
+  float current_violation = start_violation;
+  FloorplanSeed start_seed;
+  std::vector<FloorplanSeed> swap_seeds;
+  if (fp_aware) {
+    start_seed = cost_evaluator_->GetFloorplanSeed();
+  }
+  const auto violation_lt = [](float a, float b) {
+    return a < b - 1e-4f * std::max(1.0f, b);
+  };
   
   // Perform up to max_swaps_ vertex pair swaps
   for (int swap_count = 0; swap_count < max_swaps_; ++swap_count) {
@@ -227,6 +244,19 @@ float KLRefiner::KLPass(const HGraphPtr& hgraph,
     
     int vertex_a = best_pair.first;
     int vertex_b = best_pair.second;
+
+    if (fp_aware) {
+      Partition test_solution = solution;
+      std::swap(test_solution[vertex_a], test_solution[vertex_b]);
+      if (!cost_evaluator_->IsFloorplanAcceptable(hgraph, test_solution)) {
+        locked_vertices[vertex_a] = true;
+        if (++fp_rejects >= max_fp_rejects) {
+          break;
+        }
+        --swap_count;  // this iteration did not consume a swap
+        continue;
+      }
+    }
     
     // Calculate gain for this swap
     int block_a = solution[vertex_a];
@@ -245,6 +275,11 @@ float KLRefiner::KLPass(const HGraphPtr& hgraph,
     
     // Execute the swap
     ExecuteSwap(hgraph, vertex_a, vertex_b, block_balance, net_degs, solution);
+    if (fp_aware) {
+      cost_evaluator_->CommitFloorplanProbe();
+      current_violation = cost_evaluator_->GetFloorplanBaselineViolation();
+      swap_seeds.push_back(cost_evaluator_->GetFloorplanSeed());
+    }
     
     // Lock these vertices for the remainder of this pass
     locked_vertices[vertex_a] = true;
@@ -257,9 +292,13 @@ float KLRefiner::KLPass(const HGraphPtr& hgraph,
     total_gain += swap_gain;
     cumulative_gains.push_back(total_gain);
     
-    // Track the point of maximum cumulative gain
-    if (total_gain > best_total_gain) {
+    // Track the best prefix (violation first, then cumulative gain)
+    const bool better_violation = violation_lt(current_violation, best_violation);
+    const bool same_violation = !better_violation &&
+                                !violation_lt(best_violation, current_violation);
+    if (better_violation || (same_violation && total_gain > best_total_gain)) {
       best_total_gain = total_gain;
+      best_violation = current_violation;
       best_swap_index = swap_count;
     }
     
@@ -269,23 +308,39 @@ float KLRefiner::KLPass(const HGraphPtr& hgraph,
     }
   }
   
-  // If best gain is positive, keep swaps up to the best point
-  // If negative, roll back all swaps
-  if (best_total_gain > 0 && best_swap_index >= 0) {
+  // Keep the swaps up to the best point if they improved the gain or
+  // repaired the floorplan violation; otherwise roll back all swaps.
+  const bool repaired = violation_lt(best_violation, start_violation);
+  static const bool fp_debug = std::getenv("CHIPLETPART_FP_DEBUG") != nullptr;
+  if (fp_debug && fp_aware) {
+    std::cerr << "[fp-debug] KL pass: start_viol=" << start_violation
+              << " best_viol=" << best_violation << " swaps=" << swaps.size()
+              << " best_idx=" << best_swap_index << " best_gain=" << best_total_gain
+              << " fp_rejects=" << fp_rejects << "\n";
+  }
+  if ((best_total_gain > 0 || repaired) && best_swap_index >= 0) {
     // Rollback swaps after the best index (in reverse order)
     for (int i = swaps.size() - 1; i > best_swap_index; --i) {
       int vertex_a = swaps[i].first;
       int vertex_b = swaps[i].second;
       ExecuteSwap(hgraph, vertex_a, vertex_b, block_balance, net_degs, solution);
     }
-    
-    return best_total_gain;
+    if (fp_aware) {
+      cost_evaluator_->SetFloorplanSeed(swap_seeds[best_swap_index]);
+      cost_evaluator_->SetFloorplanBaseline(hgraph, solution);
+    }
+    return repaired ? std::max(best_total_gain, std::numeric_limits<float>::min())
+                    : best_total_gain;
   } else {
     // Rollback all swaps (in reverse order)
     for (int i = swaps.size() - 1; i >= 0; --i) {
       int vertex_a = swaps[i].first;
       int vertex_b = swaps[i].second;
       ExecuteSwap(hgraph, vertex_a, vertex_b, block_balance, net_degs, solution);
+    }
+    if (fp_aware) {
+      cost_evaluator_->SetFloorplanSeed(start_seed);
+      cost_evaluator_->SetFloorplanBaseline(hgraph, solution);
     }
 
     return 0.0f;
@@ -304,6 +359,12 @@ GainPair KLRefiner::FindBestSwapPair(const HGraphPtr& hgraph,
   const int num_vertices = hgraph->GetNumVertices();
   float best_gain = -std::numeric_limits<float>::max();
   GainPair best_pair(-1, -1);
+
+  // One evaluation of the current solution for the whole pair search.
+  if (cost_evaluator_) {
+    base_cost_ = cost_evaluator_->GetCostFromScratch(solution, true);
+    base_cost_valid_ = true;
+  }
   
   // Organize vertices by partition
   std::vector<std::vector<int>> part_vertices(num_parts_);
@@ -538,6 +599,7 @@ void KLRefiner::ExecuteSwap(const HGraphPtr& hgraph,
                            Matrix<float>& block_balance,
                            Matrix<int>& net_degs,
                            Partition& solution) {
+  base_cost_valid_ = false;  // the solution is about to change
   
   // Get current partitions
   int block_a = solution[vertex_a];
@@ -614,503 +676,97 @@ bool KLRefiner::IsSwapLegal(int vertex_a, int block_a,
 }
 
 // Calculate gain for swapping a pair of vertices
+//
+// Thread-safety: this is called from inside `#pragma omp parallel` loops in
+// FindBestSwapPairs, so it must not touch shared mutable state. The previous
+// implementation wrote to a shared unordered_map cache (data race) whose key
+// ignored the current partition (stale values), and dereferenced
+// cost_evaluator_ without a null check.
 KLGain KLRefiner::CalculateSwapGain(const HGraphPtr& hgraph,
                                     int vertex_a, int block_a,
                                     int vertex_b, int block_b,
                                     const Partition& solution,
                                     const Matrix<int>& net_degs) {
-  // Use fast cut-size based gain calculation for initial estimates
-  // This avoids expensive cost model calls for obvious bad swaps
-  /*float fast_gain = 0.0f;
-  
-  // Process nets connected to vertex_a
+  if (cost_evaluator_) {
+    // Cost-model gain. The approximate model (approx_state = true) is used,
+    // as in the FM refiner's move gains; the exact model is reserved for the
+    // final reported cost.
+    Partition test_solution = solution;
+    test_solution[vertex_a] = block_b;
+    test_solution[vertex_b] = block_a;
+    const float cost_before = base_cost_valid_
+        ? base_cost_
+        : cost_evaluator_->GetCostFromScratch(solution, true);
+    const float cost_after = cost_evaluator_->GetCostFromScratch(test_solution, true);
+    return (cost_before - cost_after) * weight_scale_factor_;
+  }
+
+  // Fallback without a cost model: cut-size delta of the swap.
+  float fast_gain = 0.0f;
   for (const int edge_a : hgraph->Edges(vertex_a)) {
-    // Current edge distribution
-    int a_part_count = net_degs[edge_a][block_a];
-    int b_part_count = net_degs[edge_a][block_b];
-    
-    // After the swap, a_part_count will decrease by 1 and b_part_count will increase by 1
-    
-    // Calculate cutset change 
+    const int a_part_count = net_degs[edge_a][block_a];
+    const int b_part_count = net_degs[edge_a][block_b];
+    const float w = hgraph->GetHyperedgeWeights(edge_a)[0];
     if (a_part_count == 1) {
-      // Edge will no longer connect to block_a after the swap (no longer in cutset)
-      fast_gain += hgraph->GetHyperedgeWeights(edge_a)[0];
+      fast_gain += w; // edge leaves block_a entirely
     } else if (a_part_count == 2 && hgraph->Vertices(edge_a).size() == 2) {
-      // Special case: this is a 2-pin net, currently bridging blocks, but will be internal
-      fast_gain += hgraph->GetHyperedgeWeights(edge_a)[0];
+      fast_gain += w; // 2-pin net becomes internal
     }
-    
     if (b_part_count == 0) {
-      // Edge will connect to block_b after the swap (adding to cutset)
-      fast_gain -= hgraph->GetHyperedgeWeights(edge_a)[0];
+      fast_gain -= w; // edge newly reaches block_b
     }
   }
-  
-  // Process nets connected to vertex_b (similar logic)
   for (const int edge_b : hgraph->Edges(vertex_b)) {
-    // Skip edges that we've already processed for vertex_a
-    bool already_processed = false;
+    bool shared_with_a = false;
     for (const int vertex : hgraph->Vertices(edge_b)) {
       if (vertex == vertex_a) {
-        already_processed = true;
+        shared_with_a = true;
         break;
       }
     }
-    if (already_processed) continue;
-    
-    // Current edge distribution
-    int a_part_count = net_degs[edge_b][block_a];
-    int b_part_count = net_degs[edge_b][block_b];
-    
+    if (shared_with_a) continue;
+    const int a_part_count = net_degs[edge_b][block_a];
+    const int b_part_count = net_degs[edge_b][block_b];
+    const float w = hgraph->GetHyperedgeWeights(edge_b)[0];
     if (b_part_count == 1) {
-      // Edge will no longer connect to block_b after the swap
-      fast_gain += hgraph->GetHyperedgeWeights(edge_b)[0];
+      fast_gain += w;
     } else if (b_part_count == 2 && hgraph->Vertices(edge_b).size() == 2) {
-      // Special case: 2-pin net that will be internal after swap
-      fast_gain += hgraph->GetHyperedgeWeights(edge_b)[0];
+      fast_gain += w;
     }
-    
     if (a_part_count == 0) {
-      // Edge will connect to block_a after the swap
-      fast_gain -= hgraph->GetHyperedgeWeights(edge_b)[0];
+      fast_gain -= w;
     }
   }
-  
-  // Early exit with fast gain calculation if the gain is clearly negative
-  // This avoids expensive cost model calls for unpromising swaps
-  if (fast_gain < 0 && fast_gain * weight_scale_factor_ < -10.0) {
-    return fast_gain * weight_scale_factor_;
-  }
-  
-  // For promising swaps, use the cost model if available
-  if (cost_evaluator_) {
-    // Create a copy of the solution to test the swap
-    Partition test_solution = solution;
-    
-    // Store original solution
-    int original_block_a = solution[vertex_a];
-    int original_block_b = solution[vertex_b];
-    
-    // Perform the swap
-    test_solution[vertex_a] = block_b;
-    test_solution[vertex_b] = block_a;
-    
-    // Get costs - check if cached
-    float cost_before, cost_after;
-    
-    // Reference the original solution for caching
-    std::string solution_hash = std::to_string(vertex_a) + "_" + std::to_string(vertex_b);
-    
-    // Use cached cost_before if available from previous calculations
-    if (gain_cache_.find(solution_hash) != gain_cache_.end()) {
-      float cached_gain = gain_cache_[solution_hash];
-      return cached_gain;
-    }*/
-    
-    // No cached value, calculate gain using cost model
-    Partition test_solution = solution;
-    test_solution[vertex_a] = block_b;
-    test_solution[vertex_b] = block_a;
-    float cost_before = cost_evaluator_->GetCostFromScratch(solution);
-    float cost_after = cost_evaluator_->GetCostFromScratch(test_solution);
-    std::string solution_hash = std::to_string(vertex_a) + "_" + std::to_string(vertex_b);
-    // Calculate gain
-    float gain = (cost_before - cost_after) * weight_scale_factor_;
-    
-    // Cache the result for future use
-    gain_cache_[solution_hash] = gain;
-    
-    return gain;
-  //}
-  
-  // If no cost model available, return the fast gain calculation
-  //return fast_gain * weight_scale_factor_;
+  return fast_gain * weight_scale_factor_;
 }
 
-// Floorplanner integration
+// Floorplanner integration: delegate to the cost evaluator (ChipletRefiner),
+// which owns the chiplet netlist / sequence-pair machinery. The result is
+// applied to the evaluator so subsequent swap costs see the new shapes.
 std::tuple<std::vector<float>, std::vector<float>, std::vector<float>, bool>
-KLRefiner::RunFloorplanner(std::vector<int>& partition, 
-                          HGraphPtr hgraph, 
-                          int max_steps,
-                          int perturbations, 
-                          float cooling_acceleration_factor,
-                          bool local) {
-  
+KLRefiner::RunFloorplanner(std::vector<int>& partition,
+                           HGraphPtr hgraph,
+                           int max_steps,
+                           int perturbations,
+                           float cooling_acceleration_factor,
+                           bool local) {
+  if (!cost_evaluator_) {
+    std::vector<float> dummy(1, 1.0f);
+    return std::make_tuple(dummy, dummy, dummy, false);
+  }
   auto start_time = std::chrono::high_resolution_clock::now();
-  
-  try {
-    
-    // Generate netlist from partition
-    chiplet_graph_ = GenerateNetlist(hgraph, partition);
-    
-    if (!chiplet_graph_) {
-      std::cerr << "[KL-FLOORPLAN] Failed to generate chiplet netlist" << std::endl;
-      std::vector<float> dummy_result(1, 1.0);
-      return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
-    }
-    
-    // Build chiplets
-    BuildChiplets(chiplet_graph_);
-    
-    if (chiplets_.empty()) {
-      std::vector<float> dummy_result(1, 1.0);
-      return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
-    }
-    
-    // Initialize sequence pairs
-    if (local) {
-      if (local_pos_seq_.size() != chiplets_.size() || local_neg_seq_.size() != chiplets_.size()) {
-        local_pos_seq_.resize(chiplets_.size());
-        local_neg_seq_.resize(chiplets_.size());
-        std::iota(local_pos_seq_.begin(), local_pos_seq_.end(), 0);
-        std::iota(local_neg_seq_.begin(), local_neg_seq_.end(), 0);
-      }
-    } else {
-      if (global_pos_seq_.size() != chiplets_.size() || global_neg_seq_.size() != chiplets_.size()) {
-        global_pos_seq_.resize(chiplets_.size());
-        global_neg_seq_.resize(chiplets_.size());
-        std::iota(global_pos_seq_.begin(), global_pos_seq_.end(), 0);
-        std::iota(global_neg_seq_.begin(), global_neg_seq_.end(), 0);
-      }
-    }
-    
-    // Select the appropriate sequences
-    std::vector<int> pos_seq = local ? local_pos_seq_ : global_pos_seq_;
-    std::vector<int> neg_seq = local ? local_neg_seq_ : global_neg_seq_;
-    
-    // Create workers for floorplanning
-    std::vector<std::unique_ptr<SACore>> workers;
-    workers.reserve(num_fp_workers_);
-    
-    // Distribute cooling rates among workers
-    float delta_cooling_rate = (0.99 - 0.9) / (num_fp_workers_ > 1 ? num_fp_workers_ - 1 : 1);
-    
-    // Adjust steps and perturbations per worker
-    int per_worker_steps = max_steps / (num_fp_workers_ > 0 ? num_fp_workers_ : 1);
-    int per_worker_perturbations = perturbations / (num_fp_workers_ > 0 ? num_fp_workers_ : 1);
-    
-    // Ensure reasonable minimum values
-    per_worker_steps = std::max(10, per_worker_steps);
-    per_worker_perturbations = std::max(5, per_worker_perturbations);
-    
-    // Create workers
-    for (int worker_id = 0; worker_id < num_fp_workers_; worker_id++) {
-      try {
-        // Assign cooling rate for this worker
-        float worker_cooling_rate = 0.9 + worker_id * delta_cooling_rate;
-        
-        // Create worker
-        auto sa = std::make_unique<SACore>(
-            worker_id,                     // worker_id
-            chiplets_,                     // chiplets
-            bundled_nets_,                 // bundled_nets
-            1.0,                           // area_penalty_weight
-            1.0,                           // package_penalty_weight
-            1.0,                           // net_penalty_weight
-            0.2,                           // pos_swap_prob
-            0.2,                           // neg_swap_prob
-            0.2,                           // double_swap_prob
-            0.2,                           // resize_prob
-            0.2,                           // expand_prob
-            per_worker_steps,              // max_num_step
-            per_worker_perturbations,      // num_perturb_per_step
-            worker_cooling_rate,           // cooling_rate
-            42 + worker_id);               // seed
-        
-        // Set sequence pairs
-        sa->setPosSeq(pos_seq);
-        sa->setNegSeq(neg_seq);
-        
-        // Add to workers vector
-        workers.push_back(std::move(sa));
-      } catch (const std::exception& e) {
-        std::cerr << "[KL-FLOORPLAN] Exception creating worker " << worker_id 
-                  << ": " << e.what() << std::endl;
-      }
-    }
-    
-    if (workers.empty()) {
-      std::cerr << "[KL-FLOORPLAN] Failed to create any workers" << std::endl;
-      std::vector<float> dummy_result(1, 1.0);
-      return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
-    }
-    
-    // Initialize workers
-    try {
-      workers[0]->initialize();
-      float norm_area_penalty = workers[0]->getNormAreaPenalty();
-      float norm_package_penalty = workers[0]->getNormPackagePenalty();
-      float norm_net_penalty = workers[0]->getNormNetPenalty();
-      
-      // Apply normalization to all workers
-      for (auto& worker : workers) {
-        worker->setNormAreaPenalty(norm_area_penalty);
-        worker->setNormPackagePenalty(norm_package_penalty);
-        worker->setNormNetPenalty(norm_net_penalty);
-      }
-    } catch (const std::exception& e) {
-      std::cerr << "[KL-FLOORPLAN] Exception during worker initialization: " 
-                << e.what() << std::endl;
-      std::vector<float> dummy_result(1, 1.0);
-      return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
-    }
-    
-    // Run workers
-    for (auto& worker : workers) {
-      try {
-        worker->run();
-      } catch (const std::exception& e) {
-        std::cerr << "[KL-FLOORPLAN] Exception running worker " 
-                  << worker->getWorkerId() << ": " << e.what() << std::endl;
-      }
-    }
-    
-    // Find best solution
-    SACore* best_sa = nullptr;
-    float best_cost = std::numeric_limits<float>::max();
-    bool is_valid = false;
-    
-    for (auto& worker : workers) {
-      try {
-        float current_cost = worker->getCost();
-        bool current_valid = worker->isValid();
-        
-        // Prefer valid solutions, then lower cost
-        if ((current_valid && !is_valid) || 
-            (current_valid == is_valid && current_cost < best_cost)) {
-          best_sa = worker.get();
-          best_cost = current_cost;
-          is_valid = current_valid;
-        }
-      } catch (const std::exception& e) {
-        std::cerr << "[KL-FLOORPLAN] Exception evaluating worker: " << e.what() << std::endl;
-      }
-    }
-    
-    // Use first worker if no valid solution found
-    if (!best_sa && !workers.empty()) {
-      best_sa = workers[0].get();
-      is_valid = false;
-    }
-    
-    // Extract results
-    std::vector<Chiplet> best_chiplets;
-    if (best_sa) {
-      try {
-        best_sa->getMacros(best_chiplets);
-        
-        // Store sequence pairs
-        std::vector<int> final_pos_seq, final_neg_seq;
-        best_sa->getPosSeq(final_pos_seq);
-        best_sa->getNegSeq(final_neg_seq);
-        
-        if (local) {
-          local_pos_seq_ = final_pos_seq;
-          local_neg_seq_ = final_neg_seq;
-        } else {
-          global_pos_seq_ = final_pos_seq;
-          global_neg_seq_ = final_neg_seq;
-        }
-      } catch (const std::exception& e) {
-        std::cerr << "[KL-FLOORPLAN] Exception extracting best solution: " 
-                  << e.what() << std::endl;
-        std::vector<float> dummy_result(1, 1.0);
-        return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
-      }
-    } else {
-      std::cerr << "[KL-FLOORPLAN] No solution found" << std::endl;
-      std::vector<float> dummy_result(1, 1.0);
-      return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
-    }
-    
-    // Calculate return values
-    std::vector<float> aspect_ratios;
-    std::vector<float> x_locations;
-    std::vector<float> y_locations;
-    
-    aspect_ratios.reserve(best_chiplets.size());
-    x_locations.reserve(best_chiplets.size());
-    y_locations.reserve(best_chiplets.size());
-    
-    for (const auto& chiplet : best_chiplets) {
-      aspect_ratios.push_back(chiplet.getRealWidth() / std::max(0.001f, chiplet.getRealHeight()));
-      x_locations.push_back(chiplet.getRealX());
-      y_locations.push_back(chiplet.getRealY());
-    }
-    
-    // Update timing stats
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    total_fplan_time_ += duration.count() / 1000.0f;
-    
-    return std::make_tuple(aspect_ratios, x_locations, y_locations, is_valid);
-    
-  } catch (const std::exception& e) {
-    std::cerr << "[KL-FLOORPLAN] Exception in RunFloorplanner: " << e.what() << std::endl;
-    std::vector<float> dummy_result(1, 1.0);
-    return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
+  auto result = cost_evaluator_->RunFloorplanner(
+      partition, hgraph, max_steps, perturbations, cooling_acceleration_factor, local);
+  if (std::get<3>(result)) {
+    cost_evaluator_->SetAspectRatios(std::get<0>(result));
+    cost_evaluator_->SetXLocations(std::get<1>(result));
+    cost_evaluator_->SetYLocations(std::get<2>(result));
+    base_cost_valid_ = false;
   }
-}
-
-// Build chiplets for floorplanning
-void KLRefiner::BuildChiplets(const HGraphPtr &hgraph) {
-  // Clear existing chiplets and nets
-  bundled_nets_.clear();
-  chiplets_.clear();
-  
-  // Create bundled nets for each hyperedge
-  const int num_edges = hgraph->GetNumHyperedges();
-  bundled_nets_.reserve(num_edges);
-  
-  for (int i = 0; i < num_edges; ++i) {
-    const auto& vertices = hgraph->Vertices(i);
-    
-    // Skip hyperedges with fewer than 2 vertices
-    if (vertices.size() < 2) {
-      continue;
-    }
-    
-    // Get the first two vertices as terminals
-    const int term_a = *vertices.begin();
-    const int term_b = *(++vertices.begin());
-    
-    // Get edge weight and reach
-    const float weight = hgraph->GetHyperedgeWeights(i)[0];
-    float reach = 1.0f;
-    
-    // Get reach value if available
-    try {
-      reach = hgraph->GetReach(i);
-    } catch (const std::exception& e) {
-      // Default to 1.0 if not available
-    }
-    
-    // Get IO size if available
-    float io_area = 1.0f;
-    try {
-      io_area = hgraph->GetIoSize(i);
-    } catch (const std::exception& e) {
-      // Default to 1.0 if not available
-    }
-    
-    // Create bundled net
-    bundled_nets_.emplace_back(std::pair<int, int>(term_a, term_b), weight, reach, io_area);
-  }
-  
-  // Create chiplets for each vertex
-  const int num_vertices = hgraph->GetNumVertices();
-  chiplets_.reserve(num_vertices);
-  
-  for (int i = 0; i < num_vertices; ++i) {
-    // Get vertex weight as area
-    const auto& vertex_weight = hgraph->GetVertexWeights(i);
-    const float area = std::accumulate(vertex_weight.begin(), vertex_weight.end(), 0.0f);
-    
-    // Calculate dimensions (square aspect ratio by default)
-    const float width = std::sqrt(area);
-    const float height = width;
-    
-    // Create chiplet
-    chiplets_.emplace_back(0.0f, 0.0f, width, height, area, separation_);
-  }
-}
-
-// Generate a netlist for chiplet-level floorplanning
-HGraphPtr KLRefiner::GenerateNetlist(const HGraphPtr hgraph, const std::vector<int>& partition) {
-  // Calculate block balances once and reuse
-  Matrix<float> vertex_weights_c;
-  vertex_weights_c.resize(num_parts_);
-  
-  for (int i = 0; i < num_parts_; ++i) {
-    vertex_weights_c[i].resize(hgraph->GetVertexDimensions(), 0.0f);
-  }
-  
-  // Compute weights for each partition
-  for (int v = 0; v < hgraph->GetNumVertices(); ++v) {
-    int part_id = partition[v];
-    if (part_id >= 0 && part_id < num_parts_) {
-      const auto& weights = hgraph->GetVertexWeights(v);
-      for (size_t i = 0; i < weights.size(); ++i) {
-        vertex_weights_c[part_id][i] += weights[i];
-      }
-    }
-  }
-  
-  // Only include partitions with non-zero weight
-  Matrix<float> new_vertex_weights_c;
-  std::vector<int> part_map;
-  
-  for (int i = 0; i < vertex_weights_c.size(); ++i) {
-    if (vertex_weights_c[i][0] > 0.0f) {
-      new_vertex_weights_c.push_back(vertex_weights_c[i]);
-      part_map.push_back(i);
-    }
-  }
-  
-  // Create hyperedges for the netlist
-  Matrix<int> hyperedges_c;
-  Matrix<float> hyperedges_weights_c;
-  std::vector<float> reaches;
-  std::vector<float> io_cell_sizes;
-  
-  // Process hyperedges to create chiplet-level connections
-  for (int e = 0; e < hgraph->GetNumHyperedges(); ++e) {
-    // Track which partitions this hyperedge spans
-    std::unordered_set<int> parts_seen;
-    for (const int vertex_id : hgraph->Vertices(e)) {
-      int part_id = partition[vertex_id];
-      if (part_id >= 0 && part_id < num_parts_) {
-        parts_seen.insert(part_id);
-      }
-    }
-    
-    // Only include hyperedges that span multiple partitions
-    if (parts_seen.size() <= 1) {
-      continue;
-    }
-    
-    // Create hyperedge connecting the partitions
-    std::vector<int> he_parts;
-    for (int part_id : parts_seen) {
-      // Map to the new index in new_vertex_weights_c
-      auto it = std::find(part_map.begin(), part_map.end(), part_id);
-      if (it != part_map.end()) {
-        int new_id = std::distance(part_map.begin(), it);
-        he_parts.push_back(new_id);
-      }
-    }
-    
-    // Add the hyperedge
-    hyperedges_c.push_back(he_parts);
-    hyperedges_weights_c.push_back(hgraph->GetHyperedgeWeights(e));
-    
-    // Get reach and IO size if available
-    float reach = 1.0f;
-    try {
-      reach = hgraph->GetReach(e);
-    } catch (const std::exception& e) {
-      // Default to 1.0 if not available
-    }
-    reaches.push_back(reach);
-    
-    float io_size = 1.0f;
-    try {
-      io_size = hgraph->GetIoSize(e);
-    } catch (const std::exception& e) {
-      // Default to 1.0 if not available
-    }
-    io_cell_sizes.push_back(io_size);
-  }
-  
-  // Create the chiplet-level hypergraph
-  return std::make_shared<Hypergraph>(
-      hgraph->GetVertexDimensions(),
-      hgraph->GetHyperedgeDimensions(),
-      hyperedges_c,
-      new_vertex_weights_c,
-      hyperedges_weights_c,
-      reaches,
-      io_cell_sizes);
+  auto end_time = std::chrono::high_resolution_clock::now();
+  total_fplan_time_ +=
+      std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() / 1000.0f;
+  return result;
 }
 
 } // namespace chiplet 

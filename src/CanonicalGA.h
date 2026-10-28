@@ -206,6 +206,13 @@ public:
      */
     void SaveResults(const CanonicalSolution& solution, const std::string& prefix = "canonical_ga");
 
+    /**
+     * @brief Set the path prefix used for every file this GA writes
+     *        (timing logs and the result files produced at the end of Run()).
+     */
+    void SetOutputPrefix(const std::string& prefix) { output_prefix_ = prefix; }
+    const std::string& GetOutputPrefix() const { return output_prefix_; }
+
     // Helper function to get the ID of a tech node
     int GetTechNodeId(const std::string& tech_node);
 
@@ -267,6 +274,8 @@ private:
     int min_partitions_;
     int max_partitions_;
     int tournament_size_ = 3;
+    std::string output_prefix_ = "canonical_ga";
+    bool generation_log_header_written_ = false;
     
     // Runtime data
     std::vector<std::vector<std::string>> population_;

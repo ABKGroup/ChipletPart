@@ -1,131 +1,109 @@
 #!/bin/bash
+#
+# Run ChipletPart on one of the cases under test_data/.
+#
+# All result files are written to results/<case>/<mode>/ (override with
+# --output-dir). The test_data/ directory is never written to.
 
-# Set colors for better output
+set -u
+set -o pipefail
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Function to display help/usage information
 show_help() {
     echo -e "${BLUE}Usage: $0 <test_case_name> [options]${NC}"
     echo
+    echo "Modes (pick at most one; default is standard single-technology partitioning):"
+    echo "  --genetic                     Genetic tech partitioning (GeneticTechPartitioner)"
+    echo "  --canonical-ga                Canonical genetic algorithm for technology assignment"
+    echo "  --tech-enum                   Enumerate all canonical technology assignments"
+    echo "  --evaluate-partition <file>   Evaluate an existing partition file"
+    echo
     echo "Options:"
-    echo "  --reach <value>       Specify reach value (default: 0.50)"
-    echo "  --separation <value>  Specify separation value (default: 0.25)"
-    echo "  --tech <node>         Specify tech node for standard partitioning (default: 7nm)"
-    echo "  --seed <value>        Specify random seed (default: 42)"
-    echo "  --genetic             Use genetic tech partitioning algorithm"
-    echo "  --canonical-ga        Use canonical genetic algorithm for technology assignment"
-    echo "  --tech-enum           Enumerate all canonical technology assignments up to specified max partitions"
-    echo "  --max-partitions <n>  Maximum number of partitions for tech enumeration (default: 4)"
-    echo "  --detailed-output     Generate detailed output for each tech assignment evaluation"
-    echo "  --tech-nodes <nodes>  Specify comma-separated list of tech nodes for genetic partitioning"
-    echo "                        Example: --tech-nodes 7nm,10nm,14nm,28nm"
-    echo "  --generations <num>   Specify number of generations for genetic algorithm (default: 50)"
-    echo "  --population <num>    Specify population size for genetic algorithm (default: 50)"
-    echo "  --evaluate-partition  Specify path to partition file for evaluation"
-    echo "  --help                Display this help message"
+    echo "  --reach <value>        Default IO reach for net types missing from the IO file (default: 0.50)"
+    echo "  --separation <value>   Minimum chiplet spacing used by the floorplanner (default: 0.25)"
+    echo "  --tech <node>          Tech node for standard partitioning / evaluation (default: 7nm)"
+    echo "  --tech-nodes <list>    Comma-separated tech nodes for --genetic/--canonical-ga/--tech-enum"
+    echo "                         (default: 7nm,10nm,14nm; known nodes: 45nm 16nm 14nm 10nm 7nm)"
+    echo "  --seed <value>         Random seed (default: 42)"
+    echo "  --generations <num>    GA generations (default: 50)"
+    echo "  --population <num>     GA population size (default: 50)"
+    echo "  --max-partitions <n>   Max chiplets (default: 4 for --tech-enum, 8 for the GAs)"
+    echo "  --detailed-output      Extra per-assignment output for --tech-enum"
+    echo "  --output-dir <dir>     Where to write results (default: results/<case>/<mode>)"
+    echo "  --no-floorplan-aware   Disable feasibility-gated refinement (standard mode)"
+    echo "  --fp-check-budget S,P  Per-move floorplan probe budget (default: 40,25)"
+    echo "  --fp-steps <n>         Final floorplan SA steps per walker (default: 1000)"
+    echo "  --fp-perturbs <n>      Final floorplan perturbations per step (default: 1000)"
+    echo "  --fp-workers <n>       Final floorplan parallel walkers (default: min(threads,4))"
+    echo "  --help                 Show this message"
     echo
     echo "Examples:"
-    echo "  $0 design1 --tech 5nm"
-    echo "  $0 design2 --genetic --tech-nodes 7nm,10nm,14nm --seed 123"
-    echo "  $0 design3 --canonical-ga --tech-nodes 7nm,14nm,28nm --generations 30"
-    echo "  $0 design4 --tech-enum --tech-nodes 7nm,14nm,28nm --max-partitions 3"
+    echo "  $0 48_1_14_4_1600_1600 --tech 7nm"
+    echo "  $0 epyc7282 --genetic --tech-nodes 7nm,10nm,14nm --seed 123"
+    echo "  $0 epyc7282 --canonical-ga --tech-nodes 7nm,14nm --generations 30 --population 20"
+    echo "  $0 ga100 --tech-enum --tech-nodes 7nm,10nm,14nm --max-partitions 3"
+    echo "  $0 ga100 --evaluate-partition results/ga100/standard/block_level_netlist.xml.cpart.8"
 }
 
-# Check if no arguments were provided
 if [ $# -eq 0 ]; then
     show_help
     exit 1
 fi
-
-# Check if the first argument is --help
-if [ "$1" = "--help" ]; then
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     show_help
     exit 0
 fi
 
-# Parse the first argument as the test case name
 TEST_CASE_NAME="$1"
-shift  # Remove the first argument
+shift
 
-# Default values
-DEFAULT_REACH="0.50"
-DEFAULT_SEPARATION="0.25"
-DEFAULT_TECH="7nm"
-DEFAULT_SEED="42"
-DEFAULT_GENERATIONS="50"
-DEFAULT_POPULATION="50"
-DEFAULT_MAX_PARTITIONS="4"
-USE_GENETIC=false
-USE_CANONICAL_GA=false
-USE_TECH_ENUM=false
+REACH="0.50"
+SEPARATION="0.25"
+TECH="7nm"
+SEED="42"
+GENERATIONS="50"
+POPULATION="50"
+MAX_PARTITIONS=""
 DETAILED_OUTPUT=false
 TECH_NODES=""
 EVALUATE_PARTITION=""
+OUTPUT_DIR=""
+EXTRA_OPTS=()
+MODE="standard"
+MODE_COUNT=0
 
-# Parse command line arguments
+set_mode() {
+    MODE="$1"
+    MODE_COUNT=$((MODE_COUNT + 1))
+}
+
 while [ "$#" -gt 0 ]; do
     case "$1" in
-        --help)
-            show_help
-            exit 0
-            ;;
-        --reach)
-            DEFAULT_REACH="$2"
-            shift 2
-            ;;
-        --separation)
-            DEFAULT_SEPARATION="$2"
-            shift 2
-            ;;
-        --tech)
-            DEFAULT_TECH="$2"
-            shift 2
-            ;;
-        --seed)
-            DEFAULT_SEED="$2"
-            shift 2
-            ;;
-        --genetic)
-            USE_GENETIC=true
-            shift
-            ;;
-        --canonical-ga)
-            USE_CANONICAL_GA=true
-            shift
-            ;;
-        --tech-enum)
-            USE_TECH_ENUM=true
-            shift
-            ;;
-        --max-partitions)
-            DEFAULT_MAX_PARTITIONS="$2"
-            shift 2
-            ;;
-        --detailed-output)
-            DETAILED_OUTPUT=true
-            shift
-            ;;
-        --tech-nodes)
-            TECH_NODES="$2"
-            shift 2
-            ;;
-        --generations)
-            DEFAULT_GENERATIONS="$2"
-            shift 2
-            ;;
-        --population)
-            DEFAULT_POPULATION="$2"
-            shift 2
-            ;;
-        --evaluate-partition)
-            EVALUATE_PARTITION="$2"
-            shift 2
-            ;;
+        --help|-h)            show_help; exit 0 ;;
+        --reach)              REACH="$2"; shift 2 ;;
+        --separation)         SEPARATION="$2"; shift 2 ;;
+        --tech)               TECH="$2"; shift 2 ;;
+        --seed)               SEED="$2"; shift 2 ;;
+        --genetic)            set_mode genetic; shift ;;
+        --canonical-ga)       set_mode canonical-ga; shift ;;
+        --tech-enum)          set_mode tech-enum; shift ;;
+        --evaluate-partition) set_mode evaluate; EVALUATE_PARTITION="$2"; shift 2 ;;
+        --max-partitions)     MAX_PARTITIONS="$2"; shift 2 ;;
+        --detailed-output)    DETAILED_OUTPUT=true; shift ;;
+        --tech-nodes)         TECH_NODES="$2"; shift 2 ;;
+        --generations)        GENERATIONS="$2"; shift 2 ;;
+        --population)         POPULATION="$2"; shift 2 ;;
+        --output-dir)         OUTPUT_DIR="$2"; shift 2 ;;
+        --floorplan-aware|--no-floorplan-aware)
+                              EXTRA_OPTS+=("$1"); shift ;;
+        --fp-check-budget|--fp-steps|--fp-perturbs|--fp-workers)
+                              EXTRA_OPTS+=("$1" "$2"); shift 2 ;;
         *)
             echo -e "${RED}Error: Unknown option: $1${NC}"
             show_help
@@ -134,25 +112,22 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-# Check if multiple algorithms are specified
-if ([ "$USE_GENETIC" = true ] && [ "$USE_CANONICAL_GA" = true ]) || \
-   ([ "$USE_GENETIC" = true ] && [ "$USE_TECH_ENUM" = true ]) || \
-   ([ "$USE_CANONICAL_GA" = true ] && [ "$USE_TECH_ENUM" = true ]); then
-    echo -e "${RED}Error: Cannot use multiple algorithm options together.${NC}"
-    echo -e "${YELLOW}Please specify only one algorithm approach (--genetic, --canonical-ga, or --tech-enum).${NC}"
+if [ "$MODE_COUNT" -gt 1 ]; then
+    echo -e "${RED}Error: --genetic, --canonical-ga, --tech-enum and --evaluate-partition are mutually exclusive.${NC}"
     exit 1
 fi
 
-# Define the base directory where the executable and test data are located
-BASE_DIR="$(pwd)"
-BUILD_DIR="${BASE_DIR}/build"
-EXECUTABLE="${BUILD_DIR}/bin/chipletPart"
-TEST_DATA_DIR="${BASE_DIR}/test_data/${TEST_CASE_NAME}"
+# Resolve paths relative to this script, not the caller's cwd
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXECUTABLE="${SCRIPT_DIR}/build/bin/chipletPart"
+TEST_DATA_DIR="${SCRIPT_DIR}/test_data/${TEST_CASE_NAME}"
 
-# Create results directory for this test case if it doesn't exist
-mkdir -p "${BASE_DIR}/results/"
+if [ ! -x "$EXECUTABLE" ]; then
+    echo -e "${RED}Error: executable not found: $EXECUTABLE${NC}"
+    echo "Build first: mkdir -p build && cd build && cmake .. && make -j"
+    exit 1
+fi
 
-# Define file paths for the input files
 IO="${TEST_DATA_DIR}/io_definitions.xml"
 LAYER="${TEST_DATA_DIR}/layer_definitions.xml"
 WAFER="${TEST_DATA_DIR}/wafer_process_definitions.xml"
@@ -161,7 +136,6 @@ TEST="${TEST_DATA_DIR}/test_definitions.xml"
 NETLIST="${TEST_DATA_DIR}/block_level_netlist.xml"
 BLOCKS="${TEST_DATA_DIR}/block_definitions.txt"
 
-# Check that all required files exist
 for file in "$IO" "$LAYER" "$WAFER" "$ASSEMBLY" "$TEST" "$NETLIST" "$BLOCKS"; do
     if [ ! -f "$file" ]; then
         echo -e "${RED}Error: File not found: $file${NC}"
@@ -170,194 +144,68 @@ for file in "$IO" "$LAYER" "$WAFER" "$ASSEMBLY" "$TEST" "$NETLIST" "$BLOCKS"; do
     fi
 done
 
-# Check if we're evaluating an existing partition
-if [ -n "$EVALUATE_PARTITION" ]; then
-    if [ ! -f "$EVALUATE_PARTITION" ]; then
-        echo -e "${RED}Error: Partition file not found: $EVALUATE_PARTITION${NC}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}Evaluating partition file: ${EVALUATE_PARTITION}${NC}"
-    
-    # Run ChipletPart in evaluation mode
-    "$EXECUTABLE" \
-        "$EVALUATE_PARTITION" \
-        "$IO" \
-        "$LAYER" \
-        "$WAFER" \
-        "$ASSEMBLY" \
-        "$TEST" \
-        "$NETLIST" \
-        "$BLOCKS" \
-        "$DEFAULT_REACH" \
-        "$DEFAULT_SEPARATION" \
-        "$DEFAULT_TECH" \
-        --seed "$DEFAULT_SEED"
-        
-    exit_code=$?
-    if [ $exit_code -eq 0 ]; then
-        echo -e "${GREEN}Partition evaluation completed successfully!${NC}"
-    else
-        echo -e "${RED}Partition evaluation failed with exit code $exit_code${NC}"
-    fi
-    
-    exit $exit_code
+if [ -z "$OUTPUT_DIR" ]; then
+    OUTPUT_DIR="${SCRIPT_DIR}/results/${TEST_CASE_NAME}/${MODE}"
 fi
+mkdir -p "$OUTPUT_DIR"
 
-# Build the command based on which algorithm we're using
-if [ "$USE_TECH_ENUM" = true ]; then
-    # Make sure tech nodes are provided for technology enumeration
-    if [ -z "$TECH_NODES" ]; then
-        echo -e "${YELLOW}Warning: No tech nodes specified for technology enumeration. Using default: 7nm,14nm,28nm${NC}"
-        TECH_NODES="7nm,14nm,28nm"
-    fi
-    
-    echo -e "${CYAN}====================================================================${NC}"
-    echo -e "${CYAN}     Running Technology Enumeration for test case: ${TEST_CASE_NAME}   ${NC}"
-    echo -e "${CYAN}====================================================================${NC}"
-    echo -e "${GREEN}Using Technology Enumeration to find optimal assignments${NC}"
-    echo
-    echo -e "${BLUE}Tech nodes: ${TECH_NODES}${NC}"
-    echo -e "${BLUE}Maximum partitions: ${DEFAULT_MAX_PARTITIONS}${NC}"
-    echo -e "${BLUE}Reach: ${DEFAULT_REACH}, Separation: ${DEFAULT_SEPARATION}${NC}"
-    echo -e "${BLUE}Random seed: ${DEFAULT_SEED}${NC}"
-    echo -e "${BLUE}Detailed output: ${DETAILED_OUTPUT}${NC}"
-    
-    # Create detailed output flag if needed
-    DETAIL_FLAG=""
-    if [ "$DETAILED_OUTPUT" = true ]; then
-        DETAIL_FLAG="--detailed-output"
-    fi
-    
-    # Run the executable with technology enumeration
-    "$EXECUTABLE" \
-        "$IO" \
-        "$LAYER" \
-        "$WAFER" \
-        "$ASSEMBLY" \
-        "$TEST" \
-        "$NETLIST" \
-        "$BLOCKS" \
-        "$DEFAULT_REACH" \
-        "$DEFAULT_SEPARATION" \
-        --tech-enum \
-        --tech-nodes "$TECH_NODES" \
-        --max-partitions "$DEFAULT_MAX_PARTITIONS" \
-        $DETAIL_FLAG \
-        --seed "$DEFAULT_SEED"
-        
-elif [ "$USE_CANONICAL_GA" = true ]; then
-    # Make sure tech nodes are provided for canonical GA
-    if [ -z "$TECH_NODES" ]; then
-        echo -e "${YELLOW}Warning: No tech nodes specified for canonical GA. Using default: 7nm,14nm,28nm${NC}"
-        TECH_NODES="7nm,14nm,28nm"
-    fi
-    
-    echo -e "${CYAN}====================================================================${NC}"
-    echo -e "${CYAN}         Running Canonical GA for test case: ${TEST_CASE_NAME}        ${NC}"
-    echo -e "${CYAN}====================================================================${NC}"
-    echo -e "${GREEN}Using full Canonical Genetic Algorithm implementation${NC}"
-    echo -e "${GREEN}with improved error handling and memory safety${NC}"
-    echo
-    echo -e "${BLUE}Tech nodes: ${TECH_NODES}${NC}"
-    echo -e "${BLUE}Generations: ${DEFAULT_GENERATIONS}, Population size: ${DEFAULT_POPULATION}${NC}"
-    echo -e "${BLUE}Reach: ${DEFAULT_REACH}, Separation: ${DEFAULT_SEPARATION}${NC}"
-    echo -e "${BLUE}Random seed: ${DEFAULT_SEED}${NC}"
-    
-    # Run the executable with canonical GA
-    "$EXECUTABLE" \
-        "$IO" \
-        "$LAYER" \
-        "$WAFER" \
-        "$ASSEMBLY" \
-        "$TEST" \
-        "$NETLIST" \
-        "$BLOCKS" \
-        "$DEFAULT_REACH" \
-        "$DEFAULT_SEPARATION" \
-        --canonical-ga \
-        --tech-nodes "$TECH_NODES" \
-        --generations "$DEFAULT_GENERATIONS" \
-        --population "$DEFAULT_POPULATION" \
-        --seed "$DEFAULT_SEED"
-        
-elif [ "$USE_GENETIC" = true ]; then
-    # Make sure tech nodes are provided for genetic partitioning
-    if [ -z "$TECH_NODES" ]; then
-        echo -e "${YELLOW}Warning: No tech nodes specified for genetic partitioning. Using default: 7nm,10nm,45nm${NC}"
-        TECH_NODES="7nm,10nm,45nm"
-    fi
-    
-    echo -e "${GREEN}Running genetic tech partitioning for test case: ${TEST_CASE_NAME}${NC}"
-    echo -e "${BLUE}Tech nodes: ${TECH_NODES}${NC}"
-    echo -e "${BLUE}Generations: ${DEFAULT_GENERATIONS}, Population size: ${DEFAULT_POPULATION}${NC}"
-    
-    # Run the executable using technology assignment mode instead of genetic tech partitioning
-    echo "$EXECUTABLE" \
-        "$IO" \
-        "$LAYER" \
-        "$WAFER" \
-        "$ASSEMBLY" \
-        "$TEST" \
-        "$NETLIST" \
-        "$BLOCKS" \
-        "$DEFAULT_REACH" \
-        "$DEFAULT_SEPARATION" \
-        --genetic-tech-part \
-        --tech-nodes "$TECH_NODES" \
-        --generations "$DEFAULT_GENERATIONS" \
-        --population "$DEFAULT_POPULATION" \
-        --seed "$DEFAULT_SEED"
-    "$EXECUTABLE" \
-        "$IO" \
-        "$LAYER" \
-        "$WAFER" \
-        "$ASSEMBLY" \
-        "$TEST" \
-        "$NETLIST" \
-        "$BLOCKS" \
-        "$DEFAULT_REACH" \
-        "$DEFAULT_SEPARATION" \
-        "$TECH_NODES" \
-        --seed "$DEFAULT_SEED"
+DESIGN_ARGS=("$IO" "$LAYER" "$WAFER" "$ASSEMBLY" "$TEST" "$NETLIST" "$BLOCKS" "$REACH" "$SEPARATION")
+# (${arr[@]+"${arr[@]}"} keeps bash 3 + `set -u` happy when the array is empty)
+COMMON_OPTS=(--seed "$SEED" --output-dir "$OUTPUT_DIR" ${EXTRA_OPTS[@]+"${EXTRA_OPTS[@]}"})
+CMD=()
+
+echo -e "${CYAN}====================================================================${NC}"
+echo -e "${CYAN}  ChipletPart  case=${TEST_CASE_NAME}  mode=${MODE}${NC}"
+echo -e "${CYAN}====================================================================${NC}"
+echo -e "${BLUE}Reach: ${REACH}, Separation: ${SEPARATION}, Seed: ${SEED}${NC}"
+echo -e "${BLUE}Output directory: ${OUTPUT_DIR}${NC}"
+
+case "$MODE" in
+    evaluate)
+        if [ ! -f "$EVALUATE_PARTITION" ]; then
+            echo -e "${RED}Error: Partition file not found: $EVALUATE_PARTITION${NC}"
+            exit 1
+        fi
+        echo -e "${BLUE}Partition file: ${EVALUATE_PARTITION}, Tech: ${TECH}${NC}"
+        CMD=("$EXECUTABLE" "$EVALUATE_PARTITION" "${DESIGN_ARGS[@]}" "$TECH" "${COMMON_OPTS[@]}")
+        ;;
+    tech-enum)
+        CMD=("$EXECUTABLE" "${DESIGN_ARGS[@]}" --tech-enum "${COMMON_OPTS[@]}")
+        [ -n "$TECH_NODES" ] && CMD+=(--tech-nodes "$TECH_NODES")
+        [ -n "$MAX_PARTITIONS" ] && CMD+=(--max-partitions "$MAX_PARTITIONS")
+        [ "$DETAILED_OUTPUT" = true ] && CMD+=(--detailed-output)
+        echo -e "${BLUE}Tech nodes: ${TECH_NODES:-(default)}, Max partitions: ${MAX_PARTITIONS:-(default)}${NC}"
+        ;;
+    canonical-ga)
+        CMD=("$EXECUTABLE" "${DESIGN_ARGS[@]}" --canonical-ga
+             --generations "$GENERATIONS" --population "$POPULATION" "${COMMON_OPTS[@]}")
+        [ -n "$TECH_NODES" ] && CMD+=(--tech-nodes "$TECH_NODES")
+        [ -n "$MAX_PARTITIONS" ] && CMD+=(--max-partitions "$MAX_PARTITIONS")
+        echo -e "${BLUE}Tech nodes: ${TECH_NODES:-(default)}, Generations: ${GENERATIONS}, Population: ${POPULATION}${NC}"
+        ;;
+    genetic)
+        CMD=("$EXECUTABLE" "${DESIGN_ARGS[@]}" --genetic-tech-part
+             --generations "$GENERATIONS" --population "$POPULATION" "${COMMON_OPTS[@]}")
+        [ -n "$TECH_NODES" ] && CMD+=(--tech-nodes "$TECH_NODES")
+        [ -n "$MAX_PARTITIONS" ] && CMD+=(--max-partitions "$MAX_PARTITIONS")
+        echo -e "${BLUE}Tech nodes: ${TECH_NODES:-(default)}, Generations: ${GENERATIONS}, Population: ${POPULATION}${NC}"
+        ;;
+    standard)
+        echo -e "${BLUE}Tech node: ${TECH}${NC}"
+        CMD=("$EXECUTABLE" "${DESIGN_ARGS[@]}" "$TECH" "${COMMON_OPTS[@]}")
+        ;;
+esac
+
+echo -e "${YELLOW}\$ ${CMD[*]}${NC}"
+echo
+"${CMD[@]}" 2>&1 | tee "${OUTPUT_DIR}/run.log"
+exit_code=${PIPESTATUS[0]}
+
+echo
+if [ "$exit_code" -eq 0 ]; then
+    echo -e "${GREEN}Run completed successfully. Files in ${OUTPUT_DIR}:${NC}"
+    ls -la "$OUTPUT_DIR"
 else
-    echo -e "${GREEN}Running standard partitioning for test case: ${TEST_CASE_NAME}${NC}"
-    echo -e "${BLUE}Tech node: ${DEFAULT_TECH}${NC}"
-    
-    # Run the executable with standard partitioning
-    "$EXECUTABLE" \
-        "$IO" \
-        "$LAYER" \
-        "$WAFER" \
-        "$ASSEMBLY" \
-        "$TEST" \
-        "$NETLIST" \
-        "$BLOCKS" \
-        "$DEFAULT_REACH" \
-        "$DEFAULT_SEPARATION" \
-        "$DEFAULT_TECH" \
-        --seed "$DEFAULT_SEED"
+    echo -e "${RED}Run failed with exit code $exit_code (log: ${OUTPUT_DIR}/run.log)${NC}"
 fi
-
-exit_code=$?
-if [ $exit_code -eq 0 ]; then
-    if [ "$USE_TECH_ENUM" = true ]; then
-        echo -e "${GREEN}Technology Enumeration completed successfully!${NC}"
-    elif [ "$USE_CANONICAL_GA" = true ]; then
-        echo -e "${GREEN}Canonical GA test completed successfully!${NC}"
-        
-        # List the output files from canonical GA
-        echo -e "${BLUE}Generated output files:${NC}"
-        ls -la "${BUILD_DIR}/bin/canonical_ga_result"*
-    else
-        echo -e "${GREEN}Test completed successfully!${NC}"
-    fi
-else
-    echo -e "${RED}Test failed with exit code $exit_code${NC}"
-fi
-
-if [ "$USE_TECH_ENUM" = true ] || [ "$USE_CANONICAL_GA" = true ]; then
-    echo -e "${CYAN}====================================================================${NC}"
-    echo -e "${CYAN}                     Test Script Completed                          ${NC}"
-    echo -e "${CYAN}====================================================================${NC}"
-fi 
+exit "$exit_code"

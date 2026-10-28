@@ -67,6 +67,17 @@
 // write the main here (accept arguments from command line)
 namespace chiplet {
 
+// Budget of the final (reporting) floorplan: steps x perturbations, split
+// across the SA workers. With per-step cooling rates of 0.9-0.99 the
+// temperature is frozen after ~1000 steps, so the previous 10000 x 10000
+// (6.25M perturbations per worker, ~30 s per run) was spent in a greedy
+// walk; 2000 x 1000 gives the same floorplans in well under a second.
+// Budget of the per-candidate feasibility floorplan run inside the parallel
+// refinement loop (per walker; two walkers per candidate).
+constexpr int kCandidateFloorplanSteps = 300;
+constexpr int kCandidateFloorplanPerturbs = 200;
+constexpr int kCandidateFloorplanWorkers = 2;
+
 #ifndef DISABLE_METIS
 // METIS header is now included through ChipletPart.h
 #endif
@@ -421,57 +432,51 @@ void ChipletPart::assignRemainingVerticesParallel(std::vector<int>& partition,
     changes_made = false;
     iterations++;
     
-    // Create a vector to track changes made in parallel
-    std::vector<bool> local_changes(omp_utils::get_max_threads(), false);
-    
     // First pass: assign based on neighbors
     if (num_vertices > threshold_for_parallel) {
-      // Parallel version for large graphs
-      #pragma omp parallel
-      {
-        int thread_id = omp_utils::get_thread_num();
+      // Parallel version for large graphs. Threads only READ `partition`
+      // (a snapshot of the previous round) and write their decision into a
+      // private slot of `proposed`; the assignments are applied sequentially
+      // afterwards. This avoids the read/write race on `partition` that the
+      // previous in-place version had.
+      std::vector<int> proposed(num_vertices, -1);
+      
+      #pragma omp parallel for schedule(dynamic, 64)
+      for (int v = 0; v < num_vertices; v++) {
+        if (partition[v] != -1) continue; // Skip already assigned vertices
         
-        #pragma omp for schedule(dynamic, 64)
-        for (int v = 0; v < num_vertices; v++) {
-          if (partition[v] != -1) continue; // Skip already assigned vertices
-          
-          // Find partition with most neighbors
-          std::unordered_map<int, int> neighbor_partitions;
-          for (int neighbor : hypergraph_->GetNeighbors(v)) {
-            if (partition[neighbor] != -1) {
-              neighbor_partitions[partition[neighbor]]++;
-            }
-          }
-          
-          // Assign to partition with most neighbors
-          int best_partition = -1;
-          int max_neighbors = 0;
-          
-          for (const auto& pair : neighbor_partitions) {
-            int p = pair.first;
-            int count = pair.second;
-            if (count > max_neighbors) {
-              max_neighbors = count;
-              best_partition = p;
-            }
-          }
-          
-          if (best_partition != -1) {
-            partition[v] = best_partition;
-            #pragma omp atomic
-            partition_sizes[best_partition]++;
-            local_changes[thread_id] = true;
+        // Find partition with most neighbors
+        std::unordered_map<int, int> neighbor_partitions;
+        for (int neighbor : hypergraph_->GetNeighbors(v)) {
+          if (partition[neighbor] != -1) {
+            neighbor_partitions[partition[neighbor]]++;
           }
         }
+        
+        // Assign to partition with most neighbors
+        int best_partition = -1;
+        int max_neighbors = 0;
+        
+        for (const auto& pair : neighbor_partitions) {
+          int p = pair.first;
+          int count = pair.second;
+          if (count > max_neighbors) {
+            max_neighbors = count;
+            best_partition = p;
+          }
+        }
+        
+        proposed[v] = best_partition;
       }
       
-      // Check if any thread made changes
-      for (bool thread_change : local_changes) {
-        if (thread_change) {
+      // Apply the proposals sequentially
+      for (int v = 0; v < num_vertices; v++) {
+        if (partition[v] == -1 && proposed[v] != -1) {
+          partition[v] = proposed[v];
+          partition_sizes[proposed[v]]++;
           changes_made = true;
-            break;
-          }
         }
+      }
     } else {
       // Sequential version for small graphs
       for (int v = 0; v < num_vertices; v++) {
@@ -885,43 +890,31 @@ std::vector<int> ChipletPart::kMeansClusteringParallel(const Eigen::MatrixXd& em
     
     // For large datasets, use parallel processing for point assignment
     if (num_points > large_dataset_threshold) {
-      // Array to track if any assignment changed
-      std::vector<bool> local_changed(omp_utils::get_max_threads(), false);
-      
-      // Assign points to nearest centroid in parallel
-      #pragma omp parallel
-      {
-        int thread_id = omp_utils::get_thread_num();
+      // Assign points to nearest centroid in parallel. `changed` is combined
+      // with an OpenMP reduction (std::vector<bool> packs bits, so per-thread
+      // writes to adjacent elements would race).
+      int num_changed = 0;
+      #pragma omp parallel for schedule(dynamic, 128) reduction(+:num_changed)
+      for (int i = 0; i < num_points; i++) {
+        double min_dist = std::numeric_limits<double>::max();
+        int best_cluster = 0;
         
-        #pragma omp for schedule(dynamic, 128)
-        for (int i = 0; i < num_points; i++) {
-          double min_dist = std::numeric_limits<double>::max();
-          int best_cluster = 0;
-          
-          for (int j = 0; j < k; j++) {
-            // Calculate Euclidean distance
-            double dist = (embedding.row(i) - centroids.row(j)).squaredNorm();
-            if (dist < min_dist) {
-              min_dist = dist;
-              best_cluster = j;
-            }
-          }
-          
-          // Update cluster assignment if changed
-          if (clusters[i] != best_cluster) {
-            clusters[i] = best_cluster;
-            local_changed[thread_id] = true;
+        for (int j = 0; j < k; j++) {
+          // Calculate Euclidean distance
+          double dist = (embedding.row(i) - centroids.row(j)).squaredNorm();
+          if (dist < min_dist) {
+            min_dist = dist;
+            best_cluster = j;
           }
         }
-      }
-      
-      // Check if any thread detected a change
-      for (bool thread_change : local_changed) {
-        if (thread_change) {
-          changed = true;
-          break;
+        
+        // Update cluster assignment if changed
+        if (clusters[i] != best_cluster) {
+          clusters[i] = best_cluster;
+          num_changed++;
         }
       }
+      changed = (num_changed > 0);
     } else {
       // For smaller datasets, use the original sequential approach
       for (int i = 0; i < num_points; i++) {
@@ -1010,182 +1003,6 @@ std::vector<int> ChipletPart::kMeansClusteringParallel(const Eigen::MatrixXd& em
   return clusters;
 }
 
-void ChipletPart::ReadChipletGraph(std::string hypergraph_file,
-                                   std::string chiplet_io_file) {
-  // read the chiplet_io_file_
-  if (!chiplet_io_file.empty()) {
-    pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file(chiplet_io_file.c_str());
-    if (!result) {
-      std::cerr << "Error: " << result.description() << std::endl;
-      return;
-    }
-    pugi::xml_node ios = doc.child("ios");
-    for (pugi::xml_node io = ios.child("io"); io; io = io.next_sibling("io")) {
-      // Read the 'type' attribute
-      std::string type = io.attribute("type").as_string();
-
-      // Read the 'reach' attribute
-      double reach = io.attribute("reach").as_double();
-
-      // Add to hash map
-      io_map_[type] = reach;
-    }
-  }
-
-  // read hypergraph file
-  std::ifstream hypergraph_file_input(hypergraph_file);
-  if (!hypergraph_file_input.is_open()) {
-    std::cerr << "Error: Cannot open hypergraph file " << hypergraph_file
-              << std::endl;
-    return;
-  }
-  // Check the number of vertices, number of hyperedges, weight flag
-  std::string cur_line;
-  std::getline(hypergraph_file_input, cur_line);
-  std::istringstream cur_line_buf(cur_line);
-  std::vector<int> stats{std::istream_iterator<int>(cur_line_buf),
-                         std::istream_iterator<int>()};
-  num_hyperedges_ = stats[0];
-  num_vertices_ = stats[1];
-  bool hyperedge_weight_flag = false;
-  bool vertex_weight_flag = false;
-  if (stats.size() == 3) {
-    if ((stats[2] % 10) == 1) {
-      hyperedge_weight_flag = true;
-    }
-    if (stats[2] >= 10) {
-      vertex_weight_flag = true;
-    }
-  }
-
-  // clear the related vectors
-  hyperedges_.clear();
-  hyperedge_weights_.clear();
-  vertex_weights_.clear();
-  hyperedges_.reserve(num_hyperedges_);
-  hyperedge_weights_.reserve(num_hyperedges_);
-  vertex_weights_.reserve(num_vertices_);
-  std::unordered_map<long long, std::vector<int>> distinct_hyperedges;
-
-  // Read hyperedge information
-  for (int i = 0; i < num_hyperedges_; i++) {
-    std::getline(hypergraph_file_input, cur_line);
-    if (hyperedge_weight_flag == true) {
-      std::istringstream cur_line_buf(cur_line);
-      std::vector<float> hvec{std::istream_iterator<float>(cur_line_buf),
-                              std::istream_iterator<float>()};
-      // each line is wt reach {vertex list}
-      // the first element is the weight, the second element is the reach
-      // the remaining elements are the vertex list
-      std::vector<float> hwt = {hvec[0]};
-      float reach = hvec[1];
-      float io_size = hvec[2];
-      io_sizes_.push_back(io_size);
-      reach_.push_back(reach);
-      std::vector<int> hyperedge(hvec.begin() + 3, hvec.end());
-      long long hash = 0;
-      for (auto &value : hyperedge) {
-        value--; // the vertex id starts from 1 in the hypergraph file
-        hash += value * value;
-      }
-
-      if (distinct_hyperedges.find(hash) != distinct_hyperedges.end()) {
-        continue;
-      } else {
-        distinct_hyperedges[hash] = hyperedge;
-      }
-
-      hyperedge_weights_.push_back(hwt);
-      hyperedges_.push_back(hyperedge);
-    } else {
-      std::istringstream cur_line_buf(cur_line);
-      std::vector<int> hyperedge{std::istream_iterator<int>(cur_line_buf),
-                                 std::istream_iterator<int>()};
-      for (auto &value : hyperedge) {
-        value--; // the vertex id starts from 1 in the hypergraph file
-      }
-      std::vector<float> hwts(hyperedge_dimensions_,
-                              1.0); // each dimension has the same weight
-      hyperedge_weights_.push_back(hwts);
-      hyperedges_.push_back(hyperedge);
-    }
-  }
-
-  // Read weight for vertices
-  for (int i = 0; i < num_vertices_; i++) {
-    if (vertex_weight_flag == true) {
-      std::getline(hypergraph_file_input, cur_line);
-      std::istringstream cur_line_buf(cur_line);
-      std::vector<float> vwts{std::istream_iterator<float>(cur_line_buf),
-                              std::istream_iterator<float>()};
-      vertex_weights_.push_back(vwts);
-    } else {
-      std::vector<float> vwts(vertex_dimensions_, 1.0);
-      vertex_weights_.push_back(vwts);
-    }
-  }
-
-  hypergraph_ = std::make_shared<Hypergraph>(
-      vertex_dimensions_, hyperedge_dimensions_, hyperedges_, vertex_weights_,
-      hyperedge_weights_, reach_, io_sizes_);
-  std::cout << "[INFO] Number of IP blocks in chiplet graph: " << num_vertices_
-            << std::endl;
-  std::cout << "[INFO] Number of nets in chiplet graph: " << hyperedges_.size()
-            << std::endl;
-}
-
-void ChipletPart::TechAssignPartition(
-    std::string chiplet_io_file,
-    std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
-    std::string chiplet_assembly_process_file, std::string chiplet_test_file,
-    std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-    float reach, float separation, std::vector<std::string> techs) {
-  // seed the rng_ with 0
-  rng_.seed(seed_);
-  auto start_time = std::chrono::high_resolution_clock::now();
-  // Generate the hypergraph from XML files
-  ReadChipletGraphFromXML(chiplet_io_file, chiplet_netlist_file, chiplet_blocks_file);
-
-  GeneticTechPart(chiplet_io_file, chiplet_layer_file, chiplet_wafer_process_file,
-              chiplet_assembly_process_file, chiplet_test_file, chiplet_netlist_file,
-              chiplet_blocks_file, reach, separation, techs);
-  /*GeneticPart(chiplet_io_file, chiplet_layer_file, chiplet_wafer_process_file,
-              chiplet_assembly_process_file, chiplet_test_file, chiplet_netlist_file,
-              chiplet_blocks_file, reach, separation, techs);*/
-
-  auto end_time = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double> elapsed_time = end_time - start_time;
-  std::cout << "[INFO] Total time taken for tech-aware ChipletPart: "
-            << elapsed_time.count() << "s" << std::endl;
-}
-
-void ChipletPart::CreateMatingPool(
-    const std::vector<std::vector<std::string>> &population,
-    const std::vector<float> &fitness,
-    std::vector<std::vector<std::string>> &mating_pool) {
-
-  mating_pool.clear(); // Clear existing entries in mating pool
-  std::vector<int> indices(population.size());
-  for (size_t i = 0; i < indices.size(); ++i) {
-    indices[i] = i;
-  }
-
-  // Sorting indices based on fitness values (descending order)
-  std::sort(indices.begin(), indices.end(), [&](const int &a, const int &b) {
-    return fitness[a] < fitness[b];
-  });
-
-  // Select the best individuals to fill the mating pool
-  mating_pool.reserve(population_size_);
-
-  int idx = 0;
-  while (mating_pool.size() < population_size_) {
-    mating_pool.push_back(population[indices[idx]]);
-    idx = (idx + 1) % indices.size(); // Wrap around if needed
-  }
-}
-
 void ChipletPart::GeneticTechPart(
     std::string chiplet_io_file,
     std::string chiplet_layer_file, 
@@ -1232,9 +1049,13 @@ void ChipletPart::GeneticTechPart(
   Console::TableRow({"Min Partitions", std::to_string(min_partitions)}, widths);
   Console::TableRow({"Max Partitions", std::to_string(max_partitions)}, widths);
   Console::TableRow({"Output Prefix", output_prefix}, widths);
+  Console::TableRow({"Output directory", output_dir_}, widths);
   Console::TableRow({"Random Seed", std::to_string(seed_)}, widths);
   std::cout << std::endl;
   
+  default_reach_ = reach;
+  separation_ = separation;
+
   // Ensure hypergraph is built
   if (hypergraph_ == nullptr) {
     Console::Info("Building hypergraph from provided files...");
@@ -1297,8 +1118,8 @@ void ChipletPart::GeneticTechPart(
   Console::TableRow({"Execution Time (seconds)", std::to_string(duration)}, widths);
   std::cout << std::endl;
   
-  // Save results to files
-  output_prefix = chiplet_netlist_file + "." + output_prefix;
+  // Save results to files (<output_dir>/<netlist basename>.<prefix>.*)
+  output_prefix = OutputPath(chiplet_netlist_file + "." + output_prefix);
   partitioner.SaveResults(solution, output_prefix);
   
   // Store the solution in our class for further use if needed
@@ -1308,334 +1129,6 @@ void ChipletPart::GeneticTechPart(
   Console::Success("Enhanced genetic algorithm completed successfully!");
 }
 
-
-void ChipletPart::GeneticPart(
-    std::string chiplet_io_file,
-    std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
-    std::string chiplet_assembly_process_file, std::string chiplet_test_file,
-    std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-    float reach, float separation, std::vector<std::string> &tech_nodes) {
-
-  // Generate the hypergraph from XML files
-  ReadChipletGraphFromXML(chiplet_io_file, chiplet_netlist_file, chiplet_blocks_file);
-
-  int no_improvement_counter = 0;
-  int max_no_improvement_generations = 2;
-  const std::string hseparator(60, '='); // Creates a separator line
-  std::cout << hseparator << std::endl;
-  std::cout << std::setw((hseparator.size() + 10) / 2)
-            << "RUNNING GENETIC ALGORITHM! " << std::endl;
-  std::cout << hseparator << std::endl;
-
-  // the objective of the genetic algorithm is to find
-  // a near optimal assignment of tech nodes to partitions
-  // such that the cost of the assignment is minimized
-  // the cost of running a partition with a given tech
-  // node is obtained from the function QuickPart
-
-  // the genetic algorithm is implemented as follows:
-  // 1. generate the initial population
-  // 2. evaluate the fitness of each individual
-  // 3. select the best individuals
-  // 4. crossover the best individuals
-  // 5. mutate the best individuals
-  // 6. repeat steps 2-5 until the stopping criteria is met
-
-  // the stopping criteria is met when the number of generations
-  // is reached or the cost of the best individual does not change
-  // for a given number of generations or an early threshold is set
-
-  auto CrossOver = [this](std::vector<std::string> &parent1,
-                          std::vector<std::string> &parent2) {
-    // Determine the minimum size of the two parents
-    size_t min_size = std::min(parent1.size(), parent2.size());
-
-    // Create the child with the size of the shorter parent
-    std::vector<std::string> child(min_size);
-
-    // Generate a crossover point based on the shorter parent
-    std::uniform_int_distribution<int> uni_dist(0, min_size - 1);
-    int c = uni_dist(rng_);
-
-    // Perform the crossover, up to the min size
-    for (size_t i = 0; i < min_size; ++i) {
-      child[i] = (i < c) ? parent1[i] : parent2[i];
-    }
-
-    return child;
-  };
-
-  auto Mutate = [this](std::vector<std::string> &individual,
-                       std::vector<std::string> &tech_nodes) {
-    std::uniform_int_distribution<int> part_dist(0, num_parts_ - 1);
-    std::uniform_int_distribution<int> tech_dist(0, tech_nodes.size() - 1);
-    individual[part_dist(rng_)] = tech_nodes[tech_dist(rng_)];
-  };
-
-  // step 1 begins
-
-  std::vector<std::vector<std::string>> population;
-  std::vector<float> fitness;
-  std::vector<std::string> best_individual;
-  std::vector<int> best_partition;
-  float best_cost = std::numeric_limits<float>::max();
-  int num_generations = 20;
-  int num_individuals = 10;
-  // Use the already-set seed from seed_ parameter
-  num_parts_ = tech_nodes.size();
-
-  // assign the three technodes to num_parts_
-  for (int i = 0; i < num_individuals; i++) {
-    std::vector<std::string> individual;
-    // Use rng_ rather than rand()
-    int num_parts = std::uniform_int_distribution<int>(1, 8)(rng_);
-    for (int j = 0; j < num_parts; j++) {
-      individual.push_back(tech_nodes[std::uniform_int_distribution<int>(0, tech_nodes.size() - 1)(rng_)]);
-    }
-    population.push_back(individual);
-  }
-
-  bool done = false;
-  const std::string separator(60, '*'); // Creates a separator line
-  for (int i = 0; i < num_generations_; ++i) {
-    std::cout << separator << std::endl;
-    std::cout << "[INFO] Starting [generation " << i << "] with [population "
-              << population.size() << "]" << std::endl;
-    std::cout << separator << std::endl;
-    // print the technodes for this generation
-    for (int j = 0; j < population.size(); ++j) {
-      std::cout << "[INFO] Individual " << j << ": ";
-      for (auto &tech : population[j]) {
-        std::cout << tech << " ";
-      }
-      std::cout << std::endl;
-    }
-    if (population.size() < num_individuals) {
-      std::cerr << "Error: Population size is less than the number of "
-                   "individuals"
-                << std::endl;
-      return;
-    }
-    // 1. Evaluate fitness
-    for (int j = 0; j < population.size(); ++j) {
-      // print the individual
-      auto part_tuple =
-          QuickPart(chiplet_io_file, chiplet_layer_file,
-                    chiplet_wafer_process_file, chiplet_assembly_process_file,
-                    chiplet_test_file, chiplet_netlist_file,
-                    chiplet_blocks_file, reach, separation, population[j]);
-      float cost = std::get<0>(part_tuple);
-      std::cout << "[INFO] Cost for individual " << j << " is " << cost
-                << std::endl;
-      std::vector<int> part = std::get<1>(part_tuple);
-      int num_parts = std::set<int>(part.begin(), part.end()).size();
-      fitness.push_back(cost);
-      if (cost < best_cost) {
-        best_cost = cost;
-        best_partition = std::get<1>(part_tuple);
-        best_individual = population[j];
-      }
-    }
-
-    // print the best cost for this generation and its tech assignment
-    std::cout << "[INFO] Best cost for generation " << i << " is " << best_cost
-              << " for "
-              << *std::max_element(best_partition.begin(),
-                                   best_partition.end()) +
-                     1
-              << " partitions" << std::endl;
-
-    std::cout << "[INFO] Best individual for generation " << i << ": ";
-    for (int j = 0; j < best_individual.size(); j++) {
-      std::cout << best_individual[j] << " ";
-    }
-
-    std::cout << std::endl;
-
-    // 2. Selection
-    std::vector<std::vector<std::string>> mating_pool;
-    CreateMatingPool(population, fitness, mating_pool);
-
-    // 3. Crossover
-    std::vector<std::vector<std::string>> new_population;
-
-    for (size_t j = 0; j < mating_pool.size() / 2; ++j) {
-      // Debug prints for mating pool access
-      if (2 * j < mating_pool.size() && 2 * j + 1 < mating_pool.size()) {
-        std::vector<std::string> parent1 = mating_pool[2 * j];
-        std::vector<std::string> parent2 = mating_pool[2 * j + 1];
-        std::vector<std::string> child1 = CrossOver(parent1, parent2);
-        std::vector<std::string> child2 = CrossOver(parent2, parent1);
-        new_population.push_back(child1);
-        new_population.push_back(child2);
-      } else {
-        std::cout << "Error: Out of bounds access to mating pool!" << std::endl;
-        break;
-      }
-    }
-
-    // 4. Mutation
-    std::uniform_real_distribution<float> mutation_dist(0.0, 1.0);
-    for (auto &individual : new_population) {
-      if (mutation_dist(rng_) < mutation_rate_) {
-        Mutate(individual, tech_nodes);
-      }
-    }
-
-    // Optional: Elitism - Retain some of the best individuals from the old
-    // population
-    int elitism_count = 2; // Keep the top 2 individuals
-
-    // sort the population based on fitness
-    std::vector<int> indices(population.size());
-    for (size_t j = 0; j < indices.size(); ++j) {
-      indices[j] = j;
-    }
-
-    // Sorting indices based on fitness values (ascending order)
-
-    std::sort(indices.begin(), indices.end(), [&](const int &a, const int &b) {
-      return fitness[a] < fitness[b];
-    });
-
-    // now sort the population based on the indices
-    std::vector<std::vector<std::string>> sorted_population;
-    std::vector<float> sorted_fitness;
-    for (size_t j = 0; j < indices.size(); ++j) {
-      sorted_population.push_back(population[indices[j]]);
-      sorted_fitness.push_back(fitness[indices[j]]);
-    }
-
-    population = sorted_population;
-
-    // Keep the elite individuals
-    std::vector<std::vector<std::string>> elite_individuals(
-        population.begin(), population.begin() + elitism_count);
-
-    // Replace the old population with the new population, but add back the
-    // elite
-    new_population.insert(new_population.end(), elite_individuals.begin(),
-                          elite_individuals.end());
-    population = new_population;
-
-    // Sort population by fitness if not already sorted
-    std::sort(fitness.begin(), fitness.end(), std::greater<float>());
-
-    if (i > gen_threshold_) {
-      if (best_cost <= fitness[0]) {
-        no_improvement_counter++;
-      } else {
-        no_improvement_counter = 0; // Reset if there's improvement
-        best_cost = fitness[0];     // Update best cost
-      }
-
-      // Stop if no improvement for a certain number of generations
-      if (no_improvement_counter >= max_no_improvement_generations) {
-        done = true;
-        break;
-      }
-    }
-
-    if (done) {
-      break;
-    }
-  }
-
-  // write the best partition to a file
-  std::ofstream partition_output("tech_assignment.chipletpart.parts." +
-                                 std::to_string(num_parts_));
-
-  for (auto &part : best_partition) {
-    partition_output << part << std::endl;
-  }
-
-  partition_output.close();
-
-  std::cout << "[INFO] Best cost for the tech assignment is " << best_cost
-            << std::endl;
-  std::cout << "[INFO] Best individual for the tech assignment: ";
-  for (int j = 0; j < best_individual.size(); j++) {
-    std::cout << best_individual[j] << " ";
-  }
-  std::cout << std::endl;
-
-  // write the best individual to a file
-  std::ofstream tech_assignment_file("tech_assignment.chipletpart.techs." +
-                                     std::to_string(num_parts_));
-  for (auto &tech : best_individual) {
-    tech_assignment_file << tech << std::endl;
-  }
-
-  tech_assignment_file.close();
-}
-
-std::tuple<float, std::vector<int>> ChipletPart::InitQuickPart(
-    std::string chiplet_io_file,
-    std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
-    std::string chiplet_assembly_process_file, std::string chiplet_test_file,
-    std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-    float reach, float separation, std::vector<std::string> &tech_nodes) {
-  Matrix<float> upper_block_balance;
-  Matrix<float> lower_block_balance;
-  std::vector<float> zero_vector(vertex_dimensions_, 0.0);
-  // removing balance constraints
-  for (int i = 0; i < num_parts_; i++) {
-    upper_block_balance.emplace_back(hypergraph_->GetTotalVertexWeights());
-    lower_block_balance.emplace_back(zero_vector);
-  }
-
-  num_parts_ = tech_nodes.size();
-  // Do num_parts-way cuts
-  std::vector<int> kway_partition = METISPart(num_parts_);
-  // remove all part.* files
-  std::string command = "rm -f .part.*";
-  int status = system(command.c_str());
-
-  std::vector<int> reaches(hypergraph_->GetNumHyperedges(), reach);
-  
-  // Return the METIS partition and a placeholder cost of 0.0
-  return std::make_tuple(0.0, kway_partition);
-}
-
-std::tuple<float, std::vector<int>> ChipletPart::QuickPart(
-    std::string chiplet_io_file,
-    std::string chiplet_layer_file, std::string chiplet_wafer_process_file,
-    std::string chiplet_assembly_process_file, std::string chiplet_test_file,
-    std::string chiplet_netlist_file, std::string chiplet_blocks_file,
-    float reach, float separation, std::vector<std::string> &tech_nodes) {
-  rng_.seed(seed_);
-  num_parts_ = tech_nodes.size();
-  auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
-
-  // Pre-allocate vectors to avoid resizing
-  std::vector<std::vector<int>> init_partitions;
-
-  // Prepare upper and lower block balance
-  std::vector<float> total_weights = hypergraph_->GetTotalVertexWeights();
-  Matrix<float> upper_block_balance(num_parts_, total_weights);
-  Matrix<float> lower_block_balance(
-      num_parts_, std::vector<float>(vertex_dimensions_, 0.0));
-
-  if (num_parts_ == 1) {
-    std::vector<int> partition(hypergraph_->GetNumVertices(), 0);
-    init_partitions.push_back(partition);
-  } else {
-    init_partitions.push_back(METISPart(num_parts_));
-  }
-
-  // Remove .part.* files safely
-  if (std::filesystem::exists(".part.*")) {
-    std::filesystem::remove_all(
-        ".part.*"); // C++17 feature, faster than system call
-  }
-
-  // Define variables with default values
-  float best_cost = 0.0;
-  int best_partition_idx = 0;
-  
-  float cost = 0.0; // Define cost variable with default value
-  return std::make_tuple(cost, init_partitions[best_partition_idx]);
-}
 
 void ChipletPart::Partition(
     std::string chiplet_io_file,
@@ -1665,8 +1158,12 @@ void ChipletPart::Partition(
   Console::TableRow({"Reach", std::to_string(reach)}, widths);
   Console::TableRow({"Separation", std::to_string(separation)}, widths);
   Console::TableRow({"Technology", tech}, widths);
+  Console::TableRow({"Output directory", output_dir_}, widths);
   std::cout << std::endl;
   
+  default_reach_ = reach;
+  separation_ = separation;
+
   // Generate the hypergraph from XML files
   ReadChipletGraphFromXML(chiplet_io_file, chiplet_netlist_file, chiplet_blocks_file);
   
@@ -1683,7 +1180,7 @@ void ChipletPart::Partition(
   
   // Create a ChipletRefiner with cost model files to test initialization
   Console::Info("Creating ChipletRefiner with cost model files to test initialization");
-  std::vector<int> reaches(hypergraph_->GetNumHyperedges(), 2);
+  std::vector<int> reaches(hypergraph_->GetNumHyperedges(), reach);
   auto refiner = std::make_shared<chiplet::ChipletRefiner>(
       num_parts_,                   // num_parts
       refine_iters_,                // refiner_iters
@@ -1699,6 +1196,7 @@ void ChipletPart::Partition(
       chiplet_blocks_file           // blocks_file
   );
   
+  refiner->SetSeparation(separation);
   if (hypergraph_->GetNumVertices() > 200) {
     refiner->SetBoundary();
   }
@@ -1727,10 +1225,8 @@ void ChipletPart::Partition(
   init_partitions.reserve(10); // assuming we need to store around 10 partitions
 
   // Prepare upper and lower block balance
-  std::vector<float> total_weights = hypergraph_->GetTotalVertexWeights();
-  Matrix<float> upper_block_balance(num_parts_, total_weights);
-  Matrix<float> lower_block_balance(
-      num_parts_, std::vector<float>(vertex_dimensions_, 0.0));
+  auto [upper_block_balance, lower_block_balance] =
+      BuildBalanceBounds(hypergraph_, num_parts_, ub_factor_);
 
   // Step 1: Run spectral partition - already parallelized in the implementation
   std::vector<int> init_spec_partition = SpectralPartition();
@@ -1810,6 +1306,7 @@ void ChipletPart::Partition(
     std::vector<float> x_locations;
     std::vector<float> y_locations;
     bool valid;
+    FloorplanSeed fp_seed;  // best floorplan arrangement known for this candidate
   };
   
   // Vector to store results from all partitions
@@ -2116,35 +1613,43 @@ void ChipletPart::Partition(
   
   auto start_parallel_time = std::chrono::high_resolution_clock::now();
   
+  // One refiner per thread (constructing one re-parses every cost-model
+  // input file; doing that per candidate dominated the runtime). All
+  // per-candidate state (num_parts, tech array, aspect ratios, locations)
+  // is reset below before each use.
+  auto make_thread_refiner = [&]() {
+    auto r = std::make_shared<chiplet::ChipletRefiner>(
+        num_parts_,                   // num_parts
+        refine_iters_,                // refiner_iters
+        max_moves_,                   // max_move
+        std::vector<int>(hypergraph_->GetNumHyperedges(), reach), // reaches
+        floorplanning,
+        chiplet_io_file,              // io_file
+        chiplet_layer_file,           // layer_file
+        chiplet_wafer_process_file,   // wafer_process_file
+        chiplet_assembly_process_file, // assembly_process_file
+        chiplet_test_file,            // test_file
+        chiplet_netlist_file,         // netlist_file
+        chiplet_blocks_file           // blocks_file
+    );
+    r->SetSeparation(separation);
+    if (hypergraph_->GetNumVertices() > 200) {
+      r->SetBoundary();
+    }
+    return r;
+  };
+
   // Process all partitions in parallel
   #if HAVE_OPENMP
   #pragma omp parallel num_threads(num_threads)
   {
+    auto thread_refiner = make_thread_refiner();
     #pragma omp for schedule(dynamic)
     for (size_t i = 0; i < init_partitions.size(); i++) {
   #else
+  auto thread_refiner = make_thread_refiner();
   for (size_t i = 0; i < init_partitions.size(); i++) {
   #endif
-      // Create a thread-local copy of the refiner
-      auto thread_refiner = std::make_shared<chiplet::ChipletRefiner>(
-          num_parts_,                   // num_parts
-          refine_iters_,                // refiner_iters
-          max_moves_,                   // max_move
-          std::vector<int>(hypergraph_->GetNumHyperedges(), 2), // reaches
-          floorplanning,
-          chiplet_io_file,              // io_file
-          chiplet_layer_file,           // layer_file
-          chiplet_wafer_process_file,   // wafer_process_file
-          chiplet_assembly_process_file, // assembly_process_file
-          chiplet_test_file,            // test_file
-          chiplet_netlist_file,         // netlist_file
-          chiplet_blocks_file           // blocks_file
-      );
-
-      if (hypergraph_->GetNumVertices() > 200) {
-        thread_refiner->SetBoundary();
-      }
-      
       // Get a copy of the partition to work with
       std::vector<int> partition_copy = init_partitions[i];
       
@@ -2159,19 +1664,13 @@ void ChipletPart::Partition(
       thread_refiner->SetAspectRatios(aspect_ratios);
       thread_refiner->SetXLocations(x_locations);
       thread_refiner->SetYLocations(y_locations);
+      thread_refiner->SetFloorplanAware(floorplan_aware_);
+      thread_refiner->SetFloorplanCheckBudget(fp_check_steps_, fp_check_perturbs_);
+      thread_refiner->ResetFloorplanProbeState();
       
-      // Set up balance constraints
-      // Use the exact number of partitions found in this specific partition
-      Matrix<float> upper_block_balance(num_parts, std::vector<float>(vertex_dimensions_, 0.0));
-      Matrix<float> lower_block_balance(num_parts, std::vector<float>(vertex_dimensions_, 0.0));
-      
-      // Calculate total weights for this specific partition
-      for (int j = 0; j < vertex_dimensions_; j++) {
-        for (int k = 0; k < num_parts; k++) {
-          upper_block_balance[k][j] = 
-            std::accumulate(total_weights.begin(), total_weights.end(), 0.0f) * ub_factor_ / num_parts;
-        }
-      }
+      // Balance bounds sized to this candidate's number of partitions
+      auto [upper_block_balance, lower_block_balance] =
+          BuildBalanceBounds(hypergraph_, num_parts, ub_factor_);
       
       // Run floorplanner with the correct number of partitions
       std::vector<float> result_aspect_ratios;
@@ -2198,7 +1697,6 @@ void ChipletPart::Partition(
         thread_refiner->SetYLocations(result_y_locations);
         
         // Run refinement
-        float initial_cost = thread_refiner->GetCostFromScratch(partition_copy);
         thread_refiner->Refine(hypergraph_, upper_block_balance, lower_block_balance, partition_copy);
         
         // Run KL refinement after FM refinement
@@ -2235,6 +1733,19 @@ void ChipletPart::Partition(
         
         float final_cost = thread_refiner->GetCostFromScratch(partition_copy);
         int final_num_parts = *std::max_element(partition_copy.begin(), partition_copy.end()) + 1;
+
+        // Feasibility of the refined candidate: a moderate floorplan run
+        // (the final, larger run below only sees the winner).
+        if (floorplan_aware_) {
+          thread_refiner->SetFloorplanWorkers(kCandidateFloorplanWorkers);
+          auto fp = thread_refiner->RunFloorplanner(
+              partition_copy, hypergraph_,
+              kCandidateFloorplanSteps, kCandidateFloorplanPerturbs, 0.00001);
+          result_aspect_ratios = std::get<0>(fp);
+          result_x_locations = std::get<1>(fp);
+          result_y_locations = std::get<2>(fp);
+          success = std::get<3>(fp);
+        }
         // Store results for this partition
         PartitionResult result;
         result.partition_idx = i;
@@ -2245,6 +1756,7 @@ void ChipletPart::Partition(
         result.x_locations = result_x_locations;
         result.y_locations = result_y_locations;
         result.valid = success;
+        result.fp_seed = thread_refiner->GetFloorplanSeed();
         
         // Thread-safe update of results vector
         {
@@ -2260,10 +1772,11 @@ void ChipletPart::Partition(
       {
         std::lock_guard<std::mutex> lock(results_mutex);
         float progress = static_cast<float>(completed) / init_partitions.size();
-        int num_parts_processed = *std::max_element(partition_copy.begin(), partition_copy.end()) + 1;
-        float cost_processed = thread_refiner->GetCostFromScratch(partition_copy);
-        //Console::Info("Processed partition has " + 
-        //         std::to_string(num_parts_processed) + " parts" + " and cost: " + std::to_string(cost_processed));
+        Console::Info("Candidate " + std::to_string(i) + ": " + std::to_string(result.num_parts) +
+                 " parts, cost " + std::to_string(result.cost) +
+                 (floorplanning || floorplan_aware_
+                      ? std::string(", floorplan ") + (result.valid ? "feasible" : "infeasible")
+                      : std::string()));
         Console::Info("Processed " + std::to_string(completed) + " partitions out of " + 
                  std::to_string(init_partitions.size()) + " (" + 
                  std::to_string(static_cast<int>(progress * 100)) + "%)");
@@ -2283,16 +1796,65 @@ void ChipletPart::Partition(
   Console::Success("Parallel floorplanning and refinement completed in " + 
            std::to_string(elapsed_parallel_time) + " seconds");
   
-  // Find the best partition based on cost
+  // Find the best partition: feasible candidates first (when feasibility is
+  // known), then by cost (lower is better).
+  const bool feasibility_known = floorplanning || floorplan_aware_;
   if (!partition_results.empty()) {
-    // Sort results by cost (lower is better)
     std::sort(partition_results.begin(), partition_results.end(),
-              [](const PartitionResult& a, const PartitionResult& b) {
+              [feasibility_known](const PartitionResult& a, const PartitionResult& b) {
+                if (feasibility_known && a.valid != b.valid) {
+                  return a.valid;
+                }
                 return a.cost < b.cost;
               });
+
+    // Final floorplan (large budget). If the top candidate turns out to be
+    // infeasible under the larger run, fall back to the next candidates
+    // that passed the per-candidate check before giving up.
+    refiner->SetFloorplanVerbose(true);
+    refiner->SetFloorplanWorkers(fp_workers_);
+    using FloorResult =
+        std::tuple<std::vector<float>, std::vector<float>, std::vector<float>, bool>;
+    size_t best_idx = 0;
+    FloorResult floor_result;      // floorplan of the reported candidate
+    FloorResult first_floor_result;
+    const size_t max_final_tries = feasibility_known
+        ? std::min<size_t>(partition_results.size(), 3) : 1;
+    for (size_t t = 0; t < max_final_tries; ++t) {
+      auto& cand = partition_results[t];
+      if (t > 0 && !cand.valid) {
+        break;  // only candidates that passed the per-candidate check
+      }
+      refiner->SetNumParts(cand.num_parts);
+      refiner->SetAspectRatios(cand.aspect_ratios);
+      refiner->SetXLocations(cand.x_locations);
+      refiner->SetYLocations(cand.y_locations);
+      refiner->SetFloorplanAware(floorplan_aware_);
+      refiner->SetFloorplanSeed(cand.fp_seed);
+      Console::Info("Final floorplan of candidate " + std::to_string(cand.partition_idx) +
+                    " (" + std::to_string(cand.num_parts) + " parts, cost " +
+                    std::to_string(cand.cost) + ")");
+      FloorResult fr = refiner->RunFloorplanner(
+          cand.partition, hypergraph_, final_fp_steps_, final_fp_perturbs_, 0.00001);
+      cand.valid = std::get<3>(fr);
+      if (t == 0) {
+        first_floor_result = fr;
+      }
+      if (cand.valid) {
+        cand.aspect_ratios = std::get<0>(fr);
+        cand.x_locations = std::get<1>(fr);
+        cand.y_locations = std::get<2>(fr);
+        best_idx = t;
+        floor_result = fr;
+        break;
+      }
+      Console::Warning("Candidate " + std::to_string(cand.partition_idx) +
+                       " is not floorplan-feasible under the final budget");
+      floor_result = first_floor_result;  // nothing feasible yet: report the cheapest
+    }
     
     // Get the best result
-    const auto& best_result = partition_results[0];
+    const auto& best_result = partition_results[best_idx];
     
     // Display the best partition with nice formatting
     Console::Header("Best Partition Results");
@@ -2314,7 +1876,12 @@ void ChipletPart::Partition(
     Console::TableRow({"Partition index", std::to_string(best_result.partition_idx)}, result_widths);
     Console::TableRow({"Number of parts", std::to_string(best_result.num_parts)}, result_widths);
     Console::TableRow({"Cost", std::to_string(best_result.cost)}, result_widths);
-    Console::TableRow({"Feasibility", best_result.valid ? "Yes" : "No"}, result_widths);
+    // Per-candidate feasibility is only known when the per-candidate
+    // floorplanner ran; otherwise the final floorplan decides.
+    const auto feasible_str = [&](bool valid) -> std::string {
+      return feasibility_known ? (valid ? "Yes" : "No") : "n/a";
+    };
+    Console::TableRow({"Feasibility", feasible_str(best_result.valid)}, result_widths);
     Console::TableRow({"Aspect Ratios", aspect_ratios_str}, result_widths);
     std::cout << std::endl;
     
@@ -2330,7 +1897,7 @@ void ChipletPart::Partition(
       int max_to_show = std::min(3, static_cast<int>(partition_results.size()));
       for (int i = 0; i < max_to_show; i++) {
         const auto& result = partition_results[i];
-        std::string success = result.valid ? "Yes" : "No";
+        std::string success = feasible_str(result.valid);
         Console::TableRow({
           std::to_string(i+1), 
           std::to_string(result.partition_idx),
@@ -2342,17 +1909,15 @@ void ChipletPart::Partition(
       std::cout << std::endl;
     }
     
-    // Update refiner with best results for potential future use
-    refiner->SetAspectRatios(best_result.aspect_ratios);
-    refiner->SetXLocations(best_result.x_locations);
-    refiner->SetYLocations(best_result.y_locations);
-    std::vector<int> best_partition = best_result.partition;
-    auto floor_result = refiner->RunFloorplanner(
-      best_partition, hypergraph_, 10000, 10000, 0.00001);
-      std::string success = std::get<3>(floor_result) ? "Yes" : "No";
+    std::string success = std::get<3>(floor_result) ? "Yes" : "No";
     Console::Info("Floorplanner results: " + success);
+    // Machine-readable summary lines (same wording as the other modes; the
+    // run_*.sh scripts grep for these).
+    Console::Success("Best cost: " + std::to_string(best_result.cost));
+    Console::Success("Number of partitions: " + std::to_string(best_result.num_parts));
+    Console::Success("Floorplan feasibility: " + std::string(std::get<3>(floor_result) ? "1" : "0"));
 
-    std::string partition_file = chiplet_netlist_file + ".cpart." + std::to_string(best_result.num_parts);
+    std::string partition_file = OutputPath(chiplet_netlist_file + ".cpart." + std::to_string(best_result.num_parts));
 
     // Save the best partition to file
     std::ofstream partition_output(partition_file);
@@ -2421,19 +1986,13 @@ void ChipletPart::EvaluatePartition(
   std::cout << "[INFO] Separation: " << separation << std::endl;
   std::cout << "[INFO] Tech: " << tech << std::endl;
 
+  default_reach_ = reach;
+  separation_ = separation;
+
   // Generate the hypergraph from XML files
   ReadChipletGraphFromXML(chiplet_io_file, chiplet_netlist_file, chiplet_blocks_file);
 
   auto start_time_stamp_global = std::chrono::high_resolution_clock::now();
-  Matrix<float> upper_block_balance;
-  Matrix<float> lower_block_balance;
-  std::vector<float> zero_vector(vertex_dimensions_, 0.0);
-  // removing balance constraints
-  for (int i = 0; i < num_parts_; i++) {
-    upper_block_balance.emplace_back(hypergraph_->GetTotalVertexWeights());
-    lower_block_balance.emplace_back(zero_vector);
-  }
-
   std::vector<int> partition;
 
   // read hypergraph partitioning file
@@ -2453,6 +2012,10 @@ void ChipletPart::EvaluatePartition(
 
   num_parts_ = num_parts + 1;
   std::cout << "[INFO] Number of partitions: " << num_parts_ << std::endl;
+  // Balance bounds sized to the partition count read from the file (they used
+  // to be built from the default num_parts_ before the file was read).
+  auto [upper_block_balance, lower_block_balance] =
+      BuildBalanceBounds(hypergraph_, num_parts_, ub_factor_);
   std::vector<int> reaches(hypergraph_->GetNumHyperedges(), reach);
 
   // set max moves to 50% of the number of vertices
@@ -2482,6 +2045,7 @@ void ChipletPart::EvaluatePartition(
       chiplet_netlist_file,         // netlist_file
       chiplet_blocks_file           // blocks_file
   );
+  refiner->SetSeparation(separation);
   
   if (hypergraph_->GetNumVertices() > 200) {
     refiner->SetBoundary();
@@ -2494,7 +2058,9 @@ void ChipletPart::EvaluatePartition(
     Console::Error("Cost model was NOT initialized in the ChipletRefiner constructor");
   }
 
-  auto floor_result = refiner->RunFloorplanner(partition, hypergraph_, 10000, 10000, 0.00001);
+  refiner->SetFloorplanVerbose(true);
+  refiner->SetFloorplanWorkers(fp_workers_);
+  auto floor_result = refiner->RunFloorplanner(partition, hypergraph_, final_fp_steps_, final_fp_perturbs_, 0.00001);
       
   std::vector<float> result_aspect_ratios = std::get<0>(floor_result);
   std::vector<float> result_x_locations = std::get<1>(floor_result);
@@ -2503,7 +2069,8 @@ void ChipletPart::EvaluatePartition(
   refiner->SetAspectRatios(result_aspect_ratios);
   refiner->SetXLocations(result_x_locations);
   refiner->SetYLocations(result_y_locations);
-  std::vector<std::string> tech_array(num_parts, tech);
+  // One tech entry per partition (num_parts_ = max id + 1; num_parts is the max id)
+  std::vector<std::string> tech_array(num_parts_, tech);
   refiner->SetTechArray(tech_array);
         
   // Run refinement
@@ -3178,6 +2745,10 @@ void ChipletPart::ReadChipletGraphFromXML(std::string chiplet_io_file,
 
       // Add to hash map
       io_map_[type] = reach;
+      IoCellInfo info;
+      info.cell_area = io.attribute("tx_area").as_float(0.0f) + io.attribute("rx_area").as_float(0.0f);
+      info.cell_bandwidth = io.attribute("bandwidth").as_float(0.0f);
+      io_cell_info_[type] = info;
     }
   } else {
     std::cerr << "Error: No IO file specified" << std::endl;
@@ -3198,13 +2769,14 @@ void ChipletPart::ReadChipletGraphFromXML(std::string chiplet_io_file,
             << std::endl;
             
   // Write vertex mapping file for debugging/reference
-  std::ofstream map_file("output.map");
+  const std::string map_path = OutputPath(chiplet_netlist_file + ".map");
+  std::ofstream map_file(map_path);
   if (map_file.is_open()) {
-    for (const auto& pair : vertex_index_to_name_) {
-      map_file << pair.first + 1 << " " << pair.second << std::endl;
+    for (int i = 0; i < num_vertices_; i++) {
+      map_file << i + 1 << " " << vertex_index_to_name_[i] << std::endl;
     }
     map_file.close();
-    std::cout << "[INFO] Wrote vertex mapping to output.map" << std::endl;
+    std::cout << "[INFO] Wrote vertex mapping to " << map_path << std::endl;
   }
 }
 
@@ -3245,25 +2817,47 @@ void ChipletPart::ConvertXMLToHypergraph(const std::string& netlist_file,
   std::vector<float> net_weight_array;
   std::vector<float> reach_array;
   std::vector<float> io_size_array;
+  std::unordered_set<std::string> unknown_io_types;
   
   // Process each net in the netlist
   for (pugi::xml_node net = netlist_root.child("net"); net; net = net.next_sibling("net")) {
     // Get the type of the net
     std::string type = net.attribute("type").as_string();
     
-    // Find the reach of the net
-    float reach = -1.0;
-    if (io_map_.find(type) != io_map_.end()) {
-      reach = io_map_[type];
+    // Find the reach of the net: from the IO definitions file, otherwise the
+    // default reach supplied on the command line.
+    float reach = default_reach_;
+    auto io_it = io_map_.find(type);
+    if (io_it != io_map_.end()) {
+      reach = io_it->second;
+    } else if (unknown_io_types.insert(type).second) {
+      std::cerr << "[WARN] IO type '" << type << "' has no reach in the IO definitions file; "
+                << "using default reach " << default_reach_ << std::endl;
     }
     reach_array.push_back(reach);
-    
-    // Default IO size to 1.0 for now
-    io_size_array.push_back(1.0);
     
     // Process the blocks in this net
     std::string block0_name = net.attribute("block0").as_string();
     std::string block1_name = net.attribute("block1").as_string();
+
+    // IO area of this net = number of IO cells x (tx + rx area), with the IO
+    // count derived exactly as the cost model does (ceil(bandwidth / cell
+    // bandwidth), or the explicit bb_count). The floorplanner adds this area
+    // to the shoreline needed between the two chiplets; the previous fixed
+    // 1.0 mm^2 per net alone exceeded a 2 mm reach for non-adjacent chiplets.
+    {
+      float io_area = 0.0f;
+      auto info_it = io_cell_info_.find(type);
+      if (info_it != io_cell_info_.end()) {
+        const float bw = net.attribute("bandwidth").as_float(0.0f);
+        int cells = net.attribute("bb_count").as_int(0);
+        if (cells <= 0 && info_it->second.cell_bandwidth > 0.0f) {
+          cells = static_cast<int>(std::ceil(bw / info_it->second.cell_bandwidth));
+        }
+        io_area = std::max(0, cells) * info_it->second.cell_area;
+      }
+      io_size_array.push_back(io_area);
+    }
     
     // Add blocks to the vertex mapping if they don't exist
     int block0_index, block1_index;
@@ -3330,15 +2924,34 @@ void ChipletPart::ConvertXMLToHypergraph(const std::string& netlist_file,
   
   // Initialize vertex weights from block definitions
   vertex_weights_.resize(num_vertices_);
+  int missing_block_defs = 0;
   for (int i = 0; i < num_vertices_; i++) {
     const std::string& vertex_name = vertex_index_to_name_[i];
     float area = 1.0; // Default area
     
-    if (vertex_area.find(vertex_name) != vertex_area.end()) {
-      area = vertex_area[vertex_name];
+    auto it = vertex_area.find(vertex_name);
+    if (it != vertex_area.end()) {
+      area = it->second;
+    } else {
+      if (missing_block_defs < 10) {
+        std::cerr << "[WARN] Block '" << vertex_name
+                  << "' appears in the netlist but has no entry in " << block_def_file
+                  << "; using default area 1.0" << std::endl;
+      }
+      missing_block_defs++;
     }
     
     vertex_weights_[i] = {area};
+  }
+  if (missing_block_defs > 0) {
+    std::cerr << "[WARN] " << missing_block_defs << " of " << num_vertices_
+              << " netlist blocks have no block definition (cost model will reject this netlist)"
+              << std::endl;
+  }
+  if (static_cast<int>(vertex_area.size()) > num_vertices_) {
+    std::cerr << "[WARN] " << (vertex_area.size() - num_vertices_)
+              << " block definition(s) are not referenced by any net and will be ignored"
+              << std::endl;
   }
   
   std::cout << "[INFO] Created hypergraph with " << num_vertices_ << " vertices and "
@@ -3349,6 +2962,25 @@ void ChipletPart::ConvertXMLToHypergraph(const std::string& netlist_file,
 ChipletPart::ChipletPart() {
   // Initialize the random number generator with the default seed
   rng_.seed(seed_);
+}
+
+void ChipletPart::SetOutputDir(const std::string& dir) {
+  output_dir_ = dir.empty() ? std::string(".") : dir;
+  std::error_code ec;
+  std::filesystem::create_directories(output_dir_, ec);
+  if (ec) {
+    std::cerr << "[WARN] Could not create output directory '" << output_dir_
+              << "': " << ec.message() << " (falling back to current directory)" << std::endl;
+    output_dir_ = ".";
+  }
+}
+
+std::string ChipletPart::OutputPath(const std::string& file_name) const {
+  const std::string base = std::filesystem::path(file_name).filename().string();
+  if (output_dir_.empty() || output_dir_ == ".") {
+    return base;
+  }
+  return (std::filesystem::path(output_dir_) / base).string();
 }
 
 void ChipletPart::QuickTechPartition(
@@ -3396,6 +3028,7 @@ void ChipletPart::QuickTechPartition(
       chiplet_netlist_file,         // netlist_file
       chiplet_blocks_file           // blocks_file
   );
+  refiner->SetSeparation(separation);
   
   // Set the technology array
   refiner->SetTechArray(tech_nodes);
@@ -3418,6 +3051,7 @@ void ChipletPart::QuickTechPartition(
   float cost = refiner->GetCostFromScratch(partition);
   
   // Save results
+  output_prefix = OutputPath(output_prefix);
   std::string partition_file = output_prefix + ".parts." + std::to_string(num_parts_);
   std::ofstream part_out(partition_file);
   for (int p : partition) {
@@ -3476,6 +3110,11 @@ void ChipletPart::CanonicalGeneticTechPart(
     
     // Ensure RNG is correctly seeded
     rng_.seed(seed_);
+    default_reach_ = reach;
+    separation_ = separation;
+
+    // All result files for this run share one prefix under the output dir
+    output_prefix = OutputPath(chiplet_netlist_file + "." + output_prefix);
     
     // Ensure hypergraph is built
     if (hypergraph_ == nullptr) {
@@ -3528,7 +3167,7 @@ void ChipletPart::CanonicalGeneticTechPart(
     std::cout << "[INFO] - Output Prefix: " << output_prefix << std::endl;
     
     // Log file for timing information
-    std::ofstream timing_log("ga_timing.log");
+    std::ofstream timing_log(output_prefix + ".ga_timing.log");
     if (!timing_log.is_open()) {
       std::cerr << "[WARNING] Could not open timing log file. Proceeding without logging." << std::endl;
     } else {
@@ -3563,6 +3202,7 @@ void ChipletPart::CanonicalGeneticTechPart(
       min_partitions,   // Min partitions
       max_partitions    // Max partitions
     );
+    canonical_ga.SetOutputPrefix(output_prefix);
     
     auto end_time_ga_init = std::chrono::high_resolution_clock::now();
     auto duration_ga_init = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -3754,10 +3394,10 @@ std::tuple<float, std::vector<int>> ChipletPart::EvaluateTechPartition(
                     chiplet_netlist_file,         // netlist_file
                     chiplet_blocks_file           // blocks_file
                 );
+                refiner->SetSeparation(separation);
                 
-                // Set the tech array
-                std::vector<std::string> tech_array(num_vertices, tech_assignment[0]);
-                refiner->SetTechArray(tech_array);
+                // Set the tech array (one entry per partition)
+                refiner->SetTechArray(tech_assignment);
                 
                 // Evaluate cost of single partition
                 float cost = refiner->GetCostFromScratch(single_partition);
@@ -3858,6 +3498,7 @@ std::tuple<float, std::vector<int>> ChipletPart::EvaluateTechPartition(
                 chiplet_netlist_file,         // netlist_file
                 chiplet_blocks_file           // blocks_file
             );
+            refiner->SetSeparation(separation);
             
             // Set up initial aspect ratios, locations, etc.
             std::vector<float> aspect_ratios(num_vertices, 1.0);
@@ -3878,18 +3519,11 @@ std::tuple<float, std::vector<int>> ChipletPart::EvaluateTechPartition(
         const int num_dimensions = hypergraph_->GetVertexDimensions();
         std::vector<float> total_weights = hypergraph_->GetTotalVertexWeights();
         
-        // Create upper_block_balance with balanced allocation per partition
-        Matrix<float> ub_balance(num_parts_, std::vector<float>(num_dimensions, 0.0f));
-        
-        for (int i = 0; i < num_parts_; i++) {
-            for (int j = 0; j < num_dimensions && j < total_weights.size(); j++) {
-                ub_balance[i][j] = total_weights[j] / num_parts_ * ub_factor_;
-            }
-        }
-        
-        // Create lower_block_balance with zeros
-        Matrix<float> lb_balance(
-            num_parts_, std::vector<float>(num_dimensions, 0.0f));
+        // Balance bounds (ub_factor_ == 1.0 -> unconstrained)
+        auto [ub_balance, lb_balance] =
+            BuildBalanceBounds(hypergraph_, num_parts_, ub_factor_);
+        (void)num_dimensions;
+        (void)total_weights;
         
         // Find the best partition by evaluating all candidates
         float best_cost = std::numeric_limits<float>::max();
@@ -3917,22 +3551,13 @@ std::tuple<float, std::vector<int>> ChipletPart::EvaluateTechPartition(
                     }
                 }
                 
-                // Create a tech_array that maps each vertex to a technology
-                std::vector<std::string> tech_array(num_vertices);
-                for (int v = 0; v < num_vertices; v++) {
-                    int part_id = partition_copy[v];
-                    
-                    // Assign technology based on partition ID
-                    if (part_id >= 0 && part_id < static_cast<int>(tech_assignment.size())) {
-                        tech_array[v] = tech_assignment[part_id];
-                    } else {
-                        // If part_id is out of range, use the first technology
-                        tech_array[v] = tech_assignment[0];
-                    }
-                }
-                
-                // Set the tech array in the refiner
-                refiner->SetTechArray(tech_array);
+                // The cost model expects one technology per *partition*
+                // (tech_array[p] is the node of chiplet p), and the partition
+                // index is exactly the index into tech_assignment, so the tech
+                // assignment is the tech array. A per-vertex array here would
+                // be truncated to num_parts entries by GetCostFromScratch and
+                // assign chiplets the technology of an arbitrary vertex.
+                refiner->SetTechArray(tech_assignment);
                 
                 // Get initial cost of this partition
                 float initial_cost = refiner->GetCostFromScratch(partition_copy);
@@ -3944,19 +3569,6 @@ std::tuple<float, std::vector<int>> ChipletPart::EvaluateTechPartition(
                     Console::Warning("Exception during refinement: " + std::string(e.what()));
                     // Continue without refinement
                 }
-                
-                // Update tech array after refinement
-                for (int v = 0; v < num_vertices; v++) {
-                    int part_id = partition_copy[v];
-                    if (part_id >= 0 && part_id < static_cast<int>(tech_assignment.size())) {
-                        tech_array[v] = tech_assignment[part_id];
-                    } else {
-                        tech_array[v] = tech_assignment[0];
-                    }
-                }
-                
-                // Update the refiner with the new tech array
-                refiner->SetTechArray(tech_array);
                 
                 // Get final cost after refinement
                 float final_cost = refiner->GetCostFromScratch(partition_copy);
@@ -4048,8 +3660,11 @@ std::tuple<float, std::vector<int>, std::vector<std::string>> ChipletPart::Enume
         Console::Info("  - " + tech);
     }
     Console::Info("Maximum number of partitions: " + std::to_string(max_partitions));
+    Console::Info("Output directory: " + output_dir_);
     
     auto start_time = std::chrono::high_resolution_clock::now();
+    default_reach_ = reach;
+    separation_ = separation;
     
     // Ensure the hypergraph is loaded
     if (!hypergraph_ || hypergraph_->GetNumVertices() == 0) {
@@ -4370,7 +3985,7 @@ std::tuple<float, std::vector<int>, std::vector<std::string>> ChipletPart::Enume
     }
     
     // Save the best solution to files
-    std::string assignment_file = chiplet_netlist_file + ".best_tech_assignment.txt";
+    std::string assignment_file = OutputPath(chiplet_netlist_file + ".best_tech_assignment.txt");
     std::ofstream tech_out(assignment_file);
     if (tech_out.is_open()) {
         tech_out << "# Best technology assignment found by enumeration" << std::endl;
@@ -4390,7 +4005,7 @@ std::tuple<float, std::vector<int>, std::vector<std::string>> ChipletPart::Enume
     }
     
     // Write canonical forms log file
-    std::string canonical_log_file = chiplet_netlist_file + ".canonical_forms.log";
+    std::string canonical_log_file = OutputPath(chiplet_netlist_file + ".canonical_forms.log");
     std::ofstream canonical_log(canonical_log_file);
     if (canonical_log.is_open()) {
         canonical_log << "# Canonical Forms Analysis" << std::endl;
@@ -4538,7 +4153,7 @@ std::tuple<float, std::vector<int>, std::vector<std::string>> ChipletPart::Enume
         Console::Success("Canonical forms analysis saved to " + canonical_log_file);
     }
     
-    std::string partition_file = chiplet_netlist_file + ".best_partition.txt";
+    std::string partition_file = OutputPath(chiplet_netlist_file + ".best_partition.txt");
     std::ofstream part_out(partition_file);
     if (part_out.is_open()) {
         part_out << "# Best partition found by enumeration" << std::endl;

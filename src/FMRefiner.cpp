@@ -66,13 +66,9 @@
 
 namespace chiplet {
 
-// VertexGain constructor is already defined in PriorityQueue.h
-// Remove duplicate definition
-
-HyperedgeGain::HyperedgeGain(const int hyperedge_id, const int destination_part,
-                             const float gain)
-    : hyperedge_id_(hyperedge_id), destination_part_(destination_part),
-      gain_(gain) {}
+// Extra FM passes granted to feasibility-aware refinement while the reach
+// violation is still decreasing (see ChipletRefiner::Refine).
+constexpr int kExtraRepairPasses = 5;
 
 ChipletRefiner::ChipletRefiner(
     const int num_parts, const int refiner_iters,
@@ -127,30 +123,6 @@ void ChipletRefiner::SetRefineIters(const int refiner_iters) {
   refiner_iters_ = refiner_iters;
 }
 
-void ChipletRefiner::RestoreDefaultParameters() {
-  max_move_ = max_move_default_;
-  refiner_iters_ = refiner_iters_default_;
-}
-
-void ChipletRefiner::InitFloorPlan(const HGraphPtr hgraph, int max_steps,
-                                   int perturbations,
-                                   float cooling_acceleration_factor,
-                                   std::vector<int> &solution) {
-  HGraphPtr chiplet_level_netlist = GenerateNetlist(hgraph, solution);
-  BuildChiplets(chiplet_level_netlist);
-  auto floor_tupple =
-      Floorplanner(max_steps, perturbations, cooling_acceleration_factor);
-  bool success = std::get<3>(floor_tupple);
-
-  if (success == false) {
-    std::cout << "Cannot find a valid solution" << std::endl;
-  } else {
-    // auto pos_seq = std::get<0>(floor_tupple);
-    // auto neg_seq = std::get<1>(floor_tupple);
-    // SetSequences(pos_seq, neg_seq);
-  }
-}
-
 void ChipletRefiner::BuildChiplets(const HGraphPtr &hgraph) {
   // Clear existing data structures, but keep allocated capacity where possible
   bundled_nets_.clear();
@@ -163,28 +135,34 @@ void ChipletRefiner::BuildChiplets(const HGraphPtr &hgraph) {
   bundled_nets_.reserve(num_edges);
   chiplets_.reserve(num_vertices);
   
-  // Process all hyperedges to create bundled nets
-  // Use direct indexing for better cache locality
+  // Bundle all nets between the same pair of chiplets that share a reach:
+  // their IO cells sit on the same shoreline, so the IO areas add up (the
+  // shoreline term of the reach check needs the total), and the SA has one
+  // net per pair instead of hundreds of parallel ones.
+  std::map<std::tuple<int, int, float>, int> bundle_index;
   for (int i = 0; i < num_edges; ++i) {
-    // Extract edge data
     const float weight = hgraph->GetHyperedgeWeights(i)[0];
     const auto& vertices = hgraph->Vertices(i);
-    
-    // Only proceed if we have at least two vertices
     if (vertices.size() < 2) {
       continue;
     }
-    
-    // Get terminals
-    const int term_a = *vertices.begin();
-    const int term_b = *(++vertices.begin());
-    
-    // Get reaches and IO areas
+    int term_a = *vertices.begin();
+    int term_b = *(++vertices.begin());
+    if (term_a == term_b) {
+      continue;
+    }
+    if (term_a > term_b) std::swap(term_a, term_b);
     const float reach = hgraph->GetReach(i);
     const float io_area = hgraph->GetIoSize(i);
-    
-    // Create bundled net directly without temporary vectors
-    bundled_nets_.emplace_back(std::pair<int, int>(term_a, term_b), weight, reach, io_area);
+    const auto key = std::make_tuple(term_a, term_b, reach);
+    auto it = bundle_index.find(key);
+    if (it == bundle_index.end()) {
+      bundle_index.emplace(key, static_cast<int>(bundled_nets_.size()));
+      bundled_nets_.emplace_back(std::pair<int, int>(term_a, term_b), weight, reach, io_area);
+    } else {
+      bundled_nets_[it->second].weight += weight;
+      bundled_nets_[it->second].io_area += io_area;
+    }
   }
 
   // Cache the halo width to avoid multiple lookups
@@ -269,12 +247,23 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
       std::iota(pos_seq.begin(), pos_seq.end(), 0);
       std::iota(neg_seq.begin(), neg_seq.end(), 0);
     }
+    // Feasibility-aware refinement carries the best arrangement it found for
+    // this partition; start the walkers there so a feasible arrangement
+    // known to the refiner is never lost by the floorplanner.
+    const bool seeded_from_probe = floorplan_aware_ &&
+        fp_warm_.pos_seq.size() == chiplets_.size() &&
+        fp_warm_.neg_seq.size() == chiplets_.size();
+    if (seeded_from_probe) {
+      pos_seq = fp_warm_.pos_seq;
+      neg_seq = fp_warm_.neg_seq;
+    }
     
-    // SIMPLIFIED: Use just a single worker to avoid memory issues
-    int available_threads = omp_utils::get_max_threads();
-    
-    // Force at least 2 workers for testing multi-worker mode
-    const int num_workers = std::max(2, std::min(num_threads_, 4));
+    // Number of GWTW workers (independent SA instances). Each worker gets a
+    // share of the step budget, so the total work is roughly independent of
+    // the worker count.
+    const int num_workers = (num_fp_workers_ > 0)
+                                ? num_fp_workers_
+                                : std::max(2, std::min(num_threads_, 4));
     
     // Create vector of worker instances
     std::vector<std::unique_ptr<SACore>> workers;
@@ -283,13 +272,11 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
     // Initialize workers with simple cooling rates
     float delta_cooling_rate = (max_cooling_rate_ - min_cooling_rate_) / (num_workers > 1 ? num_workers - 1 : 1);
     
-    // Adjust steps and perturbations based on worker count to avoid excessive memory use
-    int per_worker_steps = max_steps / (num_workers > 0 ? num_workers : 1);
-    int per_worker_perturbations = perturbations / (num_workers > 0 ? num_workers : 1);
-    
-    // Ensure minimum values
-    per_worker_steps = std::max(10, per_worker_steps);
-    per_worker_perturbations = std::max(5, per_worker_perturbations);
+    // Every walker runs the full schedule (max_steps x perturbations
+    // perturbations); walkers run in parallel, so more walkers means more
+    // search, not less per walker.
+    const int per_worker_steps = std::max(1, max_steps);
+    const int per_worker_perturbations = std::max(1, perturbations);
     
     for (int worker_id = 0; worker_id < num_workers; worker_id++) {
       // Simple linear distribution of cooling rates
@@ -319,6 +306,9 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
                   
         sa->setPosSeq(pos_seq);
         sa->setNegSeq(neg_seq);
+        if (seeded_from_probe) {
+          sa->applySeed(fp_warm_);  // sequence pair and shapes
+        }
           
         // Add to workers vector
         workers.push_back(std::move(sa));
@@ -360,6 +350,9 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
         worker->setNormAreaPenalty(norm_area_penalty);
         worker->setNormPackagePenalty(norm_package_penalty);
         worker->setNormNetPenalty(norm_net_penalty);
+        if (seeded_from_probe) {
+          worker->evaluateCurrent();  // remember the seed state if it is feasible
+        }
       }
     } catch (const std::exception& e) {
       std::cerr << "[ERROR] Exception during worker initialization: " << e.what() << std::endl;
@@ -367,17 +360,114 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
       return std::make_tuple(dummy_result, dummy_result, dummy_result, false);
     }
     
-    // Run simulated annealing for all workers
-    for (size_t i = 0; i < workers.size(); i++) {
-      try {
-        workers[i]->run();
-      } catch (const std::exception& e) {
-        std::cerr << "[ERROR] Exception running worker " << i << ": " 
-                  << e.what() << std::endl;
-        // Continue with other workers
+    // Go-with-the-winners (GWTW) annealing.
+    //
+    // The per-worker schedule of `per_worker_steps` is split into
+    // `gwtw_iter_` segments. After every segment the workers are ranked
+    // (valid solutions first, then by normalised cost); the top
+    // `gwtw_top_k_` solutions are copied onto the remaining workers in the
+    // proportions given by `gwtw_top_k_ratio_`, and every worker continues
+    // from its own (derated) temperature with its own RNG. Workers are
+    // independent objects, so a segment can run them in parallel.
+    const int num_rounds = std::max(1, gwtw_iter_);
+    const int steps_per_round =
+        std::max(1, (per_worker_steps + num_rounds - 1) / num_rounds);
+
+    // Rank workers: valid first, then lower cost. Returns indices.
+    auto rank_workers = [&](std::vector<int>& order) {
+      order.resize(workers.size());
+      std::iota(order.begin(), order.end(), 0);
+      std::vector<std::pair<bool, float>> key(workers.size());
+      for (size_t w = 0; w < workers.size(); ++w) {
+        if (!workers[w]->isValid()) {
+          workers[w]->restoreValid();  // rank by the best feasible state seen
+        }
+        key[w] = {workers[w]->isValid(), workers[w]->getCost()};
+      }
+      std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
+        if (key[a].first != key[b].first) return key[a].first;  // valid first
+        return key[a].second < key[b].second;
+      });
+    };
+
+    for (int round = 0; round < num_rounds; ++round) {
+      const int steps_this_round =
+          std::min(steps_per_round, per_worker_steps - round * steps_per_round);
+      if (steps_this_round <= 0) break;
+
+      #if HAVE_OPENMP
+      #pragma omp parallel for schedule(static) if(workers.size() > 1)
+      #endif
+      for (int w = 0; w < static_cast<int>(workers.size()); ++w) {
+        try {
+          workers[w]->runSteps(steps_this_round);
+        } catch (const std::exception& e) {
+          #if HAVE_OPENMP
+          #pragma omp critical(fp_worker_error)
+          #endif
+          std::cerr << "[ERROR] Exception running worker " << w << ": "
+                    << e.what() << std::endl;
+        }
+      }
+
+      if (round == num_rounds - 1 || workers.size() < 2) {
+        continue;  // no synchronisation after the last segment
+      }
+
+      // Select winners and redistribute them.
+      std::vector<int> order;
+      rank_workers(order);
+      const int top_k = std::max(1, std::min<int>(gwtw_top_k_, workers.size()));
+
+      // Cumulative share of the population each winner receives.
+      std::vector<float> ratio(gwtw_top_k_ratio_.begin(), gwtw_top_k_ratio_.end());
+      ratio.resize(top_k, 0.0f);
+      float ratio_sum = std::accumulate(ratio.begin(), ratio.end(), 0.0f);
+      if (ratio_sum <= 0.0f) {
+        std::fill(ratio.begin(), ratio.end(), 1.0f / top_k);
+        ratio_sum = 1.0f;
+      }
+
+      // Assign each non-winning worker to a winner proportionally.
+      const int num_followers = static_cast<int>(workers.size()) - top_k;
+      std::vector<int> winner_of_follower(num_followers, 0);
+      {
+        float acc = 0.0f;
+        int next = 0;
+        for (int k = 0; k < top_k; ++k) {
+          acc += ratio[k] / ratio_sum;
+          const int upto = (k == top_k - 1)
+                               ? num_followers
+                               : static_cast<int>(std::round(acc * num_followers));
+          for (; next < upto && next < num_followers; ++next) {
+            winner_of_follower[next] = k;
+          }
+        }
+      }
+      for (int f = 0; f < num_followers; ++f) {
+        SACore* follower = workers[order[top_k + f]].get();
+        const SACore* winner = workers[order[winner_of_follower[f]]].get();
+        follower->adoptSolution(*winner);
+      }
+
+      // Derate the temperature for the next segment (1.0 = unchanged).
+      if (gwtw_temp_derate_factor_ > 0.0f && gwtw_temp_derate_factor_ != 1.0f) {
+        for (auto& worker : workers) {
+          worker->setTemp(std::max(worker->getTemp() * gwtw_temp_derate_factor_,
+                                   gwtw_min_temp_));
+        }
       }
     }
     
+    // A walker may have passed through a feasible state and drifted out of
+    // it again (the SA cost blends area and package with the reach
+    // penalty); bring such walkers back to their last feasible state.
+    for (auto& worker : workers) {
+      if (!worker->isValid()) {
+        worker->restoreValid();
+      }
+    }
+
     // Find best solution
     SACore* best_sa = nullptr;
     float best_cost = std::numeric_limits<float>::max();
@@ -413,6 +503,11 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
     std::vector<Chiplet> best_chiplets;
     if (best_sa) {
       try {
+        if (!is_valid && floorplan_verbose_) {
+          std::cerr << "[FLOORPLAN] best worker " << best_sa->getWorkerId()
+                    << " is infeasible:" << std::endl;
+          best_sa->reportViolations(std::cerr, 5);
+        }
   best_sa->getMacros(best_chiplets);
         
         // Store sequence pairs
@@ -470,109 +565,77 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
   }
 }
 
-// This helper function runs a single SA instance for a specified number of steps
-void ChipletRefiner::RunSASegment(std::shared_ptr<SACore> sa, float cooling_acceleration_factor, int steps) {
-  // Run the simulated annealing for a specified number of steps
-  // This allows us to interleave SA runs and check for early convergence
-  sa->run();
+// Short single-walker floorplan probe of `partition`; returns the total reach
+// violation of the best state seen (0 = feasible). Warm-started from the last
+// feasible probe with the same chiplet count. Rebuilds chiplet_graph_ /
+// chiplets_ / bundled_nets_ as a side effect (like RunFloorplanner).
+float ChipletRefiner::FloorplanViolation(const HGraphPtr &hgraph,
+                                         const std::vector<int> &partition) {
+  chiplet_graph_ = GenerateNetlist(hgraph, partition);
+  if (!chiplet_graph_) {
+    return std::numeric_limits<float>::max();
+  }
+  BuildChiplets(chiplet_graph_);
+  const int n = static_cast<int>(chiplets_.size());
+  if (static_cast<int>(fp_warm_.pos_seq.size()) != n ||
+      static_cast<int>(fp_warm_.neg_seq.size()) != n) {
+    fp_warm_.clear();
+    fp_warm_.pos_seq.resize(n);
+    fp_warm_.neg_seq.resize(n);
+    std::iota(fp_warm_.pos_seq.begin(), fp_warm_.pos_seq.end(), 0);
+    std::iota(fp_warm_.neg_seq.begin(), fp_warm_.neg_seq.end(), 0);
+  }
+  if (n <= 1 || bundled_nets_.empty()) {
+    last_probe_violation_ = 0.0f;
+    last_probe_ = fp_warm_;
+    return 0.0f;  // a single chiplet (or no inter-chiplet nets) is trivially feasible
+  }
+  ++fp_probe_count_;
+  SACore sa(0, chiplets_, bundled_nets_, area_penalty_weight_, package_penalty_weight_,
+            net_penalty_weight_, pos_swap_prob_, neg_swap_prob_, double_swap_prob_,
+            resize_prob_, expand_prob_, fp_check_steps_, fp_check_perturbs_,
+            max_cooling_rate_, init_seed_ + fp_probe_count_);
+  // Warm start from the best arrangement seen so far (the partition changes
+  // by one vertex per move, so the previous floorplan is a good seed). Then:
+  // greedy descent on the violation, a short annealing walk for diversity,
+  // and a final descent from the best state of the walk.
+  sa.applySeed(fp_warm_);
+  sa.evaluateCurrent();
+  const int quench_budget = fp_check_steps_ * fp_check_perturbs_;
+  if (!sa.hasSeenValid()) {
+    sa.quench(quench_budget);
+  }
+  if (!sa.hasSeenValid()) {
+    sa.runSteps(fp_check_steps_);
+    sa.restoreMin();
+    sa.quench(quench_budget);
+  }
+  // The warm start is only advanced when the probed partition is adopted
+  // (CommitFloorplanProbe); probes of rejected moves must not disturb it, or
+  // re-measuring the same partition would drift.
+  sa.getMinSeed(last_probe_);
+  last_probe_violation_ = sa.hasSeenValid() ? 0.0f : sa.getMinNetPenaltySeen();
+  return last_probe_violation_;
 }
 
-bool ChipletRefiner::CheckFloorPlanFeasible(const HGraphPtr hgraph,
-                                            int max_steps, int perturbations,
-                                            float cooling_acceleration_factor,
-                                            int v,        // vertex id
-                                            int to_pid,   // to block id
-                                            int from_pid, // from block_id
-                                            std::vector<int> &partition) {
-  try {
-    // Safety check for invalid input
-    if (!hgraph || v < 0 || v >= partition.size() || to_pid < 0 || from_pid < 0) {
-      std::cerr << "[ERROR] Invalid parameters in CheckFloorPlanFeasible" << std::endl;
-      return false;
-    }
-    
-  // Temporarily move vertex to target partition
-  partition[v] = to_pid;
-  
-  // Generate netlist for the modified partition
-  HGraphPtr chiplet_level_netlist = GenerateNetlist(hgraph, partition);
-  
-  // Restore original partition for the vertex
-  partition[v] = from_pid;
-  
-    // Safety check for the generated netlist
-    if (!chiplet_level_netlist || chiplet_level_netlist->GetNumVertices() == 0) {
-      std::cerr << "[ERROR] Invalid chiplet netlist generated" << std::endl;
-      return false;
-    }
-    
-    
-  // Create chiplets based on the netlist
-  BuildChiplets(chiplet_level_netlist);
-    
-    // Safety check for chiplets
-    if (chiplets_.empty()) {
-      std::cerr << "[ERROR] No chiplets created in CheckFloorPlanFeasible" << std::endl;
-      return false;
-    }
-    
-  
-  // Store original sequences for potential rollback
-  const auto orig_pos_seq = local_pos_seq_;
-  const auto orig_neg_seq = local_neg_seq_;
-  
-    // Cache size values to avoid repeated lookups
-  const size_t netlist_vertex_count = chiplet_level_netlist->GetNumVertices();
-    const size_t chiplet_count = chiplets_.size();
-  const size_t pos_seq_size = local_pos_seq_.size();
-  const size_t neg_seq_size = local_neg_seq_.size();
-    
-    // Handle sequence size mismatch - always create fresh sequences for safety
-    ClearLocalSequences();
-    
-    // Reserve capacity to avoid multiple reallocations
-    local_pos_seq_.reserve(chiplet_count);
-    local_neg_seq_.reserve(chiplet_count);
-    
-    // Create sequential vertex ordering
-    for (size_t i = 0; i < chiplet_count; ++i) {
-      local_pos_seq_.push_back(static_cast<int>(i));
-      local_neg_seq_.push_back(static_cast<int>(i));
-    }
-    
-    // Run floorplanner with freshly created sequences - using reduced iterations for speed
-    int adjusted_steps = std::min(max_steps, 100);
-    int adjusted_perturbations = std::min(perturbations, 100);
-    
-    try {
-      auto floor_tuple = Floorplanner(adjusted_steps, adjusted_perturbations, cooling_acceleration_factor, true);
-  bool success = std::get<3>(floor_tuple);
-  
-      
-  // If floorplanning failed, restore original sequences
-  if (!success) {
-    local_pos_seq_ = orig_pos_seq;
-    local_neg_seq_ = orig_neg_seq;
-    return false;
+void ChipletRefiner::SetFloorplanBaseline(const HGraphPtr &hgraph,
+                                          const std::vector<int> &partition) {
+  if (!floorplan_aware_) {
+    current_violation_ = 0.0f;
+    return;
   }
-  
-      // Keep the new sequences for next iteration
+  FloorplanViolation(hgraph, partition);
+  CommitFloorplanProbe();
+}
+
+bool ChipletRefiner::IsFloorplanAcceptable(const HGraphPtr &hgraph,
+                                           const std::vector<int> &partition) {
+  if (!floorplan_aware_) {
     return true;
-    } catch (const std::exception& e) {
-      // Exception during floorplanning - restore sequences and return false
-      local_pos_seq_ = orig_pos_seq;
-      local_neg_seq_ = orig_neg_seq;
-      std::cerr << "[ERROR] Exception in floorplanner during feasibility check: " 
-                << e.what() << std::endl;
-      return false;
-    }
-  } catch (const std::exception& e) {
-    std::cerr << "[ERROR] Exception in CheckFloorPlanFeasible: " << e.what() << std::endl;
-    return false;
-  } catch (...) {
-    std::cerr << "[ERROR] Unknown exception in CheckFloorPlanFeasible" << std::endl;
-    return false;
   }
+  const float v = FloorplanViolation(hgraph, partition);
+  const float tol = 1e-4f * std::max(1.0f, current_violation_);
+  return v <= current_violation_ + tol;
 }
 
 // The main function of refinement class
@@ -590,19 +653,18 @@ void ChipletRefiner::Refine(const HGraphPtr &hgraph,
     }
   }
 
-  // Calculate initial legacy_cost_ for the partition if cost model is available
-  if (cost_model_initialized_ && libraryDicts_ != nullptr) {
-    legacy_cost_ = getCostFromScratch(
-        solution, 
-        tech_array_, 
-        aspect_ratios_, 
-        x_locations_, 
-        y_locations_,
-        libraryDicts_, 
-        blocks_,
-        cost_coefficient_, 
-        power_coefficient_);
-  }
+  // Seed legacy_cost_ (the baseline every move gain is measured against).
+  // Use the member GetCostFromScratch with approx_state=true: it is the SAME
+  // evaluation GetSingleMoveCost uses for the "after" cost, and it fixes the
+  // tech/aspect-ratio/location vectors to the partition count. Calling the raw
+  // evaluator with the unadjusted member vectors (as before) made the model
+  // build fail and returned FLT_MAX, so the first move of every pass had gain
+  // ~FLT_MAX and was accepted unconditionally, after which legacy_cost_
+  // collapsed to 0 and all other gains were negative -> each pass applied one
+  // arbitrary move.
+  // (Seeding happens inside the pass loop, right before each Pass(), so that
+  // it also reflects any aspect-ratio/location update made by the floorplanner
+  // and the roll-back performed by the previous pass.)
   
   if (max_move_ <= 0) {
     return;
@@ -610,7 +672,12 @@ void ChipletRefiner::Refine(const HGraphPtr &hgraph,
   // calculate the basic statistics of current solution
   Matrix<float> cur_block_balance = GetBlockBalance(hgraph, solution);
   Matrix<int> net_degs = GetNetDegrees(hgraph, solution);
-  for (int i = 0; i < refiner_iters_; ++i) {
+  // Feasibility-aware refinement may need more passes than cost-only
+  // refinement to drive the reach violation to zero; allow extra passes
+  // while the violation is still improving.
+  const int max_iters = floorplan_aware_ ? refiner_iters_ + kExtraRepairPasses : refiner_iters_;
+  fp_repair_mode_ = false;
+  for (int i = 0; i < max_iters; ++i) {
     // the main function for improving the solution
     // mark the vertices can be moved as unvisited
     std::vector<bool> visited_vertices_flag(hgraph->GetNumVertices(), false);
@@ -660,40 +727,38 @@ void ChipletRefiner::Refine(const HGraphPtr &hgraph,
       }
     }
     auto start_time = std::chrono::high_resolution_clock::now();
+    if (cost_model_initialized_ && libraryDicts_ != nullptr) {
+      legacy_cost_ = GetCostFromScratch(solution, true);
+    }
+    const float violation_before = current_violation_;
     const float gain =
         Pass(hgraph, upper_block_balance, lower_block_balance,
              cur_block_balance, net_degs, solution, visited_vertices_flag);
+    // Switch to violation-guided moves once gain-ordered passes stop
+    // reducing the violation (or the planned passes are used up).
+    if (floorplan_aware_ && current_violation_ > 1e-4f &&
+        (current_violation_ > 0.9f * violation_before || i >= refiner_iters_ - 1)) {
+      fp_repair_mode_ = true;
+    }
     
     // Only clear sequences if we're done with refinement or no longer need them
-    if (floorplanner_ == true && (gain <= 0.0 || i == refiner_iters_ - 1)) {
+    if (floorplanner_ == true && (gain <= 0.0 || i == max_iters - 1)) {
       ClearLocalSequences();
       ClearGlobalSequences();
     }
     
     if (gain <= 0.0) {
+      if (floorplan_aware_ && current_violation_ > 1e-4f && !fp_repair_mode_) {
+        fp_repair_mode_ = true;  // one more try, violation-guided
+        continue;
+      }
       return; // stop if there is no improvement
     }
-    if (cost_model_initialized_ && libraryDicts_ != nullptr) {
-      legacy_cost_ = getCostFromScratch(
-          solution, 
-          tech_array_, 
-          aspect_ratios_, 
-          x_locations_, 
-          y_locations_,
-          libraryDicts_, 
-          blocks_,
-          cost_coefficient_, 
-          power_coefficient_);
+    if (i >= refiner_iters_ - 1 && floorplan_aware_ &&
+        !(current_violation_ > 1e-4f && current_violation_ < violation_before)) {
+      return; // extra passes only while still repairing
     }
   }
-}
-
-bool ChipletRefiner::Terminate(std::deque<float> &history, float &new_cost) {
-  if (history.size() < 2) {
-    return false;
-  }
-
-  return (new_cost == history.back() || new_cost == history.front());
 }
 
 // Main FM pass function - the core of the refinement algorithm
@@ -758,13 +823,146 @@ float ChipletRefiner::Pass(
   float best_gain = 0.0f;
   int best_move_index = -1;
 
+  // Scratch for the neighbourhood computation
+  std::vector<char> touched(num_vertices, 0);
+  const bool lazy_reeval = cost_model_initialized_ && libraryDicts_ != nullptr;
+  // Bound on re-evaluations per accepted move (each one costs a model build)
+  const int max_reevals_per_move = std::max(4, 2 * num_parts_);
+  // Floorplan-aware mode: baseline violation of the starting partition and a
+  // bound on the number of candidates rejected for feasibility per move.
+  if (floorplan_aware_) {
+    SetFloorplanBaseline(hgraph, solution);
+  }
+  const int max_fp_rejects_per_move = std::max(8, 4 * num_parts_);
+  const int max_fp_repair_scan = std::max(16, 8 * num_parts_);
+  int fp_rejected_total = 0;
+  // Arrangement (sequence pair) after each accepted move, so the rollback to
+  // the best prefix can restore the matching warm start.
+  std::vector<FloorplanSeed> move_seeds;
+  const FloorplanSeed start_seed = fp_warm_;
+  // The best prefix is chosen lexicographically:
+  // lower violation first, then higher cumulative gain, so an infeasible
+  // start is repaired even at a cost increase (feasibility is a hard
+  // constraint of the design; cost is optimised among feasible designs).
+  const float start_violation = current_violation_;
+  float best_violation = start_violation;
+  const auto violation_lt = [](float a, float b) {
+    return a < b - 1e-4f * std::max(1.0f, b);
+  };
+
   // Main FM pass loop - execute up to max_move_ vertex moves
   for (int move_count = 0; move_count < max_move_; ++move_count) {
-    // Pick the best move using the optimized gain buckets
-    auto candidate = PickMoveKWay(
-        buckets, hgraph, block_balance, 
-        upper_block_balance, lower_block_balance, solution);
+    // Pick the best move using the optimized gain buckets. Gains of vertices
+    // outside the last move's neighbourhood may be stale (see below), so the
+    // picked move is re-evaluated against the current solution and, if its
+    // gain changed, re-inserted and the pick repeated ("lazy greedy"). Every
+    // accepted move therefore carries an exact gain.
+    std::shared_ptr<VertexGain> candidate;
+    int reevals = 0;
+    float candidate_violation = current_violation_;
+    // Feasibility gate (floorplan-aware mode). Every candidate is probed;
+    // whether the probe may veto it depends on the regime:
+    //  - feasible start: a move must keep the violation at zero;
+    //  - infeasible start: moves follow the cost gains (they usually reduce
+    //    the violation as well, and the prefix selection below prefers the
+    //    lowest violation);
+    //  - infeasible start that the previous pass could not improve
+    //    (fp_repair_mode_): a move must not increase the violation.
+    // When the gate vetoes, candidates are scanned in gain order; if none of
+    // the first `max_scan` qualifies the lowest-violation one is taken anyway
+    // (the rollback to the best prefix makes this safe, and it lets the pass
+    // climb out of a local minimum). Probed-but-not-taken candidates go back
+    // into their buckets.
+    const bool infeasible_start = floorplan_aware_ && current_violation_ > 1e-4f;
+    const bool repair_mode = infeasible_start && fp_repair_mode_;
+    const bool gate_moves = floorplan_aware_ && (!infeasible_start || repair_mode);
+    const int max_scan = repair_mode ? max_fp_repair_scan : max_fp_rejects_per_move;
+    struct ScannedMove {
+      std::shared_ptr<VertexGain> cell;
+      float violation;
+      FloorplanSeed seed;
+    };
+    FloorplanSeed candidate_seed = fp_warm_;
+    std::vector<ScannedMove> scanned;
+    bool candidate_acceptable = false;
+    while (true) {
+      candidate = PickMoveKWay(
+          buckets, hgraph, block_balance, 
+          upper_block_balance, lower_block_balance, solution);
+      if (candidate->GetVertex() < 0) {
+        break;
+      }
+      const int v = candidate->GetVertex();
+      float exact_gain = candidate->GetGain();
+      bool gain_is_exact = true;
+      if (lazy_reeval && reevals < max_reevals_per_move) {
+        exact_gain = GetSingleMoveCost(
+            solution, v, candidate->GetSourcePart(), candidate->GetDestinationPart());
+        const float stale_gain = candidate->GetGain();
+        const float tol = 1e-5f * std::max(1.0f, std::fabs(stale_gain));
+        gain_is_exact = std::fabs(exact_gain - stale_gain) <= tol;
+      }
+      if (gain_is_exact) {
+        if (!floorplan_aware_) {
+          break;
+        }
+        const int from = candidate->GetSourcePart();
+        const int to = candidate->GetDestinationPart();
+        solution[v] = to;
+        const float viol = FloorplanViolation(hgraph, solution);
+        solution[v] = from;
+        const float tol = 1e-4f * std::max(1.0f, current_violation_);
+        if (!gate_moves || viol <= current_violation_ + tol) {
+          candidate_violation = viol;
+          candidate_seed = last_probe_;
+          candidate_acceptable = true;
+          break;
+        }
+        scanned.push_back({candidate, viol, last_probe_});
+        buckets[to]->Remove(v);
+        if (static_cast<int>(scanned.size()) < max_scan) {
+          continue;
+        }
+        candidate = std::make_shared<VertexGain>();
+        break;
+      }
+      // `candidate` is the heap's own element; ChangePriority compares the
+      // new gain against the stored one, so a fresh cell is required (an
+      // in-place SetGain would leave the heap unordered).
+      auto refreshed = std::make_shared<VertexGain>(
+          v, candidate->GetSourcePart(), candidate->GetDestinationPart(),
+          exact_gain);
+      buckets[candidate->GetDestinationPart()]->ChangePriority(v, refreshed);
+      ++reevals;
+    }
     
+    if (!scanned.empty()) {
+      size_t best = scanned.size();  // none
+      if (!candidate_acceptable) {
+        // Lowest violation wins; ties go to the earlier (higher-gain) entry.
+        best = 0;
+        for (size_t k = 1; k < scanned.size(); ++k) {
+          if (scanned[k].violation < scanned[best].violation -
+                  1e-4f * std::max(1.0f, scanned[best].violation)) {
+            best = k;
+          }
+        }
+        candidate = scanned[best].cell;
+        candidate_violation = scanned[best].violation;
+        candidate_seed = scanned[best].seed;
+        fp_rejected_total += static_cast<int>(scanned.size());
+      }
+      for (size_t k = 0; k < scanned.size(); ++k) {
+        if (k == best) {
+          continue;
+        }
+        const auto& cell = scanned[k].cell;
+        buckets[cell->GetDestinationPart()]->InsertIntoPQ(std::make_shared<VertexGain>(
+            cell->GetVertex(), cell->GetSourcePart(), cell->GetDestinationPart(),
+            cell->GetGain()));
+      }
+    }
+
     // Check if there are any more valid moves
     const int vertex = candidate->GetVertex();
     if (vertex < 0) {
@@ -777,30 +975,44 @@ float ChipletRefiner::Pass(
     const int to_part = candidate->GetDestinationPart();
     // Update cost tracking
     legacy_cost_ -= candidate->GetGain();
+    if (floorplan_aware_) {
+      current_violation_ = candidate_violation;
+      fp_warm_ = std::move(candidate_seed);
+      move_seeds.push_back(fp_warm_);
+    }
     
     // Accept the move (updates all needed data structures)
     AcceptKWayMove(
         candidate, buckets, moves_trace, total_delta_gain,
         visited_vertices_flag, hgraph, block_balance, net_degs, solution);
      
-    // Update gain for neighbors - reuse the neighbors vector
+    // Vertices whose gains are refreshed eagerly: those sharing a hyperedge
+    // with the moved vertex and those in the source/destination partitions
+    // (their chiplet areas changed). Other boundary vertices keep their
+    // previous gains until they are picked and lazily re-evaluated above.
+    // (Refreshing the whole boundary after every move - the previous
+    // behaviour - cost O(|boundary| x k) model builds per move.)
+    std::fill(touched.begin(), touched.end(), 0);
+    for (const int e : hgraph->Edges(vertex)) {
+      for (const int u : hgraph->Vertices(e)) {
+        touched[u] = 1;
+      }
+    }
     neighbors.clear();
     for (const auto &v : boundary_vertices) {
-      if (!visited_vertices_flag[v]) {
+      if (visited_vertices_flag[v]) continue;
+      if (touched[v] || solution[v] == from_part || solution[v] == to_part) {
         neighbors.push_back(v);
       }
     }
 
-    // Update gain values efficiently
+    // Refresh gains in EVERY destination bucket for those vertices,
+    // including the bucket of the partition the vertex just left.
     #if HAVE_OPENMP
     // Parallel update for large numbers of partitions
     if (num_parts_ > 8) {
       #pragma omp parallel for schedule(dynamic)
       for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-        // Skip the updating the bucket for the source partition
-        // since no vertex can move back to its original partition
-        if (to_pid == from_part) continue;
-        
         UpdateSingleGainBucket(to_pid, buckets, hgraph, neighbors, net_degs, solution);
       }
     } else 
@@ -808,16 +1020,17 @@ float ChipletRefiner::Pass(
     {
       // Sequential update for small numbers of partitions
       for (int to_pid = 0; to_pid < num_parts_; to_pid++) {
-        // Skip updating the bucket for the source partition
-        if (to_pid == from_part) continue;
-        
         UpdateSingleGainBucket(to_pid, buckets, hgraph, neighbors, net_degs, solution);
       }
     }
 
     // Track the best solution seen so far
-    if (total_delta_gain > best_gain) {
+    const bool better_violation = violation_lt(current_violation_, best_violation);
+    const bool same_violation = !better_violation &&
+                                !violation_lt(best_violation, current_violation_);
+    if (better_violation || (same_violation && total_delta_gain > best_gain)) {
       best_gain = total_delta_gain;
+      best_violation = current_violation_;
       best_move_index = move_count;
     }
   }
@@ -826,6 +1039,22 @@ float ChipletRefiner::Pass(
   for (int i = moves_trace.size() - 1; i > best_move_index; --i) {
     auto move = moves_trace[i];
     RollBackVertexGain(move, hgraph, visited_vertices_flag, solution, block_balance, net_degs);
+  }
+  current_violation_ = best_violation;
+  if (floorplan_aware_) {
+    fp_warm_ = best_move_index >= 0 ? move_seeds[best_move_index] : start_seed;
+  }
+  static const bool fp_debug = std::getenv("CHIPLETPART_FP_DEBUG") != nullptr;
+  if (fp_debug && floorplan_aware_) {
+    std::cerr << "[fp-debug] pass: parts=" << num_parts_ << (fp_repair_mode_ ? " repair" : "")
+              << " start_viol=" << start_violation
+              << " best_viol=" << best_violation << " moves=" << moves_trace.size()
+              << " best_idx=" << best_move_index << " best_gain=" << best_gain
+              << " fp_rejected=" << fp_rejected_total << " probes=" << fp_probe_count_ << "\n";
+  }
+  // Report a repaired violation as progress so Refine() keeps iterating.
+  if (violation_lt(best_violation, start_violation) && best_gain <= 0.0f) {
+    best_gain = std::numeric_limits<float>::min();
   }
 
   // Clean up resources efficiently
@@ -998,16 +1227,12 @@ ChipletRefiner::PickMoveKWay(GainBuckets &buckets, const HGraphPtr &hgraph,
         const float gain = ele->GetGain();
         const int from_pid = ele->GetSourcePart();
         
-        // DISABLED: Floorplan feasibility check to avoid segmentation faults
-        // Always return true for now, but the method is preserved for future use
-        bool feasible = true;
-        /* DISABLED CODE - floorplanner check is causing segfaults
-        if (floorplanner_ == true && vertex >= 0 && vertex < partition.size() && 
-            from_pid >= 0 && i >= 0 && from_pid != i) {
-          feasible = CheckFloorPlanFeasible(
-            hgraph, 50, 10, 0.001, vertex, i, from_pid, partition);
-        }
-        */
+        // Balance legality: the move must respect the caller's block-balance
+        // bounds. (The floorplan feasibility check that used to live here is
+        // still disabled; see CheckFloorPlanFeasible.)
+        const bool feasible = CheckVertexMoveLegality(
+            vertex, i, from_pid, hgraph, curr_block_balance,
+            upper_block_balance, lower_block_balance);
         
         // Update thread-local best candidate
         if (feasible == true && gain > local_result.candidate->GetGain()) {
@@ -1051,16 +1276,12 @@ ChipletRefiner::PickMoveKWay(GainBuckets &buckets, const HGraphPtr &hgraph,
     const float gain = ele->GetGain();
     const int from_pid = ele->GetSourcePart();
     
-    // DISABLED: Floorplan feasibility check to avoid segmentation faults
-    // Always return true for now, but the method is preserved for future use
-    bool feasible = true;
-    /* DISABLED CODE - floorplanner check is causing segfaults
-    if (floorplanner_ == true && vertex >= 0 && vertex < partition.size() && 
-        from_pid >= 0 && i >= 0 && from_pid != i) {
-      feasible = CheckFloorPlanFeasible(
-        hgraph, 50, 10, 0.001, vertex, i, from_pid, partition);
-    }
-    */
+    // Balance legality: the move must respect the caller's block-balance
+    // bounds. (The floorplan feasibility check that used to live here is
+    // still disabled; see CheckFloorPlanFeasible.)
+    const bool feasible = CheckVertexMoveLegality(
+        vertex, i, from_pid, hgraph, curr_block_balance,
+        upper_block_balance, lower_block_balance);
     
     if (feasible == true && gain > candidate->GetGain()) {
       to_pid = i;
@@ -1191,7 +1412,9 @@ std::vector<int> ChipletRefiner::FindBoundaryVertices(
   const int num_vertices = hgraph->GetNumVertices();
   
   // Pre-allocate vector for flags with exact size needed
-  std::vector<bool> boundary_net_flag(num_hyperedges, false);
+  // std::vector<char>, not <bool>: written concurrently in the parallel loop
+  // below (vector<bool> packs bits, so adjacent writes race).
+  std::vector<char> boundary_net_flag(num_hyperedges, 0);
   
   // Pre-allocate result vector with a reasonable size estimation
   // In typical circuits, approximately 15-20% of vertices are on boundaries
@@ -1227,7 +1450,7 @@ std::vector<int> ChipletRefiner::FindBoundaryVertices(
             
             // Early exit when we know it's a boundary net
             if (num_span_parts >= 2) {
-              boundary_net_flag[e] = true;
+              boundary_net_flag[e] = 1;
               break;
             }
           }
@@ -1246,7 +1469,7 @@ std::vector<int> ChipletRefiner::FindBoundaryVertices(
           
           // Early exit when we know it's a boundary net
           if (num_span_parts >= 2) {
-            boundary_net_flag[e] = true;
+            boundary_net_flag[e] = 1;
             break;
           }
         }
@@ -1451,7 +1674,9 @@ std::vector<int> ChipletRefiner::FindBoundaryVertices(
   const int part_b = partition_pair.second;
   
   // Pre-allocate with exact size for boundary net flags
-  std::vector<bool> boundary_net_flag(num_hyperedges, false);
+  // std::vector<char>, not <bool>: written concurrently in the parallel loop
+  // below (vector<bool> packs bits, so adjacent writes race).
+  std::vector<char> boundary_net_flag(num_hyperedges, 0);
   
   // Pre-allocate result vector - estimate 10% of vertices on partition boundaries
   std::vector<int> boundary_vertices;
@@ -1469,7 +1694,7 @@ std::vector<int> ChipletRefiner::FindBoundaryVertices(
     for (int e = 0; e < num_hyperedges; e++) {
       // Check if edge spans both partitions - constant time check
       if (net_degs[e][part_a] > 0 && net_degs[e][part_b] > 0) {
-        boundary_net_flag[e] = true;
+        boundary_net_flag[e] = 1;
       }
     }
   } else {
@@ -1478,7 +1703,7 @@ std::vector<int> ChipletRefiner::FindBoundaryVertices(
     for (int e = 0; e < num_hyperedges; e++) {
       // Direct indexing is fast and maintains cache locality
       if (net_degs[e][part_a] > 0 && net_degs[e][part_b] > 0) {
-        boundary_net_flag[e] = true;
+        boundary_net_flag[e] = 1;
       }
     }
   #if HAVE_OPENMP
@@ -1565,84 +1790,6 @@ std::vector<int> ChipletRefiner::FindBoundaryVertices(
   return boundary_vertices;
 }
 
-
-// Find the neighboring vertices - efficiently implemented with reserving capacity
-std::vector<int> ChipletRefiner::FindNeighbors(
-    const HGraphPtr &hgraph, const int vertex_id,
-    const std::vector<bool> &visited_vertices_flag) const {
-
-  // Estimate the number of neighbors for efficient memory allocation
-  const auto& edges = hgraph->Edges(vertex_id);
-  size_t estimated_neighbors = 0;
-  
-  // Perform a quick scan to estimate the number of neighbors
-  // This avoids excessive reallocations
-  for (const int e : edges) {
-    estimated_neighbors += hgraph->Vertices(e).size();
-  }
-  
-  // Use a set for efficient duplicate elimination
-  std::unordered_set<int> neighbors;
-  neighbors.reserve(estimated_neighbors);
-
-  // Process all edges connected to the vertex
-  for (const int e : edges) {
-    // For each edge, collect all connected vertices that aren't visited
-    for (const int v : hgraph->Vertices(e)) {
-      if (!visited_vertices_flag[v]) {
-        neighbors.insert(v);
-      }
-    }
-  }
-  
-  // Convert to vector for return
-  std::vector<int> result;
-  result.reserve(neighbors.size());
-  result.insert(result.end(), neighbors.begin(), neighbors.end());
-  
-  return result;
-}
-
-// Find the neighboring vertices in specified blocks - optimized version
-std::vector<int>
-ChipletRefiner::FindNeighbors(const HGraphPtr &hgraph, const int vertex_id,
-                              const std::vector<bool> &visited_vertices_flag,
-                              const std::vector<int> &solution,
-                              const std::pair<int, int> &partition_pair) const {
-  // Retrieve partition information
-  const int part_a = partition_pair.first;
-  const int part_b = partition_pair.second;
-  
-  // Estimate the number of neighbors for efficient memory allocation
-  const auto& edges = hgraph->Edges(vertex_id);
-  size_t estimated_neighbors = 0;
-  
-  // Perform a quick scan to estimate the number of neighbors
-  for (const int e : edges) {
-    estimated_neighbors += hgraph->Vertices(e).size();
-  }
-  
-  // Use a set for efficient duplicate elimination
-  std::unordered_set<int> neighbors;
-  neighbors.reserve(estimated_neighbors);
-
-  // Process all edges connected to the vertex
-  for (const int e : edges) {
-    // For each edge, collect vertices that meet our criteria
-    for (const int v : hgraph->Vertices(e)) {
-      if (!visited_vertices_flag[v] && (solution[v] == part_a || solution[v] == part_b)) {
-        neighbors.insert(v);
-      }
-    }
-  }
-  
-  // Convert to vector for return
-  std::vector<int> result;
-  result.reserve(neighbors.size());
-  result.insert(result.end(), neighbors.begin(), neighbors.end());
-  
-  return result;
-}
 
 // Functions related to move a vertex
 // -----------------------------------------------------------
@@ -1768,6 +1915,15 @@ bool ChipletRefiner::CheckVertexMoveLegality(
     const HGraphPtr &hgraph, const Matrix<float> &curr_block_balance,
     const Matrix<float> &upper_block_balance,
     const Matrix<float> &lower_block_balance) const {
+  // Defensive bounds checks (bucket entries may be stale / from empty parts)
+  if (v < 0 || v >= hgraph->GetNumVertices() || to_pid < 0 || from_pid < 0 ||
+      to_pid == from_pid ||
+      to_pid >= static_cast<int>(curr_block_balance.size()) ||
+      from_pid >= static_cast<int>(curr_block_balance.size()) ||
+      to_pid >= static_cast<int>(upper_block_balance.size()) ||
+      from_pid >= static_cast<int>(lower_block_balance.size())) {
+    return false;
+  }
   // Get vertex weights and current block balance
   const std::vector<float>& vertex_weights = hgraph->GetVertexWeights(v);
   const std::vector<float>& to_block_balance = curr_block_balance[to_pid];
@@ -1823,97 +1979,6 @@ bool ChipletRefiner::CheckVertexMoveLegality(
   return to_constraint_satisfied && from_constraint_satisfied;
 }
 
-// calculate the possible gain of moving a entire hyperedge
-// We can view the process of moving the vertices in hyperege
-// one by one, then restore the moving sequence to make sure that
-// the current status is not changed. Solution should not be const
-HyperedgeGainPtr ChipletRefiner::CalculateHyperedgeGain(
-    int hyperedge_id, int to_pid, const HGraphPtr &hgraph,
-    std::vector<int> &solution, const Matrix<int> &net_degs) {
-  // if chiplet partitioning is done get the cost
-  // from chiplet evaluator
-  if (chiplet_flag_ == true) {
-    std::vector<int> temp_solution = solution;
-    // move all vertices in hyperedge to to_pid
-    for (const int v : hgraph->Vertices(hyperedge_id)) {
-      if (solution[v] != to_pid) {
-        temp_solution[v] = to_pid;
-      }
-    }
-    float score = GetCostFromScratch(temp_solution);
-    return std::make_shared<HyperedgeGain>(hyperedge_id, to_pid, score);
-  }
-  
-  // If chiplet_flag_ is false, return a zero gain as default
-  return std::make_shared<HyperedgeGain>(hyperedge_id, to_pid, 0.0f);
-}
-
-// accpet the hyperedge gain
-void ChipletRefiner::AcceptHyperedgeGain(const HyperedgeGainPtr &hyperedge_gain,
-                                         const HGraphPtr &hgraph,
-                                         float &total_delta_gain,
-                                         std::vector<int> &solution,
-                                         Matrix<float> &cur_block_balance,
-                                         Matrix<int> &net_degs) const {
-  const int hyperedge_id = hyperedge_gain->GetHyperedge();
-  total_delta_gain += hyperedge_gain->GetGain();
-  // get block id
-  const int new_part_id = hyperedge_gain->GetDestinationPart();
-  // update the solution vector block_balance and net_degs
-  for (const int vertex_id : hgraph->Vertices(hyperedge_id)) {
-    const int pre_part_id = solution[vertex_id];
-    if (pre_part_id == new_part_id) {
-      continue; // the vertex is in current block
-    }
-    // update solution
-    solution[vertex_id] = new_part_id;
-    // Update the partition balance
-    cur_block_balance[pre_part_id] =
-        cur_block_balance[pre_part_id] - hgraph->GetVertexWeights(vertex_id);
-    cur_block_balance[new_part_id] =
-        cur_block_balance[new_part_id] + hgraph->GetVertexWeights(vertex_id);
-    // update net_degs
-    // not just this hyperedge, we need to update all the related hyperedges
-    for (const int he : hgraph->Edges(vertex_id)) {
-      --net_degs[he][pre_part_id];
-      ++net_degs[he][new_part_id];
-    }
-  }
-}
-
-bool ChipletRefiner::CheckHyperedgeMoveLegality(
-    int e,      // hyperedge id
-    int to_pid, // to block id
-    const HGraphPtr &hgraph, const std::vector<int> &solution,
-    const Matrix<float> &curr_block_balance,
-    const Matrix<float> &upper_block_balance,
-    const Matrix<float> &lower_block_balance) const {
-  Matrix<float> update_block_balance = curr_block_balance;
-  for (const int v : hgraph->Vertices(e)) {
-    const int pid = solution[v];
-    if (solution[v] != to_pid) {
-      update_block_balance[to_pid] =
-          update_block_balance[to_pid] + hgraph->GetVertexWeights(v);
-      update_block_balance[pid] =
-          update_block_balance[pid] - hgraph->GetVertexWeights(v);
-    }
-  }
-  // Violate the upper bound
-  if (upper_block_balance[to_pid] < update_block_balance[to_pid]) {
-    return false;
-  }
-  // Violate the lower bound
-  for (int pid = 0; pid < num_parts_; pid++) {
-    if (pid != to_pid) {
-      if (update_block_balance[pid] < lower_block_balance[pid]) {
-        return false;
-      }
-    }
-  }
-  // valid move
-  return true;
-}
-
 HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
                                           const std::vector<int> &partition) {
   // Calculate block balances once and reuse
@@ -1923,34 +1988,26 @@ HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
   Matrix<float> new_vertex_weights_c;
   new_vertex_weights_c.reserve(vertex_weights_c.size());
   
-  // Map to track cluster IDs for more efficient lookups
-  std::vector<int> cluster_id_map_new;
-  cluster_id_map_new.reserve(vertex_weights_c.size());
-  
-  // Only include clusters with non-zero weight
-  for (int i = 0; i < vertex_weights_c.size(); i++) {
-    if (vertex_weights_c[i][0] > 0.0) {
-      cluster_id_map_new.push_back(i);
+  // Compact partition ids: chiplet k of the generated netlist is the k-th
+  // non-empty partition in ascending id order. The SAME map must be used for
+  // the vertex weights (below) and for remapping hyperedges, otherwise the
+  // chiplet areas and the nets that connect them refer to different chiplets.
+  // (Previously the weights used ascending order while the hyperedges used
+  // first-appearance order.)
+  std::vector<int> partition_to_cluster(vertex_weights_c.size(), -1);
+  for (int i = 0; i < static_cast<int>(vertex_weights_c.size()); i++) {
+    if (!vertex_weights_c[i].empty() && vertex_weights_c[i][0] > 0.0) {
+      partition_to_cluster[i] = static_cast<int>(new_vertex_weights_c.size());
       new_vertex_weights_c.push_back(vertex_weights_c[i]);
     }
   }
 
-  // Make a local copy to avoid modifying the input
-  std::vector<int> vertex_cluster_id_vec = partition;
-
-  // Create a cluster ID mapping for continuous IDs
-  std::unordered_map<int, int> cluster_id_map;
-  cluster_id_map.reserve(num_parts_); // Reserve approximate capacity
-  
-  int cluster_id = 0;
-  
-  // First pass: determine the cluster assignments
-  for (int i = 0; i < vertex_cluster_id_vec.size(); i++) {
-    const int orig_id = vertex_cluster_id_vec[i];
-    if (cluster_id_map.find(orig_id) == cluster_id_map.end()) {
-      cluster_id_map[orig_id] = cluster_id++;
+  std::vector<int> vertex_cluster_id_vec(partition.size(), -1);
+  for (size_t v = 0; v < partition.size(); v++) {
+    const int pid = partition[v];
+    if (pid >= 0 && pid < static_cast<int>(partition_to_cluster.size())) {
+      vertex_cluster_id_vec[v] = partition_to_cluster[pid];
     }
-    vertex_cluster_id_vec[i] = cluster_id_map[orig_id];
   }
 
   // Pre-allocate space for hyperedges and weights
@@ -1986,7 +2043,10 @@ HGraphPtr ChipletRefiner::GenerateNetlist(const HGraphPtr hgraph,
     
     // Add all cluster IDs of vertices in this hyperedge
     for (const int vertex_id : range) {
-      hyperedge_c.insert(vertex_cluster_id_vec[vertex_id]);
+      const int cid = vertex_cluster_id_vec[vertex_id];
+      if (cid >= 0) {
+        hyperedge_c.insert(cid);
+      }
     }
     
     // Skip if hyperedge only spans a single cluster
@@ -2070,8 +2130,13 @@ bool ChipletRefiner::InitializeCostModel() {
                           assembly_process_file_, test_file_, netlist_file_, 
                           blocks_file_);
     
-    // Load blocks using the existing readBlocks function
-    blocks_ = readBlocks(blocks_file_);
+    // Load blocks and reorder them into netlist (vertex) order so that
+    // blocks_[i] corresponds to partition[i] and to row i of the adjacency
+    // matrices in libraryDicts_.
+    blocks_.clear();
+    if (libraryDicts_ != nullptr) {
+      blocks_ = alignBlocksToNetlist(readBlocks(blocks_file_), libraryDicts_->block_names);
+    }
     
     cost_model_initialized_ = (libraryDicts_ != nullptr && !blocks_.empty());
     return cost_model_initialized_;
@@ -2110,19 +2175,16 @@ float ChipletRefiner::GetSingleMoveCost(
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
       end_time - start_time).count();
   
-  total_cost_model_time_ += duration / 1000000.0f;
+  // This is called from parallel bucket initialisation/update loops; the
+  // accumulator is shared, so the update must be atomic.
+  const float elapsed_s = duration / 1000000.0f;
+  #if HAVE_OPENMP
+  #pragma omp atomic
+  #endif
+  total_cost_model_time_ += elapsed_s;
   
   // Return the gain value
   return gain;
-}
-
-// Initialize slopes for gain calculations
-void ChipletRefiner::InitSlopes(int num_parts) {
-  // Resize vectors if needed
-  areaSlopes_.resize(num_parts, 1.0);
-  powerAreaSlopes_.resize(num_parts, 1.0);
-  costBandwidthSlopes_.resize(num_parts, 1.0);
-  powerBandwidthSlopes_.resize(num_parts, 1.0);
 }
 
 // Implementation of GetCostFromScratch that calls the other version with default parameters

@@ -50,8 +50,8 @@ public:
   // Setter methods for parameters
   void SetMaxSwaps(int max_swaps) { max_swaps_ = max_swaps; }
   void SetRefinerIters(int refiner_iters) { refiner_iters_ = refiner_iters; }
-  void SetFloorplannerParams(int num_workers, int max_steps, int perturbations) {
-    num_fp_workers_ = num_workers;
+  void SetFloorplannerParams(int /*num_workers (unused; the evaluator picks)*/,
+                             int max_steps, int perturbations) {
     max_fp_steps_ = max_steps;
     max_fp_perturbations_ = perturbations;
   }
@@ -108,12 +108,6 @@ private:
                    const Matrix<float>& upper_block_balance,
                    const Matrix<float>& lower_block_balance);
 
-  // Generate a chiplet-level netlist for floorplanning
-  HGraphPtr GenerateNetlist(const HGraphPtr hgraph, const std::vector<int>& partition);
-
-  // Build chiplets for floorplanning
-  void BuildChiplets(const HGraphPtr &hgraph);
-
   // Member variables
   int num_parts_;
   int refiner_iters_;
@@ -121,18 +115,7 @@ private:
   bool floorplanner_;
   float weight_scale_factor_ = 0.01f; // Default scale factor for gain calculations
 
-  // Floorplanner-specific variables
-  std::vector<BundledNet> bundled_nets_;
-  std::vector<Chiplet> chiplets_;
-  HGraphPtr chiplet_graph_ = nullptr;
-  std::vector<int> local_pos_seq_;
-  std::vector<int> local_neg_seq_;
-  std::vector<int> global_pos_seq_;
-  std::vector<int> global_neg_seq_;
-  float separation_ = 0.1;
-  
-  // Floorplanner parameters
-  int num_fp_workers_ = 2;
+  // Floorplanner parameters (floorplanning itself is delegated to cost_evaluator_)
   int max_fp_steps_ = 200;
   int max_fp_perturbations_ = 50;
   float cooling_rate_ = 0.95;
@@ -143,9 +126,14 @@ private:
 
   // Cost evaluator (borrowed from FM refiner)
   std::shared_ptr<ChipletRefiner> cost_evaluator_ = nullptr;
+
+  // Cost of the current (unswapped) solution, evaluated once per
+  // FindBestSwapPair() and reused for every candidate pair; invalidated by
+  // ExecuteSwap(). Before this, every candidate pair paid two full model
+  // builds, one of them for a cost that never changed within the search.
+  float base_cost_ = 0.0f;
+  bool base_cost_valid_ = false;
   
-  // Cache for gain calculations to avoid redundant calculations
-  std::unordered_map<std::string, float> gain_cache_;
 };
 
 using KLRefinerPtr = std::shared_ptr<KLRefiner>;

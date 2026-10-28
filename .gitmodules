@@ -1,0 +1,9 @@
+# Optional: only needed when building METIS from source (CMake option 1).
+# A system METIS (`brew install metis`, `apt install libmetis-dev`) is picked
+# up automatically and these submodules can stay empty.
+[submodule "METIS"]
+	path = METIS
+	url = https://github.com/KarypisLab/METIS.git
+[submodule "GKlib"]
+	path = GKlib
+	url = https://github.com/KarypisLab/GKlib.git
