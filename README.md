@@ -6,6 +6,25 @@ An example of an SoC netlist is the [Mempool testcase](https://github.com/bodhi9
 ### Overall Flow ###
 The overall flow is shown below: ![shown here](https://github.com/ABKGroup/ChipletPart/blob/main/chipletpart_overall_v5.png).
 
+### Key features ###
+- **Cost-driven partitioning.** Spectral/METIS initial partitions for every chiplet count are refined by
+  FM and KL moves scored with the full chiplet cost model (dies per wafer, yield, assembly, test, IO,
+  NRE), and the cheapest design is reported.
+- **Floorplan-feasibility-aware refinement** ([details](#floorplan-feasibility)). Every move is checked
+  with a short, warm-started sequence-pair floorplan probe, so the reported partition is placeable with
+  every inter-chiplet bundle within its IO reach. Infeasible starts are repaired; cheaper but unplaceable
+  partitions are never reported (`--no-floorplan-aware` turns this off).
+- **Cost-aware floorplanner.** The final floorplan's feasible arrangements are ranked by the cost model and
+  the chiplet shapes are refined against it under the reach constraint; candidates are ranked and
+  `Best cost` is reported by this post-floorplan cost.
+- **Iterated local search.** Kick-and-repair moves off the plateau that gated FM reaches, run in
+  parallel and accepted only when feasible and cheaper after floorplanning (`--ils-kicks`, `--ils-parents`).
+- **Reproducible results.** The final arrangement is saved next to the partition (`*.cpart.N.fp`);
+  evaluation mode starts from it and reproduces the partitioner's cost and feasibility. Runs are
+  deterministic for a given `--seed` regardless of the thread count.
+- **Heterogeneous technology assignment** by genetic algorithms or exhaustive enumeration
+  ([details](#heterogeneous-mode)), and an **evaluation mode** for existing partitions.
+
 ### Repository layout ###
 1. `src/` – the partitioner (`ChipletPart`, FM/KL refiners, sequence-pair floorplanner, GAs, CLI in `Main.cpp`).
 2. `cost_model/` – the C++ chiplet cost model (`evaluator_cpp`, `design::*`) and its unit tests.
