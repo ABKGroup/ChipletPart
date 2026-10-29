@@ -713,6 +713,11 @@ float ChipletRefiner::FloorplanViolation(const HGraphPtr &hgraph,
   }
   ++fp_probe_count_;
   ++fp_stats_.probes;
+  const auto probe_t0 = std::chrono::steady_clock::now();
+  struct ProbeTimer {
+    std::chrono::steady_clock::time_point t0; double& acc;
+    ~ProbeTimer() { acc += std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count(); }
+  } probe_timer{probe_t0, fp_probe_time_};
   SACore sa(0, chiplets_, bundled_nets_, area_penalty_weight_, package_penalty_weight_,
             net_penalty_weight_, pos_swap_prob_, neg_swap_prob_, double_swap_prob_,
             resize_prob_, expand_prob_, fp_check_steps_, fp_check_perturbs_,
@@ -931,6 +936,10 @@ float ChipletRefiner::Pass(
   // Calculate the number of expected moves to pre-allocate data structures
   const int num_vertices = hgraph->GetNumVertices();
   const int expected_moves = std::min(max_move_, num_vertices / 10);
+  const auto pass_t0 = std::chrono::steady_clock::now();
+  const float cm_time0 = total_cost_model_time_;
+  const long cost_evals0 = cost_evals_;
+  const double probe_time0 = fp_probe_time_;
   
   // Initialize gain buckets with capacity pre-allocation
   GainBuckets buckets;
@@ -970,6 +979,8 @@ float ChipletRefiner::Pass(
   
   // Initialize gain buckets
   InitializeGainBucketsKWay(buckets, hgraph, boundary_vertices, net_degs, solution);
+  const double init_time = std::chrono::duration<double>(std::chrono::steady_clock::now() - pass_t0).count();
+  const long init_evals = cost_evals_ - cost_evals0;
 
   // Allocate move history with capacity pre-reservation
   std::vector<GainCell> moves_trace;
@@ -1175,6 +1186,10 @@ float ChipletRefiner::Pass(
         touched[u] = 1;
       }
     }
+    // (Refreshing only the touched vertices and leaving the source/
+    // destination partitions to the lazy re-evaluation was tried: 3x faster
+    // on WS3 but clearly worse results, since a stale, too-low gain is never
+    // picked and so never corrected.)
     neighbors.clear();
     for (const auto &v : boundary_vertices) {
       if (visited_vertices_flag[v]) continue;
@@ -1227,7 +1242,11 @@ float ChipletRefiner::Pass(
               << " start_viol=" << start_violation
               << " best_viol=" << best_violation << " moves=" << moves_trace.size()
               << " best_idx=" << best_move_index << " best_gain=" << best_gain
-              << " fp_rejected=" << fp_rejected_total << " probes=" << fp_probe_count_ << "\n";
+              << " fp_rejected=" << fp_rejected_total << " probes=" << fp_probe_count_
+              << " | t=" << std::chrono::duration<double>(std::chrono::steady_clock::now() - pass_t0).count()
+              << "s init=" << init_time << "s/" << init_evals << "ev boundary=" << boundary_vertices.size()
+              << " cm=" << (total_cost_model_time_ - cm_time0) << "s/" << (cost_evals_ - cost_evals0)
+              << "ev probe=" << (fp_probe_time_ - probe_time0) << "s\n";
   }
   // Report a repaired violation as progress so Refine() keeps iterating.
   if (violation_lt(best_violation, start_violation) && best_gain <= 0.0f) {
@@ -2366,6 +2385,10 @@ float ChipletRefiner::GetSingleMoveCost(
 
 // Implementation of GetCostFromScratch that calls the other version with default parameters
 float ChipletRefiner::GetCostFromScratch(const std::vector<int>& partition, bool approx_state) const {
+  #if HAVE_OPENMP
+  #pragma omp atomic
+  #endif
+  ++cost_evals_;
   return CostWithAspectRatios(partition, aspect_ratios_, approx_state);
 }
 

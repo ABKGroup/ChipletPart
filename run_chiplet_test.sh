@@ -43,7 +43,7 @@ show_help() {
     echo "  --fp-workers <n>       Final floorplan parallel walkers (default: 8)"
     echo "  --no-fp-cost-aware     Floorplanner picks by the SA objective, no cost-model shape refinement"
     echo "  --ils-kicks <n>        Iterated local search: up to <n> kick-and-repair attempts per parent"
-    echo "                         after refinement (default: 64; 0 = off)"
+    echo "                         after refinement (default: 256; 0 = off)"
     echo "  --ils-parents <n>      Cheapest feasible candidates to kick (default: 1)"
     echo "  --fp-excursion <frac>  Feasibility gate: tolerate reach violations up to <frac> x reach scale"
     echo "                         within a pass that starts feasible (default: 0 = strict)"

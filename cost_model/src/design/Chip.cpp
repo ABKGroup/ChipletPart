@@ -1142,7 +1142,8 @@ FloatType Chip::GetSignalPower(const std::vector<String>& internal_block_list) c
     // print the internal block list 
     FloatType signal_power = 0.0;
     IntType block_index = -1;
-    std::vector<IntType> internal_block_list_indices;
+    // is_internal[i]: block_names_[i] is in internal_block_list
+    std::vector<char> is_internal(block_names_.size(), 0);
     
     // Find block index and internal block list indices
     
@@ -1153,7 +1154,7 @@ FloatType Chip::GetSignalPower(const std::vector<String>& internal_block_list) c
         
         // Check if block_names_[i] is in internal_block_list
         if (std::find(internal_block_list.begin(), internal_block_list.end(), block_names_[i]) != internal_block_list.end()) {
-            internal_block_list_indices.push_back(i);
+            is_internal[i] = 1;
         }
     }
     
@@ -1190,7 +1191,7 @@ FloatType Chip::GetSignalPower(const std::vector<String>& internal_block_list) c
         // Process connections for this block
         for (IntType j = 0; j < static_cast<IntType>(block_names_.size()); j++) {
             // Skip if j is in internal_block_list_indices
-            if (std::find(internal_block_list_indices.begin(), internal_block_list_indices.end(), j) != internal_block_list_indices.end()) {
+            if (is_internal[j]) {
                 continue;
             }
             
@@ -1929,6 +1930,9 @@ std::pair<IntType, std::map<String, IntType>> Chip::GetSignalCount(const std::ve
         
         // Set bidirectional factor
         FloatType bidirectional_factor = matching_io->GetBidirectional() ? 0.5 : 1.0;
+        // Reach key of this IO type (the same for every connection below).
+        const String reach_str = std::to_string(matching_io->GetReach());
+        IntType* reach_bucket = nullptr;
         
         // Process connections for this block
         for (IntType j = 0; j < static_cast<IntType>(block_names_.size()); j++) {
@@ -1962,8 +1966,10 @@ std::pair<IntType, std::map<String, IntType>> Chip::GetSignalCount(const std::ve
                 signal_count += final_count_to_add;
                 
                 // Add to signal with reach count
-                String reach_str = std::to_string(matching_io->GetReach());
-                signal_with_reach_count[reach_str] += final_count_to_add;
+                if (!reach_bucket) {
+                    reach_bucket = &signal_with_reach_count[reach_str];
+                }
+                *reach_bucket += final_count_to_add;
             }
         }
     }

@@ -271,9 +271,24 @@ float getAreas(std::vector<float>& chiplet_areas, const std::vector<std::vector<
     for (int i = 0; i < numPartitions; ++i) {
         chiplet_areas.push_back(0.0);
     }
+    // The scaling factor depends only on (block tech, chiplet tech, memory);
+    // there are a handful of distinct pairs, so look each up once per call
+    // (this runs for every move the refiner scores).
+    struct Key { const std::string* from; const std::string* to; bool mem; float f; };
+    std::vector<Key> memo;
     for (int partitionId = 0; partitionId < numPartitions; partitionId++) {
+        const std::string& to = tech_array[partitionId];
         for (int blockId = 0; blockId < partitionVector[partitionId].size(); blockId++) {
-            chiplet_areas[partitionId] += blocks[partitionVector[partitionId][blockId]].area*area_scaling_factor(blocks[partitionVector[partitionId][blockId]].tech, tech_array[partitionId], blocks[partitionVector[partitionId][blockId]].is_memory);
+            const block& b = blocks[partitionVector[partitionId][blockId]];
+            float f = -1.0f;
+            for (const Key& k : memo) {
+                if (k.mem == b.is_memory && *k.to == to && *k.from == b.tech) { f = k.f; break; }
+            }
+            if (f < 0.0f) {
+                f = area_scaling_factor(b.tech, to, b.is_memory);
+                memo.push_back({&b.tech, &to, b.is_memory, f});
+            }
+            chiplet_areas[partitionId] += b.area * f;
         }
         total_area += chiplet_areas[partitionId];
     }
@@ -286,9 +301,21 @@ float getPowers(std::vector<float>& chiplet_powers, const std::vector<std::vecto
     for (int i = 0; i < numPartitions; ++i) {
         chiplet_powers.push_back(0.0);
     }
+    struct Key { const std::string* from; const std::string* to; float f; };
+    std::vector<Key> memo;
     for (int partitionId = 0; partitionId < numPartitions; partitionId++) {
+        const std::string& to = tech_array[partitionId];
         for (int blockId = 0; blockId < partitionVector[partitionId].size(); blockId++) {
-            chiplet_powers[partitionId] += blocks[partitionVector[partitionId][blockId]].power*power_scaling_factor(blocks[partitionVector[partitionId][blockId]].tech, tech_array[partitionId]);
+            const block& b = blocks[partitionVector[partitionId][blockId]];
+            float f = -1.0f;
+            for (const Key& k : memo) {
+                if (*k.to == to && *k.from == b.tech) { f = k.f; break; }
+            }
+            if (f < 0.0f) {
+                f = power_scaling_factor(b.tech, to);
+                memo.push_back({&b.tech, &to, f});
+            }
+            chiplet_powers[partitionId] += b.power * f;
         }
         total_power += chiplet_powers[partitionId];
     }
@@ -296,6 +323,27 @@ float getPowers(std::vector<float>& chiplet_powers, const std::vector<std::vecto
 }
 
 // Build a chip model based on partition IDs
+// Sparse view of the block-level adjacency matrices (built once per library).
+static const std::vector<SparseAdjacency>& getSparseAdjacency(LibraryDicts* libraryDicts) {
+    std::call_once(libraryDicts->sparse_adjacency_once, [libraryDicts] {
+        for (const auto& [io_type, matrix] : libraryDicts->global_adjacency_matrix) {
+            SparseAdjacency adj;
+            adj.io_type = io_type;
+            for (size_t i = 0; i < matrix.size(); ++i) {
+                for (size_t j = 0; j < matrix[i].size(); ++j) {
+                    if (matrix[i][j] != 0) {
+                        adj.row.push_back(static_cast<int>(i));
+                        adj.col.push_back(static_cast<int>(j));
+                        adj.value.push_back(matrix[i][j]);
+                    }
+                }
+            }
+            libraryDicts->sparse_adjacency.push_back(std::move(adj));
+        }
+    });
+    return libraryDicts->sparse_adjacency;
+}
+
 std::shared_ptr<design::Chip> buildModel(const std::vector<int>& partitionIDs, 
                                        const std::vector<std::string>& tech_array, 
                                        const std::vector<float>& aspect_ratios, 
@@ -353,45 +401,51 @@ std::shared_ptr<design::Chip> buildModel(const std::vector<int>& partitionIDs,
     std::vector<std::string> block_chiplet_names = getBlockChipletNames(numPartitions);
     std::vector<std::string> block_names = getBlockNames(blocks);
     
-    // Combine blocks to create new connectivity matrices based on partition assignments
-    // This matches the Python implementation's call to combine_blocks
-    
-    // Convert int matrices to double matrices for CombineBlocks
-    std::map<std::string, std::vector<std::vector<double>>> global_adj_matrix_double;
-    for (const auto& [key, matrix] : libraryDicts->global_adjacency_matrix) {
-        std::vector<std::vector<double>> double_matrix;
-        for (const auto& row : matrix) {
-            std::vector<double> double_row(row.begin(), row.end());
-            double_matrix.push_back(double_row);
-        }
-        global_adj_matrix_double[key] = double_matrix;
-    }
-    
-    // Use CombineBlocks with the converted matrices
-    auto combined_result = construct_chip::CombineBlocks(
-        global_adj_matrix_double,
-        libraryDicts->average_bandwidth_utilization,
-        block_names,
-        partitionVector
-    );
-    
-    // Extract the results
-    std::map<std::string, std::vector<std::vector<double>>> combined_adjacency_matrix = std::get<0>(combined_result);
-    std::map<std::string, std::vector<std::vector<double>>> combined_average_bandwidth_utilization = std::get<1>(combined_result);
-    std::vector<std::string> combined_block_names = std::get<2>(combined_result);
-    
-    // Convert the combined adjacency matrix back to int if needed for CreateChipFromXML
+    // Collapse the block-level connectivity to the chiplet level (the
+    // equivalent of construct_chip::CombineBlocks, computed from the sparse
+    // form of the adjacency matrices: this runs for every move the refiner
+    // scores, and the dense version spent most of its time converting and
+    // scanning zeros). Per chiplet pair: IO count = sum of the block-pair
+    // counts, bandwidth utilisation = count-weighted average; diagonal 0.
+    // Terms are accumulated in the same (row, column) order as CombineBlocks,
+    // so the results are identical.
     std::map<std::string, std::vector<std::vector<int>>> combined_adjacency_matrix_int;
-    for (const auto& [key, matrix] : combined_adjacency_matrix) {
-        std::vector<std::vector<int>> int_matrix;
-        for (const auto& row : matrix) {
-            std::vector<int> int_row;
-            for (double val : row) {
-                int_row.push_back(static_cast<int>(val));
+    std::map<std::string, std::vector<std::vector<double>>> combined_average_bandwidth_utilization;
+    {
+        const auto& sparse = getSparseAdjacency(libraryDicts);
+        const size_t k = static_cast<size_t>(numPartitions);
+        std::vector<std::vector<double>> bw_weighted(k, std::vector<double>(k, 0.0));
+        for (const auto& adj : sparse) {
+            auto& counts = combined_adjacency_matrix_int[adj.io_type];
+            auto& ave_bw = combined_average_bandwidth_utilization[adj.io_type];
+            counts.assign(k, std::vector<int>(k, 0));
+            ave_bw.assign(k, std::vector<double>(k, 0.0));
+            for (auto& r : bw_weighted) std::fill(r.begin(), r.end(), 0.0);
+            const auto bw_it = libraryDicts->average_bandwidth_utilization.find(adj.io_type);
+            const std::vector<std::vector<double>>* bw_matrix =
+                bw_it != libraryDicts->average_bandwidth_utilization.end() ? &bw_it->second : nullptr;
+            for (size_t n = 0; n < adj.value.size(); ++n) {
+                const int i = adj.row[n], j = adj.col[n];
+                if (i >= static_cast<int>(partitionIDs.size()) || j >= static_cast<int>(partitionIDs.size())) continue;
+                const int p = partitionIDs[i], q = partitionIDs[j];
+                if (p < 0 || q < 0 || p == q) continue;
+                const int v = adj.value[n];
+                double bw = 0.0;
+                if (bw_matrix && static_cast<size_t>(i) < bw_matrix->size() &&
+                    static_cast<size_t>(j) < (*bw_matrix)[i].size()) {
+                    bw = (*bw_matrix)[i][j];
+                }
+                counts[p][q] += v;
+                bw_weighted[p][q] += bw * static_cast<double>(v);
             }
-            int_matrix.push_back(int_row);
+            for (size_t p = 0; p < k; ++p) {
+                for (size_t q = 0; q < k; ++q) {
+                    if (counts[p][q] != 0) {
+                        ave_bw[p][q] = bw_weighted[p][q] / static_cast<double>(counts[p][q]);
+                    }
+                }
+            }
         }
-        combined_adjacency_matrix_int[key] = int_matrix;
     }
 
     // Create a chip XML using ConstructChip
@@ -455,7 +509,6 @@ float getCostFromScratch(const std::vector<int>& partitionIds,
     // Calculate the cost and power
     float cost = chip->ComputeCost();
     float power = chip->GetPower();  // Use GetPower() instead of ComputePower()
-    std::cout << "Cost: " << cost << ", Power: " << power << std::endl;
     
     // Calculate the weighted sum
     float total_cost = cost_coefficient * cost + power_coefficient * power;

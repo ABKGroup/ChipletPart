@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <mutex>
 
 #include "include/design/Design.hpp"
 #include "include/design/Chip.hpp"
@@ -26,6 +27,17 @@ struct block {
 };
 
 // Structure to hold all library definitions
+// Non-zero entries of one IO type's block-level adjacency matrix, in
+// row-major order. Built once from global_adjacency_matrix; every cost
+// evaluation collapses it to the chiplet level in O(nnz) instead of
+// converting and scanning the dense n x n matrices.
+struct SparseAdjacency {
+    std::string io_type;
+    std::vector<int> row;
+    std::vector<int> col;
+    std::vector<int> value;
+};
+
 struct LibraryDicts {
     std::vector<design::WaferProcess> wafer_processes;
     std::vector<design::IO> ios;
@@ -35,6 +47,9 @@ struct LibraryDicts {
     std::map<std::string, std::vector<std::vector<int>>> global_adjacency_matrix;
     std::map<std::string, std::vector<std::vector<double>>> average_bandwidth_utilization;
     std::vector<std::string> block_names;
+    // Derived from global_adjacency_matrix (see buildModel); filled lazily.
+    std::vector<SparseAdjacency> sparse_adjacency;
+    std::once_flag sparse_adjacency_once;
 };
 
 // Helper function for scaling areas between technology nodes

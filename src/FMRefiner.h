@@ -694,6 +694,8 @@ private:
   bool approx_state_ = 0;
   // tally global runtime
   mutable float total_cost_model_time_ = 0.0;
+  mutable long cost_evals_ = 0;          // GetCostFromScratch calls (profiling)
+  double fp_probe_time_ = 0.0;           // seconds spent in FloorplanViolation probes
   float total_fplan_time_ = 0.0;
   // 0 stands for gain bucket initialization
   // 1 stands for gain bucket neighbor update

@@ -135,8 +135,9 @@ single-vertex move is vetoed by the gate (about 90% on EPYC and GA100 at 8 chipl
 a plateau that it cannot leave one vertex at a time. A kick moves 2-4 boundary vertices of the
 cheapest feasible candidate to a neighbouring chiplet (within the balance bounds), one short gated
 FM pass repairs it, it is floorplanned, and it replaces its parent when it is feasible and cheaper.
-Kicks run in rounds of 8 (in parallel), up to `--ils-kicks` per parent (default 64, `0` disables),
-stopping after two rounds without improvement; `--ils-parents` kicks more than one candidate. The
+Kicks run in rounds of 8 (in parallel), up to `--ils-kicks` per parent (default 256, `0` disables),
+stopping after two rounds without improvement (on the reference designs the search ends after
+16-180 kicks); `--ils-parents` kicks more than one candidate. The
 result is deterministic for a given seed. `--fp-excursion <frac>` additionally lets a feasible pass
 walk through partitions that violate the reach by up to `frac` x the total weighted reach before
 the usual rollback; it changed nothing on the reference designs and is off by default.
@@ -152,12 +153,11 @@ chosen by the annealer's objective, no shape refinement, candidates ranked by re
 | EPYC (`epyc7282`) | 71.23 – 71.36 / 8 | 71.97 / 8 | 72.27 / 8 | 70.83 / 8 (infeasible) |
 | GA100 (`ga100`) | 70.24 / 8 | 70.24 / 8 | 71.17 / 8 | 70.14 / 8 (infeasible) |
 | WS₁ (`48_1_14_4_1600_1600`) | 48.97 – 49.41 / 4 – 6 | 49.56 – 50.04 / 4 – 8 | 50.12 / 4 | 49.89 / 7 |
-| WS₃ (`48_4_14_4_1600_1600`) | 245.81 – 251.79 / 8 | 259.17 / 8 | 262.40 / 8 | 260.23 / 8 |
+| WS₃ (`48_4_14_4_1600_1600`) | 243.62 – 245.67 / 8 | 259.17 / 8 | 262.40 / 8 | 260.23 / 8 |
 | MP (`mempool_group`) | 5.81 / 1 | 5.81 / 1 | 5.82 / 1 | 5.82 / 1 |
 
-Runtime on a laptop (8 threads): EPYC and GA100 about 15 s, WS₃ about 55 s, WS₁ 13 s, MP 5 s
-(without the local search: 10 s, 30 s, 7 s, 4 s). WS₃ keeps improving with more kicks
-(`--ils-kicks 128`: 243.8 – 246.8 in about 75 s).
+Runtime on a laptop (8 threads): EPYC and GA100 about 9 s, WS₃ 30 – 40 s, WS₁ 8 s, MP 3 s
+(without the local search: 9 s, 15 s, 5 s, 3 s).
 
 ## Heterogeneous mode ##
 Multiple technology nodes; partitioning and technology assignment are co-optimised by a genetic algorithm:
@@ -230,7 +230,7 @@ Options:
   --fp-workers <n>       Final floorplan parallel walkers (default: 8)
   --no-fp-cost-aware     Floorplanner picks by the SA objective, no cost-model shape refinement
   --ils-kicks <n>        Iterated local search: up to <n> kick-and-repair attempts per parent
-                         after refinement (default: 64; 0 = off)
+                         after refinement (default: 256; 0 = off)
   --ils-parents <n>      Cheapest feasible candidates to kick (default: 1)
   --fp-excursion <frac>  Feasibility gate: tolerate reach violations up to <frac> x reach scale
                          within a pass that starts feasible (default: 0 = strict)

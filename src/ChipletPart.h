@@ -308,7 +308,7 @@ private:
   int fp_workers_ = 0;           // final floorplan walkers (0 = auto)
   bool fp_cost_aware_ = true;    // cost-model ranking + shape refinement in the floorplanner
   float fp_excursion_ = 0.0f;    // bounded-excursion budget of the gate
-  int ils_kicks_ = 64;           // max ILS kicks per parent (0 = off)
+  int ils_kicks_ = 256;          // max ILS kicks per parent (0 = off)
   int ils_parents_ = 1;          // ILS parents (cheapest feasible candidates)
   bool fp_eval_candidates_ = false;
   int fp_audit_factor_ = 0;
