@@ -86,15 +86,15 @@ Results are written to `results/<case>/standard/` (override with `--output-dir`)
 +------------+----------------------+------------+------------------+------------------+------------+
 | Rank       | Partition Index      | Parts      | Cost             | Refined cost     | Feasible   |
 +------------+----------------------+------------+------------------+------------------+------------+
-| 1          | 17                   | 8          | 71.965065        | 72.034363        | Yes        |
-| 2          | 16                   | 8          | 72.147827        | 71.835381        | Yes        |
+| 1          | 17                   | 8          | 71.225777        | 71.296188        | Yes        |
+| 2          | 16                   | 8          | 72.078323        | 71.835381        | Yes        |
 | 3          | 13                   | 6          | 73.521904        | 73.643364        | Yes        |
 [INFO] Floorplanner results: Yes
-[SUCCESS] Best cost: 71.965065
+[SUCCESS] Best cost: 71.225777
 [SUCCESS] Number of partitions: 8
 [SUCCESS] Floorplan feasibility: 1
-[SUCCESS] Pre-floorplan cost: 72.034363
-[SUCCESS] Post-floorplan cost: 71.965065
+[SUCCESS] Pre-floorplan cost: 71.296188
+[SUCCESS] Post-floorplan cost: 71.225777
 [SUCCESS] Best partition saved to results/epyc7282/standard/block_level_netlist.xml.cpart.8
 [SUCCESS] Floorplan seed saved to results/epyc7282/standard/block_level_netlist.xml.cpart.8.fp
 ```
@@ -102,7 +102,7 @@ Results are written to `results/<case>/standard/` (override with `--output-dir`)
 mode reports for the saved partition); `Refined cost` / `Pre-floorplan cost` is the cost the
 refinement optimised, which assumes square chiplets. Candidates are ranked by the former, so a
 candidate with a slightly higher refined cost can win (as above: 16 refines to 71.84 but floorplans
-to 72.15, 17 refines to 72.03 and floorplans to 71.97).
+to 72.08, 17 refines to 71.30 and floorplans to 71.23).
 
 ### Floorplan feasibility ###
 A partition is *feasible* when the sequence-pair floorplanner can place the chiplets (with the
@@ -130,20 +130,34 @@ selects by the annealer's objective instead. The final arrangement is saved next
 (`*.cpart.N.fp`) and evaluation mode starts from it, so the saved partition reproduces its cost and
 feasibility.
 
-Results with the default settings (7nm, reach 0.5, separation 0.25; `Best cost` / chiplets, all
-feasible). "Cost-only" is `--no-floorplan-aware`, whose EPYC and GA100 designs are **not**
-placeable; the middle column is the same feasibility-aware search with the previous floorplanner
-(walker chosen by the annealer's objective, no shape refinement, candidates ranked by refined cost):
+The refinement ends with an **iterated local search**. From a refined feasible partition nearly every
+single-vertex move is vetoed by the gate (about 90% on EPYC and GA100 at 8 chiplets), so FM sits on
+a plateau that it cannot leave one vertex at a time. A kick moves 2-4 boundary vertices of the
+cheapest feasible candidate to a neighbouring chiplet (within the balance bounds), one short gated
+FM pass repairs it, it is floorplanned, and it replaces its parent when it is feasible and cheaper.
+Kicks run in rounds of 8 (in parallel), up to `--ils-kicks` per parent (default 64, `0` disables),
+stopping after two rounds without improvement; `--ils-parents` kicks more than one candidate. The
+result is deterministic for a given seed. `--fp-excursion <frac>` additionally lets a feasible pass
+walk through partitions that violate the reach by up to `frac` x the total weighted reach before
+the usual rollback; it changed nothing on the reference designs and is off by default.
 
-| Case | Default (seeds 1, 2, 3, 42) | Previous floorplanner (seed 1) | Cost-only (seed 42) |
-|------|-----------------------------|--------------------------------|---------------------|
-| EPYC (`epyc7282`) | 71.97 / 8 | 72.27 / 8 | 70.83 / 8 (infeasible) |
-| GA100 (`ga100`) | 70.24 / 8 | 71.17 / 8 | 70.14 / 8 (infeasible) |
-| WS₁ (`48_1_14_4_1600_1600`) | 49.56 – 50.04 / 4 – 8 | 50.12 / 4 | 49.89 / 7 |
-| WS₃ (`48_4_14_4_1600_1600`) | 259.17 / 8 | 262.40 / 8 | 260.23 / 8 |
-| MP (`mempool_group`) | 5.81 / 1 | 5.82 / 1 | 5.82 / 1 |
+Results with the default settings (7nm, reach 0.5, separation 0.25; `Best cost` / chiplets over
+seeds 1, 2, 3 and 42, all feasible). `--ils-kicks 0` is the same search without the iterated local
+search; "Previous floorplanner" is the feasibility-aware search with the earlier floorplanner (walker
+chosen by the annealer's objective, no shape refinement, candidates ranked by refined cost);
+"Cost-only" is `--no-floorplan-aware`, whose EPYC and GA100 designs are **not** placeable:
 
-Runtime on a laptop (10 threads): EPYC and GA100 about 19 s, WS₃ about 55 s, WS₁ 10 s, MP 6 s.
+| Case | Default | `--ils-kicks 0` | Previous floorplanner (seed 1) | Cost-only (seed 42) |
+|------|---------|-----------------|--------------------------------|---------------------|
+| EPYC (`epyc7282`) | 71.23 – 71.36 / 8 | 71.97 / 8 | 72.27 / 8 | 70.83 / 8 (infeasible) |
+| GA100 (`ga100`) | 70.24 / 8 | 70.24 / 8 | 71.17 / 8 | 70.14 / 8 (infeasible) |
+| WS₁ (`48_1_14_4_1600_1600`) | 48.97 – 49.41 / 4 – 6 | 49.56 – 50.04 / 4 – 8 | 50.12 / 4 | 49.89 / 7 |
+| WS₃ (`48_4_14_4_1600_1600`) | 245.81 – 251.79 / 8 | 259.17 / 8 | 262.40 / 8 | 260.23 / 8 |
+| MP (`mempool_group`) | 5.81 / 1 | 5.81 / 1 | 5.82 / 1 | 5.82 / 1 |
+
+Runtime on a laptop (8 threads): EPYC and GA100 about 15 s, WS₃ about 55 s, WS₁ 13 s, MP 5 s
+(without the local search: 10 s, 30 s, 7 s, 4 s). WS₃ keeps improving with more kicks
+(`--ils-kicks 128`: 243.8 – 246.8 in about 75 s).
 
 ## Heterogeneous mode ##
 Multiple technology nodes; partitioning and technology assignment are co-optimised by a genetic algorithm:
@@ -215,6 +229,11 @@ Options:
   --fp-perturbs <n>      Final floorplan perturbations per step (default: 1000)
   --fp-workers <n>       Final floorplan parallel walkers (default: 8)
   --no-fp-cost-aware     Floorplanner picks by the SA objective, no cost-model shape refinement
+  --ils-kicks <n>        Iterated local search: up to <n> kick-and-repair attempts per parent
+                         after refinement (default: 64; 0 = off)
+  --ils-parents <n>      Cheapest feasible candidates to kick (default: 1)
+  --fp-excursion <frac>  Feasibility gate: tolerate reach violations up to <frac> x reach scale
+                         within a pass that starts feasible (default: 0 = strict)
   --help                 Show this message
 
 Examples:

@@ -44,6 +44,7 @@
 #include "CanonicalGA.h" // Add include for CanonicalGA
 #include "Console.h" // Include Console.h for formatting
 #include <chrono>
+#include <cstdlib>
 #include <codecvt>
 #include <filesystem>
 #include <future> // For parallel fitness evaluation
@@ -82,6 +83,15 @@ constexpr int kCandidateFloorplanWorkers = 2;
 // against the cost model, so more walkers buy a cheaper floorplan (about
 // 0.1-0.4% from 4 to 8 on the reference designs) for a few seconds.
 constexpr int kFinalFloorplanWorkers = 8;
+// Iterated local search (--ils-kicks): a kick moves 2-4 boundary vertices
+// and is repaired by one FM pass of at most kIlsKickMaxMoves moves (a full
+// refinement per kick costs 5-10x more and finds the same improvements on
+// the reference designs). Kicks of a round are independent and run in
+// parallel; the search stops after kIlsPatience rounds without improvement.
+constexpr int kIlsKickPasses = 1;
+constexpr int kIlsKickMaxMoves = 8;
+constexpr int kIlsKicksPerRound = 8;
+constexpr int kIlsPatience = 2;
 
 // Floorplan seed file (<partition file>.fp): lines "pos", "neg", "ar" and
 // optionally "w" / "h", each followed by one value per chiplet (sequence
@@ -1751,7 +1761,11 @@ void ChipletPart::Partition(
       thread_refiner->SetFloorplanProbeAudit(fp_audit_factor_);
       thread_refiner->SetFloorplanCostAware(fp_cost_aware_);
       thread_refiner->SetFloorplanExcursion(fp_excursion_);
-      thread_refiner->SetRefineIters(quick ? std::min(refine_iters_, 2) : refine_iters_);
+      // A kick displaces 2-4 vertices from a refined partition, so its
+      // repair needs one short FM pass; the pass's fixed cost (gains for
+      // every boundary vertex) is what makes many kicks affordable.
+      thread_refiner->SetRefineIters(quick ? std::min(refine_iters_, kIlsKickPasses) : refine_iters_);
+      thread_refiner->SetMaxMove(quick ? std::min(max_moves_, kIlsKickMaxMoves) : max_moves_);
       thread_refiner->ResetFloorplanProbeState();
       if (warm_seed && static_cast<int>(warm_seed->size()) == num_parts) {
         thread_refiner->SetFloorplanSeed(*warm_seed);
@@ -1766,6 +1780,11 @@ void ChipletPart::Partition(
       std::vector<float> result_x_locations;
       std::vector<float> result_y_locations;
       bool success = true;
+      static const bool fp_debug = std::getenv("CHIPLETPART_FP_DEBUG") != nullptr;
+      const auto t_start = std::chrono::steady_clock::now();
+      auto since = [](std::chrono::steady_clock::time_point t) {
+        return std::chrono::duration<double>(std::chrono::steady_clock::now() - t).count();
+      };
       if (floorplanning) {
         auto floor_result = thread_refiner->RunFloorplanner(partition_copy, hypergraph_, 100, 100, 0.00001);
         result_aspect_ratios = std::get<0>(floor_result);
@@ -1784,8 +1803,10 @@ void ChipletPart::Partition(
         thread_refiner->SetXLocations(result_x_locations);
         thread_refiner->SetYLocations(result_y_locations);
         
+        const double t_initfp = since(t_start);
         // Run refinement
         thread_refiner->Refine(hypergraph_, upper_block_balance, lower_block_balance, partition_copy);
+        const double t_fm = since(t_start) - t_initfp;
         
         // Run KL refinement after FM refinement
         if (!quick) {
@@ -1819,6 +1840,7 @@ void ChipletPart::Partition(
         }
         }
         
+        const double t_kl = since(t_start) - t_initfp - t_fm;
         float final_cost = thread_refiner->GetCostFromScratch(partition_copy);
         int final_num_parts = *std::max_element(partition_copy.begin(), partition_copy.end()) + 1;
 
@@ -1842,6 +1864,16 @@ void ChipletPart::Partition(
             thread_refiner->SetYLocations(result_y_locations);
             post_cost = thread_refiner->GetCostFromScratch(partition_copy);
           }
+        }
+        if (fp_debug) {
+          const double t_total = since(t_start);
+          const auto& ps = thread_refiner->GetFloorplanProbeStats();
+          std::ostringstream os;
+          os << "[fp-debug] candidate " << idx << (quick ? " (kick)" : "") << ": parts=" << num_parts
+             << " init_fp=" << t_initfp << "s fm=" << t_fm << "s kl=" << t_kl
+             << "s cand_fp=" << (t_total - t_initfp - t_fm - t_kl) << "s total=" << t_total
+             << "s probes=" << ps.probes << " rejected=" << ps.rejected << "\n";
+          std::cerr << os.str();
         }
         // Store results for this partition
         PartitionResult result;
@@ -2008,8 +2040,8 @@ void ChipletPart::Partition(
 
         // Kicks of one round are generated from the same parent and run in
         // parallel; the round size is fixed (not the thread count) so the
-        // result does not depend on the machine.
-        constexpr int kIlsKicksPerRound = 8;
+        // result does not depend on the machine. Rounds stop early once no
+        // parent has improved for kIlsPatience rounds in a row.
         const int num_parents = static_cast<int>(parents.size());
         const int per_round = std::min(kIlsKicksPerRound, ils_kicks_);
         const int num_rounds = (ils_kicks_ + per_round - 1) / per_round;
@@ -2017,9 +2049,10 @@ void ChipletPart::Partition(
         std::vector<int> kick_parent;
         std::vector<PartitionResult> kick_results;
         int kicks_done = 0, kicks_feasible = 0, kicks_accepted = 0;
-        Console::Info("ILS: " + std::to_string(ils_kicks_) + " kicks on " + std::to_string(num_parents) +
-                      " parent(s), " + std::to_string(num_rounds) + " round(s) of up to " +
-                      std::to_string(per_round) + " kicks per parent");
+        int stalled_rounds = 0;
+        Console::Info("ILS: up to " + std::to_string(ils_kicks_) + " kicks on " +
+                      std::to_string(num_parents) + " parent(s), " + std::to_string(num_rounds) +
+                      " round(s) of " + std::to_string(per_round) + " kicks per parent");
         auto ils_start = std::chrono::high_resolution_clock::now();
         #if HAVE_OPENMP
         #pragma omp parallel num_threads(num_threads)
@@ -2027,6 +2060,10 @@ void ChipletPart::Partition(
         {
           auto ils_refiner = make_thread_refiner();
           for (int round = 0; round < num_rounds; ++round) {
+            // All threads read the value written by the previous round's
+            // single block (its barrier orders the accesses), so they stop
+            // together.
+            if (stalled_rounds >= kIlsPatience) break;
             #if HAVE_OPENMP
             #pragma omp single
             #endif
@@ -2056,6 +2093,7 @@ void ChipletPart::Partition(
             #pragma omp single
             #endif
             {
+              bool any_accepted = false;
               for (int p = 0; p < num_parents; ++p) {
                 auto& parent = partition_results[parents[p]];
                 int best = -1;
@@ -2078,8 +2116,10 @@ void ChipletPart::Partition(
                                 std::to_string(kick_results[best].post_cost) + " (" +
                                 std::to_string(kick_results[best].num_parts) + " parts)");
                   parent = kick_results[best];
+                  any_accepted = true;
                 }
               }
+              stalled_rounds = any_accepted ? 0 : stalled_rounds + 1;
             }
           }
         }

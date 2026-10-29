@@ -93,7 +93,7 @@ struct Options {
   int fp_probe_audit = 0;               // --fp-probe-audit <factor>
   bool fp_cost_aware = true;            // --no-fp-cost-aware
   float fp_excursion = 0.0f;            // --fp-excursion <frac>
-  int ils_kicks = 0;                    // --ils-kicks <n>
+  int ils_kicks = 64;                   // --ils-kicks <n>
   int ils_parents = 1;                  // --ils-parents <n>
   bool help = false;
 };
@@ -137,8 +137,9 @@ void displayUsage(const char* programName) {
       << "  --fp-excursion <frac>    Feasibility gate: let a pass that starts feasible pass through\n"
       << "                           partitions violating the reach by up to <frac> x reach scale\n"
       << "                           (result stays feasible; default: 0 = strict)\n"
-      << "  --ils-kicks <int>        Iterated local search: perturb-and-refine attempts per parent on\n"
-      << "                           the best candidates (default: 0 = off)\n"
+      << "  --ils-kicks <int>        Iterated local search after refinement: up to <int> kick-and-repair\n"
+      << "                           attempts per parent, in rounds of 8, stopping after two rounds\n"
+      << "                           without improvement (default: 64; 0 = off)\n"
       << "  --ils-parents <int>      Number of cheapest feasible candidates to kick (default: 1)\n"
       << "  --fp-eval-candidates     Floorplan every refined candidate with the final budget and report\n"
       << "                           its post-floorplan cost ([CANDIDATE] lines; experiments)\n"
