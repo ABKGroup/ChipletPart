@@ -1089,6 +1089,75 @@ void SACore::quench(int num_perturbs)
   }
 }
 
+void SACore::getAspectRatios(std::vector<float>& ratios) const
+{
+  ratios.clear();
+  ratios.reserve(macros_.size());
+  for (const auto& m : macros_) {
+    ratios.push_back(m.getRealHeight() > 0.0f
+                         ? m.getRealWidth() / m.getRealHeight()
+                         : 1.0f);
+  }
+}
+
+float SACore::refineShapes(const std::function<float(const std::vector<float>&)>& cost_fn,
+                           const std::vector<float>& candidates,
+                           int max_rounds,
+                           int* evals)
+{
+  packFloorplan();
+  calPenalty();
+  std::vector<float> ratios;
+  getAspectRatios(ratios);
+  if (macros_.empty() || net_penalty_ > net_reach_penalty_acc_) {
+    return cost_fn(ratios);
+  }
+  float best_cost = cost_fn(ratios);
+  if (evals) ++*evals;
+
+  const int n = static_cast<int>(macros_.size());
+  for (int round = 0; round < max_rounds; ++round) {
+    bool improved = false;
+    for (int i = 0; i < n; ++i) {
+      Chiplet& m = macros_[i];
+      // Candidates are width/height; the chiplet's range is height/width.
+      const float lo = 1.0f / m.max_ar_;
+      const float hi = 1.0f / m.min_ar_;
+      const std::vector<Chiplet> saved = macros_;
+      const float saved_ratio = ratios[i];
+      std::vector<Chiplet> best_macros = macros_;
+      float best_ratio = saved_ratio;
+      bool found = false;
+      for (float c : candidates) {
+        const float r = std::clamp(c, lo, hi);
+        if (std::fabs(r - saved_ratio) <= 1e-4f * saved_ratio) continue;
+        macros_ = saved;
+        macros_[i].resizeRandomly(1.0f / r);  // argument is height/width
+        packFloorplan();
+        calPenalty();
+        if (net_penalty_ > net_reach_penalty_acc_) continue;
+        ratios[i] = r;
+        const float cost = cost_fn(ratios);
+        if (evals) ++*evals;
+        if (cost < best_cost - 1e-6f) {
+          best_cost = cost;
+          best_ratio = r;
+          best_macros = macros_;
+          found = true;
+        }
+      }
+      macros_ = found ? best_macros : saved;
+      ratios[i] = found ? best_ratio : saved_ratio;
+      improved = improved || found;
+    }
+    if (!improved) break;
+  }
+  packFloorplan();
+  calPenalty();
+  trackViolation();
+  return best_cost;
+}
+
 bool SACore::restoreValid()
 {
   if (!seen_valid_) {

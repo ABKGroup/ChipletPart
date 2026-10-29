@@ -117,6 +117,9 @@ public:
   }
   // Number of parallel SA walkers (GWTW) for the final floorplan; 0 = auto.
   void SetFloorplanWorkers(int workers) { fp_workers_ = workers; }
+  // Rank feasible floorplans by the cost model and refine chiplet shapes
+  // against it (default on).
+  void SetFloorplanCostAware(bool on) { fp_cost_aware_ = on; }
   // Experiment instrumentation: floorplan every refined candidate with the
   // final budget and report its post-floorplan cost; audit gate rejections
   // with a `factor`x probe (0 = off).
@@ -294,6 +297,7 @@ private:
   int final_fp_steps_ = 1000;    // final floorplan: SA steps per walker
   int final_fp_perturbs_ = 1000; // final floorplan: perturbations per step
   int fp_workers_ = 0;           // final floorplan walkers (0 = auto)
+  bool fp_cost_aware_ = true;    // cost-model ranking + shape refinement in the floorplanner
   bool fp_eval_candidates_ = false;
   int fp_audit_factor_ = 0;
   int num_parts_ = 8;     // number of partitions

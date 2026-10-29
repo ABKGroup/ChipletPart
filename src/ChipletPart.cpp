@@ -77,6 +77,75 @@ namespace chiplet {
 constexpr int kCandidateFloorplanSteps = 300;
 constexpr int kCandidateFloorplanPerturbs = 200;
 constexpr int kCandidateFloorplanWorkers = 2;
+// Walkers of the final (reporting) floorplan when --fp-workers is not given.
+// Each feasible walker is a distinct arrangement whose shapes are refined
+// against the cost model, so more walkers buy a cheaper floorplan (about
+// 0.1-0.4% from 4 to 8 on the reference designs) for a few seconds.
+constexpr int kFinalFloorplanWorkers = 8;
+
+// Floorplan seed file (<partition file>.fp): three lines, "pos", "neg" and
+// "ar", each followed by one value per chiplet (sequence pair positions and
+// height/width ratios). Lines starting with '#' are ignored.
+static bool WriteFloorplanSeed(const std::string& path, const FloorplanSeed& seed) {
+  if (seed.empty() || seed.neg_seq.size() != seed.size() ||
+      seed.aspect_ratios.size() != seed.size()) {
+    return false;
+  }
+  std::ofstream out(path);
+  if (!out.is_open()) {
+    return false;
+  }
+  out << "# ChipletPart floorplan seed: sequence pair and height/width ratios\n";
+  out << "pos";
+  for (int v : seed.pos_seq) out << ' ' << v;
+  out << "\nneg";
+  for (int v : seed.neg_seq) out << ' ' << v;
+  out << "\nar";
+  out << std::setprecision(8);
+  for (float v : seed.aspect_ratios) out << ' ' << v;
+  out << '\n';
+  return true;
+}
+
+static bool ReadFloorplanSeed(const std::string& path, FloorplanSeed& seed) {
+  std::ifstream in(path);
+  if (!in.is_open()) {
+    return false;
+  }
+  seed.clear();
+  std::string line;
+  while (std::getline(in, line)) {
+    if (line.empty() || line[0] == '#') continue;
+    std::istringstream iss(line);
+    std::string key;
+    iss >> key;
+    if (key == "pos" || key == "neg") {
+      auto& seq = (key == "pos") ? seed.pos_seq : seed.neg_seq;
+      int v;
+      while (iss >> v) seq.push_back(v);
+    } else if (key == "ar") {
+      float v;
+      while (iss >> v) seed.aspect_ratios.push_back(v);
+    }
+  }
+  // A valid seed is two permutations of the same length plus one ratio each.
+  const size_t n = seed.pos_seq.size();
+  if (n == 0 || seed.neg_seq.size() != n || seed.aspect_ratios.size() != n) {
+    seed.clear();
+    return false;
+  }
+  for (const auto* seq : {&seed.pos_seq, &seed.neg_seq}) {
+    std::vector<bool> present(n, false);
+    for (int v : *seq) {
+      if (v < 0 || v >= static_cast<int>(n) || present[v]) {
+        seed.clear();
+        return false;
+      }
+      present[v] = true;
+    }
+  }
+  return true;
+}
 
 #ifndef DISABLE_METIS
 // METIS header is now included through ChipletPart.h
@@ -1668,6 +1737,7 @@ void ChipletPart::Partition(
       thread_refiner->SetFloorplanAware(floorplan_aware_);
       thread_refiner->SetFloorplanCheckBudget(fp_check_steps_, fp_check_perturbs_);
       thread_refiner->SetFloorplanProbeAudit(fp_audit_factor_);
+      thread_refiner->SetFloorplanCostAware(fp_cost_aware_);
       thread_refiner->ResetFloorplanProbeState();
       
       // Balance bounds sized to this candidate's number of partitions
@@ -1820,8 +1890,9 @@ void ChipletPart::Partition(
                 return a.cost < b.cost;
               });
 
-    refiner->SetFloorplanWorkers(fp_workers_);
+    refiner->SetFloorplanWorkers(fp_workers_ > 0 ? fp_workers_ : kFinalFloorplanWorkers);
     refiner->SetFloorplanAware(floorplan_aware_);
+    refiner->SetFloorplanCostAware(fp_cost_aware_);
     // Post-floorplan cost of a candidate: cost model evaluated with the
     // aspect ratios and locations of its (final-budget) floorplan.
     const auto post_floorplan_cost = [&](PartitionResult& cand) -> float {
@@ -1992,6 +2063,12 @@ void ChipletPart::Partition(
       }
       Console::Success("Best partition saved to " + partition_file);
     }
+    // Save the floorplan arrangement with it, so that evaluating the saved
+    // partition starts from the same arrangement and reproduces the
+    // feasibility (a cold floorplan of a tight design may not).
+    if (WriteFloorplanSeed(partition_file + ".fp", refiner->GetLastFloorplanResult())) {
+      Console::Success("Floorplan seed saved to " + partition_file + ".fp");
+    }
     
     // Output aspect ratios of best solution
     /*std::ofstream aspect_ratios_output("chipletpart.aspect_ratios");
@@ -2124,7 +2201,23 @@ void ChipletPart::EvaluatePartition(
   }
 
   refiner->SetFloorplanVerbose(true);
-  refiner->SetFloorplanWorkers(fp_workers_);
+  refiner->SetFloorplanWorkers(fp_workers_ > 0 ? fp_workers_ : kFinalFloorplanWorkers);
+  refiner->SetFloorplanCostAware(fp_cost_aware_);
+  {
+    // Start from the arrangement saved with the partition, if any.
+    FloorplanSeed seed;
+    const std::string seed_file = hypergraph_part + ".fp";
+    if (ReadFloorplanSeed(seed_file, seed)) {
+      if (static_cast<int>(seed.size()) == num_parts_) {
+        refiner->SetFloorplanSeed(seed);
+        Console::Info("Floorplan seed loaded from " + seed_file);
+      } else {
+        Console::Warning("Ignoring " + seed_file + ": it describes " +
+                         std::to_string(seed.size()) + " chiplets, partition has " +
+                         std::to_string(num_parts_));
+      }
+    }
+  }
   auto floor_result = refiner->RunFloorplanner(partition, hypergraph_, final_fp_steps_, final_fp_perturbs_, 0.00001);
       
   std::vector<float> result_aspect_ratios = std::get<0>(floor_result);

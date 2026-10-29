@@ -91,6 +91,7 @@ struct Options {
   int fp_workers = 0;                   // --fp-workers (0 = auto)
   bool fp_eval_candidates = false;      // --fp-eval-candidates
   int fp_probe_audit = 0;               // --fp-probe-audit <factor>
+  bool fp_cost_aware = true;            // --no-fp-cost-aware
   bool help = false;
 };
 
@@ -127,7 +128,9 @@ void displayUsage(const char* programName) {
       << "  --fp-check-budget <S,P>  Per-move probe: SA steps,perturbations (default: 40,25)\n"
       << "  --fp-steps <int>         Final floorplan: SA steps per walker (default: 1000)\n"
       << "  --fp-perturbs <int>      Final floorplan: perturbations per step (default: 1000)\n"
-      << "  --fp-workers <int>       Final floorplan: parallel SA walkers (default: min(threads,4))\n"
+      << "  --fp-workers <int>       Final floorplan: parallel SA walkers (default: 8)\n"
+      << "  --no-fp-cost-aware       Floorplanner: pick the walker by the SA objective and skip the\n"
+      << "                           cost-model shape refinement (default: cost-aware)\n"
       << "  --fp-eval-candidates     Floorplan every refined candidate with the final budget and report\n"
       << "                           its post-floorplan cost ([CANDIDATE] lines; experiments)\n"
       << "  --fp-probe-audit <int>   Re-check every gate rejection with an <int>x probe and report the\n"
@@ -261,6 +264,8 @@ Options parseArgs(int argc, char* argv[]) {
       opt.fp_eval_candidates = true;
     } else if (arg == "--fp-probe-audit") {
       opt.fp_probe_audit = parseInt(needValue(i, arg), "fp-probe-audit");
+    } else if (arg == "--no-fp-cost-aware") {
+      opt.fp_cost_aware = false;
     } else if (arg == "--tech-nodes") {
       opt.tech_nodes = parseTechList(needValue(i, arg));
       // Legacy form: `--tech-nodes 7nm 14nm 28nm`. Absorb following tokens
@@ -373,6 +378,7 @@ int main(int argc, char* argv[]) {
     chiplet_part->SetFloorplanWorkers(opt.fp_workers);
     chiplet_part->SetEvalCandidates(opt.fp_eval_candidates);
     chiplet_part->SetFloorplanProbeAudit(opt.fp_probe_audit);
+    chiplet_part->SetFloorplanCostAware(opt.fp_cost_aware);
     Console::Info("Output directory: " + chiplet_part->GetOutputDir());
 
     switch (opt.mode) {

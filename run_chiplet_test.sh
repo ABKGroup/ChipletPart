@@ -100,7 +100,7 @@ while [ "$#" -gt 0 ]; do
         --generations)        GENERATIONS="$2"; shift 2 ;;
         --population)         POPULATION="$2"; shift 2 ;;
         --output-dir)         OUTPUT_DIR="$2"; shift 2 ;;
-        --floorplan-aware|--no-floorplan-aware|--fp-eval-candidates)
+        --floorplan-aware|--no-floorplan-aware|--fp-eval-candidates|--no-fp-cost-aware)
                               EXTRA_OPTS+=("$1"); shift ;;
         --fp-check-budget|--fp-steps|--fp-perturbs|--fp-workers|--fp-probe-audit)
                               EXTRA_OPTS+=("$1" "$2"); shift 2 ;;

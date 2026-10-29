@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include <functional>
 #include <map>
 #include <random>
 #include <vector>
@@ -297,6 +298,21 @@ class SACore
     // perturbations, each kept only if it does not increase the violation.
     // Used by the per-move feasibility probe of the partitioner.
     void quench(int num_perturbs);
+    // Per-chiplet width / height ratios of the current state (the convention
+    // the cost model uses).
+    void getAspectRatios(std::vector<float>& ratios) const;
+    // Coordinate descent on the chiplet shapes under the reach constraint.
+    // `cost_fn` maps a width/height vector to the design cost. Each chiplet
+    // in turn is tried at every ratio of `candidates` (width/height, clamped
+    // to the chiplet's range) with the sequence pair fixed; the cheapest
+    // feasible shape is kept. Rounds repeat while something improves, up to
+    // `max_rounds`. Requires a feasible current state (returns the current
+    // cost unchanged otherwise). Leaves the state at the best shapes found
+    // and returns their cost. `evals`, when given, counts cost evaluations.
+    float refineShapes(const std::function<float(const std::vector<float>&)>& cost_fn,
+                       const std::vector<float>& candidates,
+                       int max_rounds,
+                       int* evals = nullptr);
     float getCoolingRate() const {
       return cooling_rate_;
     }

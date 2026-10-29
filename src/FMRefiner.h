@@ -161,6 +161,11 @@ public:
       const int toPartitionId);
 
   float GetCostFromScratch(const std::vector<int> &basePartitionIds, bool approx_state = false) const; 
+  // Same evaluation with an explicit per-partition width/height vector
+  // instead of the stored aspect_ratios_.
+  float CostWithAspectRatios(const std::vector<int> &basePartitionIds,
+                             const std::vector<float> &aspect_ratios,
+                             bool approx_state = false) const;
   
   // Control the weight of cost model vs connectivity gain
   void SetCostModelWeight(float weight) { cost_model_weight_ = weight; }
@@ -205,8 +210,11 @@ public:
       }
     }
     
-              
-    return Floorplanner(max_steps, perturbations, cooling_acceleration_factor, local);
+    // Let Floorplanner() score feasible arrangements with the cost model.
+    fp_cost_partition_ = partition;
+    auto result = Floorplanner(max_steps, perturbations, cooling_acceleration_factor, local);
+    fp_cost_partition_.clear();
+    return result;
   }
 
   Matrix<float> GetBlockBalance(const HGraphPtr hgraph,
@@ -434,6 +442,25 @@ public:
   }
   // Number of GWTW walkers used by Floorplanner(); 0 = min(threads, 4).
   void SetFloorplanWorkers(int workers) { num_fp_workers_ = workers; }
+  // Cost-aware floorplanning (RunFloorplanner only): feasible walkers are
+  // ranked by the cost model rather than by the SA objective, and the
+  // chiplet shapes of every feasible walker are refined against the cost
+  // model under the reach constraint before the best one is returned.
+  void SetFloorplanCostAware(bool on) { fp_cost_aware_ = on; }
+  bool IsFloorplanCostAware() const { return fp_cost_aware_; }
+  // Statistics of the last Floorplanner() call.
+  struct FloorplanRunStats {
+    int walkers = 0;          // walkers run
+    int feasible = 0;         // ... that ended (or were restored) feasible
+    float sa_pick_cost = 0;   // cost-model cost of the walker the SA objective would pick
+    float best_cost = 0;      // cost-model cost of the returned floorplan
+    int shape_evals = 0;      // cost evaluations spent in the shape refinement
+  };
+  const FloorplanRunStats& GetFloorplanRunStats() const { return fp_run_stats_; }
+  // Arrangement (sequence pair + height/width ratios) returned by the last
+  // Floorplanner() call; saved next to the partition so that evaluation mode
+  // can start from it (SetFloorplanSeed) and reproduce the feasibility.
+  const FloorplanSeed& GetLastFloorplanResult() const { return fp_last_result_; }
   // Total reach violation (sum over nets of weight x excess length, 0 when
   // feasible) of the best floorplan found by a short probe of `partition`.
   float FloorplanViolation(const HGraphPtr &hgraph, const std::vector<int> &partition);
@@ -444,7 +471,8 @@ public:
   // the baseline does (always true when not floorplan-aware).
   bool IsFloorplanAcceptable(const HGraphPtr &hgraph, const std::vector<int> &partition);
   // Best floorplan arrangement known for the current partition; seeds the
-  // next probe and the full floorplanner.
+  // next probe and the full floorplanner (which starts every walker from it
+  // whenever its size matches the chiplet count, aware or not).
   const FloorplanSeed& GetFloorplanSeed() const { return fp_warm_; }
   void SetFloorplanSeed(const FloorplanSeed& seed) { fp_warm_ = seed; }
   // Forget the warm start and probe counter (call before refining a new,
@@ -629,6 +657,10 @@ private:
   // Re-check a vetoed partition with a `fp_audit_factor_`x probe without
   // disturbing the probe state (seed, warm start) of the real search.
   void AuditFloorplanRejection(const HGraphPtr &hgraph, const std::vector<int> &partition);
+  bool fp_cost_aware_ = true;
+  std::vector<int> fp_cost_partition_;   // partition being floorplanned (set by RunFloorplanner)
+  FloorplanRunStats fp_run_stats_;
+  FloorplanSeed fp_last_result_;
   int max_num_step_ = 2000;
   int num_perturb_per_step_ = 500;
   int num_oscillations_ = 4; // number of oscillations allowed in FM

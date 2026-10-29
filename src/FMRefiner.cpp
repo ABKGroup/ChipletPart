@@ -248,9 +248,10 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
       std::iota(neg_seq.begin(), neg_seq.end(), 0);
     }
     // Feasibility-aware refinement carries the best arrangement it found for
-    // this partition; start the walkers there so a feasible arrangement
+    // this partition (and evaluation mode may load the arrangement saved
+    // with a partition); start the walkers there so a feasible arrangement
     // known to the refiner is never lost by the floorplanner.
-    const bool seeded_from_probe = floorplan_aware_ &&
+    const bool seeded_from_probe =
         fp_warm_.pos_seq.size() == chiplets_.size() &&
         fp_warm_.neg_seq.size() == chiplets_.size();
     if (seeded_from_probe) {
@@ -373,6 +374,29 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
     const int steps_per_round =
         std::max(1, (per_worker_steps + num_rounds - 1) / num_rounds);
 
+    // Cost-model scoring of feasible arrangements. The SA objective (area,
+    // package, reach penalty) is only a proxy: the design cost depends on
+    // the chiplet shapes through dies-per-wafer, reticle fit and the IO
+    // shoreline, and two feasible floorplans of the same partition can
+    // differ by a few percent in cost. When RunFloorplanner() gave us the
+    // partition, feasible walkers are ranked by the real cost instead.
+    int num_parts_in_partition = 0;
+    for (int p : fp_cost_partition_) num_parts_in_partition = std::max(num_parts_in_partition, p + 1);
+    const bool cost_aware = fp_cost_aware_ && cost_model_initialized_ &&
+        libraryDicts_ != nullptr &&
+        num_parts_in_partition == static_cast<int>(chiplets_.size());
+    auto cost_fn = [&](const std::vector<float>& ratios) {
+      return CostWithAspectRatios(fp_cost_partition_, ratios);
+    };
+    std::vector<float> ratios_scratch;
+    auto worker_cost = [&](SACore& w) {
+      if (!cost_aware) return w.getCost();
+      w.getAspectRatios(ratios_scratch);
+      return cost_fn(ratios_scratch);
+    };
+    fp_run_stats_ = FloorplanRunStats();
+    fp_run_stats_.walkers = static_cast<int>(workers.size());
+
     // Rank workers: valid first, then lower cost. Returns indices.
     auto rank_workers = [&](std::vector<int>& order) {
       order.resize(workers.size());
@@ -382,7 +406,8 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
         if (!workers[w]->isValid()) {
           workers[w]->restoreValid();  // rank by the best feasible state seen
         }
-        key[w] = {workers[w]->isValid(), workers[w]->getCost()};
+        const bool valid = workers[w]->isValid();
+        key[w] = {valid, valid ? worker_cost(*workers[w]) : workers[w]->getCost()};
       }
       std::stable_sort(order.begin(), order.end(), [&](int a, int b) {
         if (key[a].first != key[b].first) return key[a].first;  // valid first
@@ -492,6 +517,68 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
         // Continue with other workers
       }
     }
+
+    // Cost-aware selection among the feasible walkers: refine the chiplet
+    // shapes of each distinct feasible arrangement against the cost model
+    // (sequence pair fixed, reach constraint enforced) and return the
+    // cheapest. The SA pick above is the fallback when nothing is feasible.
+    if (cost_aware && is_valid && best_sa) {
+      fp_run_stats_.sa_pick_cost = worker_cost(*best_sa);
+      // width/height grid over the allowed range, log-spaced, plus a finer
+      // band around 1 (most chiplets end up near square).
+      std::vector<float> candidates;
+      for (int k = 0; k <= 24; ++k) {
+        candidates.push_back(std::exp(std::log(0.2f) + k * (std::log(5.0f) - std::log(0.2f)) / 24.0f));
+      }
+      for (int k = -6; k <= 6; ++k) {
+        candidates.push_back(std::exp(k * 0.05f));
+      }
+      std::sort(candidates.begin(), candidates.end());
+      constexpr int kShapeRounds = 4;
+
+      struct Seen { std::vector<int> pos, neg; std::vector<float> ratios; };
+      std::vector<Seen> seen;
+      SACore* best_shaped = nullptr;
+      float best_shaped_cost = std::numeric_limits<float>::max();
+      for (auto& worker : workers) {
+        if (!worker->isValid()) continue;
+        ++fp_run_stats_.feasible;
+        Seen s;
+        worker->getPosSeq(s.pos);
+        worker->getNegSeq(s.neg);
+        worker->getAspectRatios(s.ratios);
+        bool duplicate = false;
+        for (const auto& t : seen) {
+          if (t.pos != s.pos || t.neg != s.neg) continue;
+          bool same = true;
+          for (size_t i = 0; i < s.ratios.size() && same; ++i) {
+            same = std::fabs(t.ratios[i] - s.ratios[i]) <= 1e-4f * std::max(1.0f, t.ratios[i]);
+          }
+          if (same) { duplicate = true; break; }
+        }
+        if (duplicate) continue;
+        seen.push_back(std::move(s));
+        const float c = worker->refineShapes(cost_fn, candidates, kShapeRounds,
+                                             &fp_run_stats_.shape_evals);
+        if (worker->isValid() && c < best_shaped_cost) {
+          best_shaped_cost = c;
+          best_shaped = worker.get();
+        }
+      }
+      if (best_shaped) {
+        best_sa = best_shaped;
+        best_cost = best_shaped_cost;
+      }
+      fp_run_stats_.best_cost = best_shaped ? best_shaped_cost : fp_run_stats_.sa_pick_cost;
+      if (std::getenv("CHIPLETPART_FP_DEBUG")) {
+        std::cerr << "[fp-debug] floorplan: walkers=" << fp_run_stats_.walkers
+                  << " feasible=" << fp_run_stats_.feasible
+                  << " distinct=" << seen.size()
+                  << " sa_pick_cost=" << fp_run_stats_.sa_pick_cost
+                  << " best_cost=" << fp_run_stats_.best_cost
+                  << " shape_evals=" << fp_run_stats_.shape_evals << std::endl;
+      }
+    }
     
     // If no valid solution found, use the best invalid one
     if (best_sa == nullptr && !workers.empty()) {
@@ -514,6 +601,14 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
         std::vector<int> final_pos_seq, final_neg_seq;
         best_sa->getPosSeq(final_pos_seq);
         best_sa->getNegSeq(final_neg_seq);
+        fp_last_result_.pos_seq = final_pos_seq;
+        fp_last_result_.neg_seq = final_neg_seq;
+        fp_last_result_.aspect_ratios.clear();
+        for (const auto& chiplet : best_chiplets) {
+          fp_last_result_.aspect_ratios.push_back(
+              chiplet.getRealWidth() > 0.0f
+                  ? chiplet.getRealHeight() / chiplet.getRealWidth() : 1.0f);
+        }
         
   if (local) {
           local_pos_seq_ = final_pos_seq;
@@ -2233,6 +2328,12 @@ float ChipletRefiner::GetSingleMoveCost(
 
 // Implementation of GetCostFromScratch that calls the other version with default parameters
 float ChipletRefiner::GetCostFromScratch(const std::vector<int>& partition, bool approx_state) const {
+  return CostWithAspectRatios(partition, aspect_ratios_, approx_state);
+}
+
+float ChipletRefiner::CostWithAspectRatios(const std::vector<int>& partition,
+                                           const std::vector<float>& aspect_ratios,
+                                           bool approx_state) const {
   if (!cost_model_initialized_ || libraryDicts_ == nullptr) {
     return 0.0f; // Return 0 if cost model not initialized
   }
@@ -2260,7 +2361,7 @@ float ChipletRefiner::GetCostFromScratch(const std::vector<int>& partition, bool
   }
   
   // Ensure aspect_ratios has the correct size
-  std::vector<float> local_aspect_ratios = aspect_ratios_;
+  std::vector<float> local_aspect_ratios = aspect_ratios;
   if (local_aspect_ratios.size() != num_partitions) {
     /*std::cerr << "Warning: Resizing aspect_ratios from " << local_aspect_ratios.size() 
               << " to " << num_partitions << " elements" << std::endl;*/
