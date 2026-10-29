@@ -40,7 +40,8 @@ show_help() {
     echo "  --fp-check-budget S,P  Per-move floorplan probe budget (default: 40,25)"
     echo "  --fp-steps <n>         Final floorplan SA steps per walker (default: 1000)"
     echo "  --fp-perturbs <n>      Final floorplan perturbations per step (default: 1000)"
-    echo "  --fp-workers <n>       Final floorplan parallel walkers (default: min(threads,4))"
+    echo "  --fp-workers <n>       Final floorplan parallel walkers (default: 8)"
+    echo "  --no-fp-cost-aware     Floorplanner picks by the SA objective, no cost-model shape refinement"
     echo "  --help                 Show this message"
     echo
     echo "Examples:"

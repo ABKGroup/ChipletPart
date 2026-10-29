@@ -83,18 +83,26 @@ Results are written to `results/<case>/standard/` (override with `--output-dir`)
 
 ### Sample output (epyc7282, 7nm, seed 42) ###
 ```
-+------------+----------------------+------------+----------------------+------------+
-| Rank       | Partition Index      | Parts      | Cost                 | Feasible   |
-+------------+----------------------+------------+----------------------+------------+
-| 1          | 16                   | 8          | 71.835381            | Yes        |
-| 2          | 17                   | 8          | 72.034363            | Yes        |
-| 3          | 12                   | 6          | 73.213936            | Yes        |
++------------+----------------------+------------+------------------+------------------+------------+
+| Rank       | Partition Index      | Parts      | Cost             | Refined cost     | Feasible   |
++------------+----------------------+------------+------------------+------------------+------------+
+| 1          | 17                   | 8          | 71.965065        | 72.034363        | Yes        |
+| 2          | 16                   | 8          | 72.147827        | 71.835381        | Yes        |
+| 3          | 13                   | 6          | 73.521904        | 73.643364        | Yes        |
 [INFO] Floorplanner results: Yes
-[SUCCESS] Best cost: 71.835381
+[SUCCESS] Best cost: 71.965065
 [SUCCESS] Number of partitions: 8
 [SUCCESS] Floorplan feasibility: 1
+[SUCCESS] Pre-floorplan cost: 72.034363
+[SUCCESS] Post-floorplan cost: 71.965065
 [SUCCESS] Best partition saved to results/epyc7282/standard/block_level_netlist.xml.cpart.8
+[SUCCESS] Floorplan seed saved to results/epyc7282/standard/block_level_netlist.xml.cpart.8.fp
 ```
+`Cost` / `Best cost` is the cost of the design with its final floorplan applied (the number evaluation
+mode reports for the saved partition); `Refined cost` / `Pre-floorplan cost` is the cost the
+refinement optimised, which assumes square chiplets. Candidates are ranked by the former, so a
+candidate with a slightly higher refined cost can win (as above: 16 refines to 71.84 but floorplans
+to 72.15, 17 refines to 72.03 and floorplans to 71.97).
 
 ### Floorplan feasibility ###
 A partition is *feasible* when the sequence-pair floorplanner can place the chiplets (with the
@@ -106,22 +114,36 @@ By default the refinement is **floorplan-aware**: every FM move and KL swap is f
 warm-started floorplan probe of the resulting partition, each pass is rolled back to the prefix with
 the lowest reach violation (then the highest gain), and candidates are ranked feasible-first. The
 cost of the winning partition is therefore the best cost *among feasible designs*; a cheaper but
-unplaceable partition (e.g. EPYC at 70.83 with 8 chiplets) is not reported. The best arrangement the
-probes found seeds the final floorplanner, which runs `--fp-steps x --fp-perturbs` perturbations per
-walker on `--fp-workers` parallel walkers (default 1000 x 1000 on min(threads, 4) walkers).
+unplaceable partition (e.g. EPYC at 70.83 with 8 chiplets) is not reported.
 `--no-floorplan-aware` restores pure cost-driven refinement (faster, may be infeasible);
 `--fp-check-budget S,P` sets the probe budget (default `40,25`).
 
-Results with the default settings (7nm, reach 0.5, separation 0.25, seed 42; "cost-only" is
-`--no-floorplan-aware`):
+The floorplanner is **cost-aware**. Of a floorplan only the chiplet shapes enter the cost model
+(dies per wafer, reticle fit, IO shoreline), and the annealer's own objective (area, package, reach
+penalty) is only a proxy for it: two feasible floorplans of the same partition can differ by a few
+percent in cost. So every feasible walker's chiplet shapes are refined against the cost model under
+the reach constraint, and the cheapest feasible floorplan is returned. Each refined candidate gets a
+short such floorplan (its result is the candidate's cost), the three cheapest feasible candidates get
+the full final floorplan (`--fp-steps x --fp-perturbs` perturbations per walker on `--fp-workers`
+walkers, default 1000 x 1000 on 8), and the cheapest of those is reported. `--no-fp-cost-aware`
+selects by the annealer's objective instead. The final arrangement is saved next to the partition
+(`*.cpart.N.fp`) and evaluation mode starts from it, so the saved partition reproduces its cost and
+feasibility.
 
-| Case | Floorplan-aware: cost / chiplets / feasible | Cost-only: cost / chiplets / feasible |
-|------|---------------------------------------------|---------------------------------------|
-| EPYC (`epyc7282`) | 71.84 / 8 / yes | 70.83 / 8 / **no** |
-| GA100 (`ga100`) | 70.31 / 8 / yes | 70.14 / 8 / **no** |
-| WS₁ (`48_1_14_4_1600_1600`) | 49.89 / 7 / yes | 49.89 / 7 / yes |
-| WS₃ (`48_4_14_4_1600_1600`) | 260.23 / 8 / yes | 260.23 / 8 / yes |
-| MP (`mempool_group`) | 5.82 / 1 / yes | 5.82 / 1 / yes |
+Results with the default settings (7nm, reach 0.5, separation 0.25; `Best cost` / chiplets, all
+feasible). "Cost-only" is `--no-floorplan-aware`, whose EPYC and GA100 designs are **not**
+placeable; the middle column is the same feasibility-aware search with the previous floorplanner
+(walker chosen by the annealer's objective, no shape refinement, candidates ranked by refined cost):
+
+| Case | Default (seeds 1, 2, 3, 42) | Previous floorplanner (seed 1) | Cost-only (seed 42) |
+|------|-----------------------------|--------------------------------|---------------------|
+| EPYC (`epyc7282`) | 71.97 / 8 | 72.27 / 8 | 70.83 / 8 (infeasible) |
+| GA100 (`ga100`) | 70.24 / 8 | 71.17 / 8 | 70.14 / 8 (infeasible) |
+| WS₁ (`48_1_14_4_1600_1600`) | 49.56 – 50.04 / 4 – 8 | 50.12 / 4 | 49.89 / 7 |
+| WS₃ (`48_4_14_4_1600_1600`) | 259.17 / 8 | 262.40 / 8 | 260.23 / 8 |
+| MP (`mempool_group`) | 5.81 / 1 | 5.82 / 1 | 5.82 / 1 |
+
+Runtime on a laptop (10 threads): EPYC and GA100 about 19 s, WS₃ about 55 s, WS₁ 10 s, MP 6 s.
 
 ## Heterogeneous mode ##
 Multiple technology nodes; partitioning and technology assignment are co-optimised by a genetic algorithm:
@@ -155,13 +177,15 @@ Evaluate an existing partition (one chiplet id per line, in block order): it is 
 ./run_chiplet_test.sh ga100 --evaluate-partition results/ga100/standard/block_level_netlist.xml.cpart.8
 ```
 ```
-[INFO] Cost of partition is 71.915916
+[INFO] Floorplan seed loaded from results/ga100/standard/block_level_netlist.xml.cpart.8.fp
+[INFO] Cost of partition is 70.238197
 [INFO] Number of partitions is 8
 [INFO] Floorplan feasibility is 1
 ```
-The evaluation cost is computed with the aspect ratios and locations of the final floorplan, so it is
-slightly different from the `Best cost` printed by the partitioner (which costs the partition before
-floorplanning); compare partitions within one mode.
+If a `<partition_file>.fp` seed (written by the partitioner) sits next to the partition file, the
+floorplan starts from it and the evaluation reproduces the partitioner's `Best cost` and
+feasibility. Without it the floorplan starts cold, and for tight designs (EPYC at 8 chiplets) a cold
+run may end slightly costlier or even infeasible.
 
 ## Usage Directions ##
   ```
@@ -189,7 +213,8 @@ Options:
   --fp-check-budget S,P  Per-move floorplan probe budget (default: 40,25)
   --fp-steps <n>         Final floorplan SA steps per walker (default: 1000)
   --fp-perturbs <n>      Final floorplan perturbations per step (default: 1000)
-  --fp-workers <n>       Final floorplan parallel walkers (default: min(threads,4))
+  --fp-workers <n>       Final floorplan parallel walkers (default: 8)
+  --no-fp-cost-aware     Floorplanner picks by the SA objective, no cost-model shape refinement
   --help                 Show this message
 
 Examples:
