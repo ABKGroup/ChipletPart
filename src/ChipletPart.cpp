@@ -83,9 +83,10 @@ constexpr int kCandidateFloorplanWorkers = 2;
 // 0.1-0.4% from 4 to 8 on the reference designs) for a few seconds.
 constexpr int kFinalFloorplanWorkers = 8;
 
-// Floorplan seed file (<partition file>.fp): three lines, "pos", "neg" and
-// "ar", each followed by one value per chiplet (sequence pair positions and
-// height/width ratios). Lines starting with '#' are ignored.
+// Floorplan seed file (<partition file>.fp): lines "pos", "neg", "ar" and
+// optionally "w" / "h", each followed by one value per chiplet (sequence
+// pair positions, height/width ratios, exact widths and heights). Lines
+// starting with '#' are ignored.
 static bool WriteFloorplanSeed(const std::string& path, const FloorplanSeed& seed) {
   if (seed.empty() || seed.neg_seq.size() != seed.size() ||
       seed.aspect_ratios.size() != seed.size()) {
@@ -95,14 +96,20 @@ static bool WriteFloorplanSeed(const std::string& path, const FloorplanSeed& see
   if (!out.is_open()) {
     return false;
   }
-  out << "# ChipletPart floorplan seed: sequence pair and height/width ratios\n";
+  out << "# ChipletPart floorplan seed: sequence pair, height/width ratios, widths, heights\n";
   out << "pos";
   for (int v : seed.pos_seq) out << ' ' << v;
   out << "\nneg";
   for (int v : seed.neg_seq) out << ' ' << v;
-  out << "\nar";
   out << std::setprecision(8);
+  out << "\nar";
   for (float v : seed.aspect_ratios) out << ' ' << v;
+  if (seed.widths.size() == seed.size() && seed.heights.size() == seed.size()) {
+    out << "\nw";
+    for (float v : seed.widths) out << ' ' << v;
+    out << "\nh";
+    for (float v : seed.heights) out << ' ' << v;
+  }
   out << '\n';
   return true;
 }
@@ -123,16 +130,22 @@ static bool ReadFloorplanSeed(const std::string& path, FloorplanSeed& seed) {
       auto& seq = (key == "pos") ? seed.pos_seq : seed.neg_seq;
       int v;
       while (iss >> v) seq.push_back(v);
-    } else if (key == "ar") {
+    } else if (key == "ar" || key == "w" || key == "h") {
+      auto& vals = (key == "ar") ? seed.aspect_ratios : (key == "w") ? seed.widths : seed.heights;
       float v;
-      while (iss >> v) seed.aspect_ratios.push_back(v);
+      while (iss >> v) vals.push_back(v);
     }
   }
-  // A valid seed is two permutations of the same length plus one ratio each.
+  // A valid seed is two permutations of the same length plus one ratio each;
+  // widths/heights are optional but must match when present.
   const size_t n = seed.pos_seq.size();
   if (n == 0 || seed.neg_seq.size() != n || seed.aspect_ratios.size() != n) {
     seed.clear();
     return false;
+  }
+  if (seed.widths.size() != n || seed.heights.size() != n) {
+    seed.widths.clear();
+    seed.heights.clear();
   }
   for (const auto* seq : {&seed.pos_seq, &seed.neg_seq}) {
     std::vector<bool> present(n, false);
@@ -1714,20 +1727,14 @@ void ChipletPart::Partition(
     return r;
   };
 
-  // Process all partitions in parallel
-  #if HAVE_OPENMP
-  #pragma omp parallel num_threads(num_threads)
-  {
-    auto thread_refiner = make_thread_refiner();
-    #pragma omp for schedule(dynamic)
-    for (size_t i = 0; i < init_partitions.size(); i++) {
-  #else
-  auto thread_refiner = make_thread_refiner();
-  for (size_t i = 0; i < init_partitions.size(); i++) {
-  #endif
-      // Get a copy of the partition to work with
-      std::vector<int> partition_copy = init_partitions[i];
-      
+  // Refine one candidate partition on `thread_refiner`: FM + KL refinement,
+  // refined cost, candidate floorplan (feasibility + post-floorplan cost).
+  // `warm_seed` (optional) seeds the feasibility probes; `quick` runs fewer
+  // FM passes and no KL (used for ILS kicks, which start near a refined
+  // partition).
+  auto refine_candidate = [&](const std::shared_ptr<chiplet::ChipletRefiner>& thread_refiner,
+                              std::vector<int> partition_copy, int idx,
+                              const FloorplanSeed* warm_seed, bool quick) -> PartitionResult {
       // Find the actual number of partitions in this specific partition
       int num_parts = *std::max_element(partition_copy.begin(), partition_copy.end()) + 1;
       
@@ -1743,7 +1750,12 @@ void ChipletPart::Partition(
       thread_refiner->SetFloorplanCheckBudget(fp_check_steps_, fp_check_perturbs_);
       thread_refiner->SetFloorplanProbeAudit(fp_audit_factor_);
       thread_refiner->SetFloorplanCostAware(fp_cost_aware_);
+      thread_refiner->SetFloorplanExcursion(fp_excursion_);
+      thread_refiner->SetRefineIters(quick ? std::min(refine_iters_, 2) : refine_iters_);
       thread_refiner->ResetFloorplanProbeState();
+      if (warm_seed && static_cast<int>(warm_seed->size()) == num_parts) {
+        thread_refiner->SetFloorplanSeed(*warm_seed);
+      }
       
       // Balance bounds sized to this candidate's number of partitions
       auto [upper_block_balance, lower_block_balance] =
@@ -1767,7 +1779,6 @@ void ChipletPart::Partition(
         result_y_locations = y_locations;
       }
       
-      //if (success) {
         // Update thread-local refiner with floorplanner results
         thread_refiner->SetAspectRatios(result_aspect_ratios);
         thread_refiner->SetXLocations(result_x_locations);
@@ -1777,7 +1788,7 @@ void ChipletPart::Partition(
         thread_refiner->Refine(hypergraph_, upper_block_balance, lower_block_balance, partition_copy);
         
         // Run KL refinement after FM refinement
-        //Console::Info("Running KL refinement for partition " + std::to_string(i));
+        if (!quick) {
         try {
           auto kl_refiner = std::make_shared<chiplet::KLRefiner>(
               num_parts,          // num_parts
@@ -1801,11 +1812,11 @@ void ChipletPart::Partition(
           // Run KL refinement on the same partition
           kl_refiner->Refine(hypergraph_, upper_block_balance, lower_block_balance, partition_copy);
           
-          //Console::Success("KL refinement completed for partition " + std::to_string(i));
         } catch (const std::exception& e) {
           Console::Error("Exception in KL refinement: " + std::string(e.what()));
         } catch (...) {
           Console::Error("Unknown exception in KL refinement");
+        }
         }
         
         float final_cost = thread_refiner->GetCostFromScratch(partition_copy);
@@ -1834,7 +1845,7 @@ void ChipletPart::Partition(
         }
         // Store results for this partition
         PartitionResult result;
-        result.partition_idx = i;
+        result.partition_idx = idx;
         result.num_parts = final_num_parts;
         result.cost = final_cost;
         result.post_cost = post_cost;
@@ -1849,13 +1860,48 @@ void ChipletPart::Partition(
                              ? thread_refiner->GetLastFloorplanResult()
                              : thread_refiner->GetFloorplanSeed();
         result.probe_stats = thread_refiner->GetFloorplanProbeStats();
-        
-        // Thread-safe update of results vector
-        {
-          std::lock_guard<std::mutex> lock(results_mutex);
-          partition_results.push_back(result);
-        }
-      //}
+        return result;
+  };
+
+  const auto describe_result = [&](const PartitionResult& result) {
+    const auto& ps = result.probe_stats;
+    return std::to_string(result.num_parts) +
+           " parts, cost " + std::to_string(result.cost) +
+           (floorplanning || floorplan_aware_
+                ? std::string(", floorplan ") + (result.valid ? "feasible" : "infeasible")
+                : std::string()) +
+           (floorplan_aware_ && result.valid
+                ? ", post-floorplan cost " + std::to_string(result.post_cost)
+                : std::string()) +
+           (floorplan_aware_
+                ? ", probes " + std::to_string(ps.probes) + ", gated " +
+                      std::to_string(ps.gated) + ", rejected " + std::to_string(ps.rejected) +
+                      (ps.audit_checked > 0
+                           ? ", audit false " + std::to_string(ps.audit_false) + "/" +
+                                 std::to_string(ps.audit_checked)
+                           : std::string())
+                : std::string());
+  };
+
+  // Process all partitions in parallel
+  #if HAVE_OPENMP
+  #pragma omp parallel num_threads(num_threads)
+  {
+    auto thread_refiner = make_thread_refiner();
+    #pragma omp for schedule(dynamic)
+    for (size_t i = 0; i < init_partitions.size(); i++) {
+  #else
+  auto thread_refiner = make_thread_refiner();
+  for (size_t i = 0; i < init_partitions.size(); i++) {
+  #endif
+      PartitionResult result =
+          refine_candidate(thread_refiner, init_partitions[i], static_cast<int>(i), nullptr, false);
+      
+      // Thread-safe update of results vector
+      {
+        std::lock_guard<std::mutex> lock(results_mutex);
+        partition_results.push_back(result);
+      }
       
       // Update progress counter
       int completed = ++partitions_processed;
@@ -1864,23 +1910,7 @@ void ChipletPart::Partition(
       {
         std::lock_guard<std::mutex> lock(results_mutex);
         float progress = static_cast<float>(completed) / init_partitions.size();
-        const auto& ps = result.probe_stats;
-        Console::Info("Candidate " + std::to_string(i) + ": " + std::to_string(result.num_parts) +
-                 " parts, cost " + std::to_string(result.cost) +
-                 (floorplanning || floorplan_aware_
-                      ? std::string(", floorplan ") + (result.valid ? "feasible" : "infeasible")
-                      : std::string()) +
-                 (floorplan_aware_ && result.valid
-                      ? ", post-floorplan cost " + std::to_string(result.post_cost)
-                      : std::string()) +
-                 (floorplan_aware_
-                      ? ", probes " + std::to_string(ps.probes) + ", gated " +
-                            std::to_string(ps.gated) + ", rejected " + std::to_string(ps.rejected) +
-                            (ps.audit_checked > 0
-                                 ? ", audit false " + std::to_string(ps.audit_false) + "/" +
-                                       std::to_string(ps.audit_checked)
-                                 : std::string())
-                      : std::string()));
+        Console::Info("Candidate " + std::to_string(i) + ": " + describe_result(result));
         Console::Info("Processed " + std::to_string(completed) + " partitions out of " + 
                  std::to_string(init_partitions.size()) + " (" + 
                  std::to_string(static_cast<int>(progress * 100)) + "%)");
@@ -1915,6 +1945,153 @@ void ChipletPart::Partition(
   };
   if (!partition_results.empty()) {
     rank_candidates();
+
+    // Iterated local search (3c). From a refined feasible partition almost
+    // every single-vertex move is infeasible (the gate vetoes ~90% of them on
+    // EPYC/GA100 at 8 chiplets), so the refinement sits on a plateau. A kick
+    // moves a few boundary vertices to a neighbouring chiplet (within the
+    // balance bounds), the result is re-refined with the gate, and it
+    // replaces the parent when it is feasible and cheaper after its
+    // floorplan. Kicks of a round run in parallel; parents are the cheapest
+    // feasible candidates.
+    if (ils_kicks_ > 0 && floorplan_aware_) {
+      std::vector<size_t> parents;
+      for (size_t t = 0; t < partition_results.size() &&
+                         static_cast<int>(parents.size()) < ils_parents_; ++t) {
+        if (partition_results[t].valid) parents.push_back(t);
+      }
+      if (!parents.empty()) {
+        Console::Header("Iterated Local Search");
+        const int dims = hypergraph_->GetVertexDimensions();
+        const auto make_kick = [&](const PartitionResult& parent, unsigned kick_seed) {
+          std::mt19937 rng(kick_seed);
+          std::vector<int> part = parent.partition;
+          const int k = parent.num_parts;
+          auto [upper, lower] = BuildBalanceBounds(hypergraph_, k, ub_factor_);
+          std::vector<std::vector<float>> balance(k, std::vector<float>(dims, 0.0f));
+          for (int v = 0; v < hypergraph_->GetNumVertices(); ++v) {
+            const auto& w = hypergraph_->GetVertexWeights(v);
+            for (int d = 0; d < dims; ++d) balance[part[v]][d] += w[d];
+          }
+          std::vector<int> boundary;
+          for (int v = 0; v < hypergraph_->GetNumVertices(); ++v) {
+            for (int u : hypergraph_->GetNeighbors(v)) {
+              if (part[u] != part[v]) { boundary.push_back(v); break; }
+            }
+          }
+          std::shuffle(boundary.begin(), boundary.end(), rng);
+          const int num_moves = 2 + static_cast<int>(rng() % 3);  // 2..4 vertices
+          int moved = 0;
+          for (size_t b = 0; b < boundary.size() && moved < num_moves; ++b) {
+            const int v = boundary[b];
+            const int src = part[v];
+            std::vector<int> dests;
+            for (int u : hypergraph_->GetNeighbors(v)) {
+              if (part[u] != src && std::find(dests.begin(), dests.end(), part[u]) == dests.end()) {
+                dests.push_back(part[u]);
+              }
+            }
+            if (dests.empty()) continue;
+            const int dst = dests[rng() % dests.size()];
+            const auto& w = hypergraph_->GetVertexWeights(v);
+            bool ok = true;
+            for (int d = 0; d < dims && ok; ++d) {
+              ok = balance[dst][d] + w[d] <= upper[dst][d] && balance[src][d] - w[d] >= lower[src][d];
+            }
+            if (!ok) continue;
+            for (int d = 0; d < dims; ++d) { balance[dst][d] += w[d]; balance[src][d] -= w[d]; }
+            part[v] = dst;
+            ++moved;
+          }
+          return part;
+        };
+
+        // Kicks of one round are generated from the same parent and run in
+        // parallel; the round size is fixed (not the thread count) so the
+        // result does not depend on the machine.
+        constexpr int kIlsKicksPerRound = 8;
+        const int num_parents = static_cast<int>(parents.size());
+        const int per_round = std::min(kIlsKicksPerRound, ils_kicks_);
+        const int num_rounds = (ils_kicks_ + per_round - 1) / per_round;
+        std::vector<std::vector<int>> kicks;
+        std::vector<int> kick_parent;
+        std::vector<PartitionResult> kick_results;
+        int kicks_done = 0, kicks_feasible = 0, kicks_accepted = 0;
+        Console::Info("ILS: " + std::to_string(ils_kicks_) + " kicks on " + std::to_string(num_parents) +
+                      " parent(s), " + std::to_string(num_rounds) + " round(s) of up to " +
+                      std::to_string(per_round) + " kicks per parent");
+        auto ils_start = std::chrono::high_resolution_clock::now();
+        #if HAVE_OPENMP
+        #pragma omp parallel num_threads(num_threads)
+        #endif
+        {
+          auto ils_refiner = make_thread_refiner();
+          for (int round = 0; round < num_rounds; ++round) {
+            #if HAVE_OPENMP
+            #pragma omp single
+            #endif
+            {
+              kicks.clear();
+              kick_parent.clear();
+              const int kicks_this_round = std::min(per_round, ils_kicks_ - round * per_round);
+              for (int p = 0; p < num_parents; ++p) {
+                for (int j = 0; j < kicks_this_round; ++j) {
+                  const unsigned kick_seed = static_cast<unsigned>(seed_) * 7919u +
+                                             static_cast<unsigned>(round * 1000 + p * 100 + j + 1);
+                  kicks.push_back(make_kick(partition_results[parents[p]], kick_seed));
+                  kick_parent.push_back(p);
+                }
+              }
+              kick_results.assign(kicks.size(), PartitionResult());
+            }
+            #if HAVE_OPENMP
+            #pragma omp for schedule(dynamic)
+            #endif
+            for (int j = 0; j < static_cast<int>(kicks.size()); ++j) {
+              const auto& parent = partition_results[parents[kick_parent[j]]];
+              kick_results[j] = refine_candidate(ils_refiner, kicks[j], parent.partition_idx,
+                                                 &parent.fp_seed, true);
+            }
+            #if HAVE_OPENMP
+            #pragma omp single
+            #endif
+            {
+              for (int p = 0; p < num_parents; ++p) {
+                auto& parent = partition_results[parents[p]];
+                int best = -1;
+                for (int j = 0; j < static_cast<int>(kicks.size()); ++j) {
+                  if (kick_parent[j] != p) continue;
+                  ++kicks_done;
+                  const auto& r = kick_results[j];
+                  if (!r.valid) continue;
+                  ++kicks_feasible;
+                  if (r.post_cost < parent.post_cost - 1e-6f &&
+                      (best < 0 || r.post_cost < kick_results[best].post_cost)) {
+                    best = j;
+                  }
+                }
+                if (best >= 0) {
+                  ++kicks_accepted;
+                  Console::Info("ILS round " + std::to_string(round) + ": candidate " +
+                                std::to_string(parent.partition_idx) + " improved " +
+                                std::to_string(parent.post_cost) + " -> " +
+                                std::to_string(kick_results[best].post_cost) + " (" +
+                                std::to_string(kick_results[best].num_parts) + " parts)");
+                  parent = kick_results[best];
+                }
+              }
+            }
+          }
+        }
+        auto ils_end = std::chrono::high_resolution_clock::now();
+        Console::Success("ILS: " + std::to_string(kicks_done) + " kicks, " +
+                         std::to_string(kicks_feasible) + " feasible, " +
+                         std::to_string(kicks_accepted) + " accepted, " +
+                         std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                            ils_end - ils_start).count() / 1000.0) + " s");
+        rank_candidates();
+      }
+    }
 
     refiner->SetFloorplanWorkers(fp_workers_ > 0 ? fp_workers_ : kFinalFloorplanWorkers);
     refiner->SetFloorplanAware(floorplan_aware_);

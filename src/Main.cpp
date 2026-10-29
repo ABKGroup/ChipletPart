@@ -92,6 +92,9 @@ struct Options {
   bool fp_eval_candidates = false;      // --fp-eval-candidates
   int fp_probe_audit = 0;               // --fp-probe-audit <factor>
   bool fp_cost_aware = true;            // --no-fp-cost-aware
+  float fp_excursion = 0.0f;            // --fp-excursion <frac>
+  int ils_kicks = 0;                    // --ils-kicks <n>
+  int ils_parents = 1;                  // --ils-parents <n>
   bool help = false;
 };
 
@@ -131,6 +134,12 @@ void displayUsage(const char* programName) {
       << "  --fp-workers <int>       Final floorplan: parallel SA walkers (default: 8)\n"
       << "  --no-fp-cost-aware       Floorplanner: pick the walker by the SA objective and skip the\n"
       << "                           cost-model shape refinement (default: cost-aware)\n"
+      << "  --fp-excursion <frac>    Feasibility gate: let a pass that starts feasible pass through\n"
+      << "                           partitions violating the reach by up to <frac> x reach scale\n"
+      << "                           (result stays feasible; default: 0 = strict)\n"
+      << "  --ils-kicks <int>        Iterated local search: perturb-and-refine attempts per parent on\n"
+      << "                           the best candidates (default: 0 = off)\n"
+      << "  --ils-parents <int>      Number of cheapest feasible candidates to kick (default: 1)\n"
       << "  --fp-eval-candidates     Floorplan every refined candidate with the final budget and report\n"
       << "                           its post-floorplan cost ([CANDIDATE] lines; experiments)\n"
       << "  --fp-probe-audit <int>   Re-check every gate rejection with an <int>x probe and report the\n"
@@ -266,6 +275,12 @@ Options parseArgs(int argc, char* argv[]) {
       opt.fp_probe_audit = parseInt(needValue(i, arg), "fp-probe-audit");
     } else if (arg == "--no-fp-cost-aware") {
       opt.fp_cost_aware = false;
+    } else if (arg == "--fp-excursion") {
+      opt.fp_excursion = parseFloat(needValue(i, arg), "fp-excursion");
+    } else if (arg == "--ils-kicks") {
+      opt.ils_kicks = parseInt(needValue(i, arg), "ils-kicks");
+    } else if (arg == "--ils-parents") {
+      opt.ils_parents = parseInt(needValue(i, arg), "ils-parents");
     } else if (arg == "--tech-nodes") {
       opt.tech_nodes = parseTechList(needValue(i, arg));
       // Legacy form: `--tech-nodes 7nm 14nm 28nm`. Absorb following tokens
@@ -294,6 +309,9 @@ Options parseArgs(int argc, char* argv[]) {
   if (opt.fp_steps <= 0) throw std::runtime_error("--fp-steps must be positive");
   if (opt.fp_perturbs <= 0) throw std::runtime_error("--fp-perturbs must be positive");
   if (opt.fp_workers < 0) throw std::runtime_error("--fp-workers must be non-negative");
+  if (opt.fp_excursion < 0.0f) throw std::runtime_error("--fp-excursion must be non-negative");
+  if (opt.ils_kicks < 0) throw std::runtime_error("--ils-kicks must be non-negative");
+  if (opt.ils_parents <= 0) throw std::runtime_error("--ils-parents must be positive");
 
   // Evaluation mode is the standard mode with one extra leading positional.
   if (opt.mode == Mode::Standard && opt.positionals.size() == kNumDesignPositionals + 2) {
@@ -379,6 +397,8 @@ int main(int argc, char* argv[]) {
     chiplet_part->SetEvalCandidates(opt.fp_eval_candidates);
     chiplet_part->SetFloorplanProbeAudit(opt.fp_probe_audit);
     chiplet_part->SetFloorplanCostAware(opt.fp_cost_aware);
+    chiplet_part->SetFloorplanExcursion(opt.fp_excursion);
+    chiplet_part->SetIlsKicks(opt.ils_kicks, opt.ils_parents);
     Console::Info("Output directory: " + chiplet_part->GetOutputDir());
 
     switch (opt.mode) {

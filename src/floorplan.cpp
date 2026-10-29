@@ -1030,30 +1030,56 @@ void SACore::trackViolation()
   }
 }
 
+static void fillSeedShapes(FloorplanSeed& seed, const std::vector<Chiplet>& macros)
+{
+  seed.aspect_ratios.clear();
+  seed.widths.clear();
+  seed.heights.clear();
+  seed.aspect_ratios.reserve(macros.size());
+  seed.widths.reserve(macros.size());
+  seed.heights.reserve(macros.size());
+  for (const auto& m : macros) {
+    seed.aspect_ratios.push_back(m.getRealWidth() > 0.0f
+                                     ? m.getRealHeight() / m.getRealWidth()
+                                     : 1.0f);
+    seed.widths.push_back(m.getRealWidth());
+    seed.heights.push_back(m.getRealHeight());
+  }
+}
+
 void SACore::getMinSeed(FloorplanSeed& seed) const
 {
   seed.pos_seq = min_pos_seq_;
   seed.neg_seq = min_neg_seq_;
-  seed.aspect_ratios.clear();
-  seed.aspect_ratios.reserve(min_macros_.size());
-  for (const auto& m : min_macros_) {
-    seed.aspect_ratios.push_back(m.getRealWidth() > 0.0f
-                                     ? m.getRealHeight() / m.getRealWidth()
-                                     : 1.0f);
-  }
+  fillSeedShapes(seed, min_macros_);
 }
 
-void SACore::applySeed(const FloorplanSeed& seed)
+void SACore::getSeed(FloorplanSeed& seed) const
+{
+  seed.pos_seq = pos_seq_;
+  seed.neg_seq = neg_seq_;
+  fillSeedShapes(seed, macros_);
+}
+
+void SACore::applySeed(const FloorplanSeed& seed, bool exact_shapes)
 {
   if (seed.pos_seq.size() != macros_.size() || seed.neg_seq.size() != macros_.size()) {
     return;
   }
   pos_seq_ = seed.pos_seq;
   neg_seq_ = seed.neg_seq;
-  if (seed.aspect_ratios.size() == macros_.size()) {
-    for (size_t i = 0; i < macros_.size(); ++i) {
-      const float ar = std::clamp(seed.aspect_ratios[i], macros_[i].min_ar_, macros_[i].max_ar_);
-      macros_[i].resizeRandomly(ar);
+  const bool exact = exact_shapes &&
+                     seed.widths.size() == macros_.size() &&
+                     seed.heights.size() == macros_.size();
+  for (size_t i = 0; i < macros_.size(); ++i) {
+    Chiplet& m = macros_[i];
+    if (exact && seed.widths[i] > 0.0f && seed.heights[i] > 0.0f &&
+        seed.widths[i] * seed.heights[i] >= m.getMinArea() * (1.0f - 1e-4f)) {
+      m.width = seed.widths[i];
+      m.height = seed.heights[i];
+    } else if (seed.aspect_ratios.size() == macros_.size()) {
+      const float ar = std::clamp(seed.aspect_ratios[i], m.min_ar_, m.max_ar_);
+      m.resizeRandomly(ar);
     }
   }
 }

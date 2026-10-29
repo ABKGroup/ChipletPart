@@ -175,17 +175,25 @@ struct Chiplet
 };
 
 
-// A floorplan starting point: sequence pair plus per-chiplet aspect ratio
-// (height / width at nominal area). Carried by the feasibility-aware refiner
-// from one probe to the next and into the full floorplanner.
+// A floorplan starting point: sequence pair plus per-chiplet shape, as the
+// aspect ratio (height / width at nominal area) and, when known, the exact
+// width and height (a chiplet may have been expanded beyond its nominal
+// area to meet a reach; re-applying only the ratio could lose feasibility).
+// Carried by the feasibility-aware refiner from one probe to the next and
+// into the full floorplanner.
 struct FloorplanSeed
 {
   std::vector<int> pos_seq;
   std::vector<int> neg_seq;
   std::vector<float> aspect_ratios;
+  std::vector<float> widths;   // optional (same size as pos_seq when set)
+  std::vector<float> heights;
   bool empty() const { return pos_seq.empty(); }
   size_t size() const { return pos_seq.size(); }
-  void clear() { pos_seq.clear(); neg_seq.clear(); aspect_ratios.clear(); }
+  void clear() {
+    pos_seq.clear(); neg_seq.clear(); aspect_ratios.clear();
+    widths.clear(); heights.clear();
+  }
 };
 
 class SACore
@@ -291,9 +299,17 @@ class SACore
     // Lowest-violation state seen so far (feasible or not): export it as a
     // seed, or jump back to it.
     void getMinSeed(FloorplanSeed& seed) const;
+    // Current state as a seed (sequence pair and exact shapes).
+    void getSeed(FloorplanSeed& seed) const;
     void restoreMin();
     // Start from `seed` (sequence pair and, when sizes match, shapes).
-    void applySeed(const FloorplanSeed& seed);
+    // Apply a seed: sequence pair plus shapes. By default the shapes are
+    // re-derived from the aspect ratios at nominal area (robust when the
+    // seed comes from a slightly different partition); with exact_shapes
+    // the seed's widths/heights are used verbatim where they cover the
+    // chiplet's area, which reproduces a saved state including chiplets
+    // that were expanded to meet a reach.
+    void applySeed(const FloorplanSeed& seed, bool exact_shapes = false);
     // Greedy descent on the reach violation alone: `num_perturbs` random
     // perturbations, each kept only if it does not increase the violation.
     // Used by the per-move feasibility probe of the partitioner.

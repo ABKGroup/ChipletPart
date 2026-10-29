@@ -120,6 +120,15 @@ public:
   // Rank feasible floorplans by the cost model and refine chiplet shapes
   // against it (default on).
   void SetFloorplanCostAware(bool on) { fp_cost_aware_ = on; }
+  // Bounded-excursion budget of the feasibility gate (fraction of the reach
+  // scale; 0 = strict).
+  void SetFloorplanExcursion(float frac) { fp_excursion_ = frac; }
+  // Iterated local search on the best candidates: `kicks` perturb-and-refine
+  // attempts per parent, on the `parents` cheapest feasible candidates.
+  void SetIlsKicks(int kicks, int parents) {
+    ils_kicks_ = kicks;
+    ils_parents_ = parents;
+  }
   // Experiment instrumentation: floorplan every refined candidate with the
   // final budget and report its post-floorplan cost; audit gate rejections
   // with a `factor`x probe (0 = off).
@@ -298,6 +307,9 @@ private:
   int final_fp_perturbs_ = 1000; // final floorplan: perturbations per step
   int fp_workers_ = 0;           // final floorplan walkers (0 = auto)
   bool fp_cost_aware_ = true;    // cost-model ranking + shape refinement in the floorplanner
+  float fp_excursion_ = 0.0f;    // bounded-excursion budget of the gate
+  int ils_kicks_ = 0;            // ILS kicks per parent (0 = off)
+  int ils_parents_ = 1;          // ILS parents (cheapest feasible candidates)
   bool fp_eval_candidates_ = false;
   int fp_audit_factor_ = 0;
   int num_parts_ = 8;     // number of partitions

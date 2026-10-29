@@ -442,6 +442,11 @@ public:
   }
   // Number of GWTW walkers used by Floorplanner(); 0 = min(threads, 4).
   void SetFloorplanWorkers(int workers) { num_fp_workers_ = workers; }
+  // Bounded excursions: an FM pass that starts feasible may accept moves
+  // whose reach violation is at most `frac` x (sum of weight x reach of the
+  // chiplet graph); the pass result is still restricted to feasible
+  // prefixes. 0 = strict gate.
+  void SetFloorplanExcursion(float frac) { fp_excursion_frac_ = std::max(0.0f, frac); }
   // Cost-aware floorplanning (RunFloorplanner only): feasible walkers are
   // ranked by the cost model rather than by the SA objective, and the
   // chiplet shapes of every feasible walker are refined against the cost
@@ -658,6 +663,8 @@ private:
   // disturbing the probe state (seed, warm start) of the real search.
   void AuditFloorplanRejection(const HGraphPtr &hgraph, const std::vector<int> &partition);
   bool fp_cost_aware_ = true;
+  float fp_excursion_frac_ = 0.0f;       // bounded-excursion budget (fraction of fp_reach_scale_)
+  float fp_reach_scale_ = 0.0f;          // sum of weight x reach of the current chiplet graph
   std::vector<int> fp_cost_partition_;   // partition being floorplanned (set by RunFloorplanner)
   FloorplanRunStats fp_run_stats_;
   FloorplanSeed fp_last_result_;

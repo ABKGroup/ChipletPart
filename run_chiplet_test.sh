@@ -103,7 +103,7 @@ while [ "$#" -gt 0 ]; do
         --output-dir)         OUTPUT_DIR="$2"; shift 2 ;;
         --floorplan-aware|--no-floorplan-aware|--fp-eval-candidates|--no-fp-cost-aware)
                               EXTRA_OPTS+=("$1"); shift ;;
-        --fp-check-budget|--fp-steps|--fp-perturbs|--fp-workers|--fp-probe-audit)
+        --fp-check-budget|--fp-steps|--fp-perturbs|--fp-workers|--fp-probe-audit|--fp-excursion|--ils-kicks|--ils-parents)
                               EXTRA_OPTS+=("$1" "$2"); shift 2 ;;
         *)
             echo -e "${RED}Error: Unknown option: $1${NC}"

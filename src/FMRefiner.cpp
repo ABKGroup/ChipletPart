@@ -165,6 +165,13 @@ void ChipletRefiner::BuildChiplets(const HGraphPtr &hgraph) {
     }
   }
 
+  // Scale of the reach violation for this chiplet graph (the violation is
+  // sum of weight x excess length; this is sum of weight x reach).
+  fp_reach_scale_ = 0.0f;
+  for (const auto& net : bundled_nets_) {
+    fp_reach_scale_ += net.weight * net.reach;
+  }
+
   // Cache the halo width to avoid multiple lookups
   const float halo_width = separation_;
 
@@ -508,7 +515,7 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
         seed_walker->setNormAreaPenalty(workers[0]->getNormAreaPenalty());
         seed_walker->setNormPackagePenalty(workers[0]->getNormPackagePenalty());
         seed_walker->setNormNetPenalty(workers[0]->getNormNetPenalty());
-        seed_walker->applySeed(fp_warm_);
+        seed_walker->applySeed(fp_warm_, /*exact_shapes=*/true);
         seed_walker->evaluateCurrent();
         if (seed_walker->isValid()) {
           workers.push_back(std::move(seed_walker));
@@ -627,14 +634,7 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
         std::vector<int> final_pos_seq, final_neg_seq;
         best_sa->getPosSeq(final_pos_seq);
         best_sa->getNegSeq(final_neg_seq);
-        fp_last_result_.pos_seq = final_pos_seq;
-        fp_last_result_.neg_seq = final_neg_seq;
-        fp_last_result_.aspect_ratios.clear();
-        for (const auto& chiplet : best_chiplets) {
-          fp_last_result_.aspect_ratios.push_back(
-              chiplet.getRealWidth() > 0.0f
-                  ? chiplet.getRealHeight() / chiplet.getRealWidth() : 1.0f);
-        }
+        best_sa->getSeed(fp_last_result_);
         
   if (local) {
           local_pos_seq_ = final_pos_seq;
@@ -1005,6 +1005,15 @@ float ChipletRefiner::Pass(
   const auto violation_lt = [](float a, float b) {
     return a < b - 1e-4f * std::max(1.0f, b);
   };
+  // Bounded excursions (3b): a pass that starts feasible may accept moves
+  // whose partition violates the reach by up to `excursion_budget` (a
+  // fraction of the reach scale). Only prefixes that are feasible again can
+  // become the pass result (lexicographic prefix selection below), so the
+  // result stays feasible; the excursion lets the pass cross a ridge of
+  // infeasible single moves that the strict gate cannot.
+  const bool feasible_pass = floorplan_aware_ && start_violation <= 1e-4f;
+  const float excursion_budget =
+      feasible_pass ? fp_excursion_frac_ * fp_reach_scale_ : 0.0f;
 
   // Main FM pass loop - execute up to max_move_ vertex moves
   for (int move_count = 0; move_count < max_move_; ++move_count) {
@@ -1029,9 +1038,12 @@ float ChipletRefiner::Pass(
     // (the rollback to the best prefix makes this safe, and it lets the pass
     // climb out of a local minimum). Probed-but-not-taken candidates go back
     // into their buckets.
-    const bool infeasible_start = floorplan_aware_ && current_violation_ > 1e-4f;
+    const bool on_excursion = excursion_budget > 0.0f && current_violation_ > 1e-4f;
+    const bool infeasible_start =
+        floorplan_aware_ && current_violation_ > 1e-4f && !on_excursion;
     const bool repair_mode = infeasible_start && fp_repair_mode_;
     const bool gate_moves = floorplan_aware_ && (!infeasible_start || repair_mode);
+    const float gate_threshold = std::max(current_violation_, excursion_budget);
     const int max_scan = repair_mode ? max_fp_repair_scan : max_fp_rejects_per_move;
     struct ScannedMove {
       std::shared_ptr<VertexGain> cell;
@@ -1067,11 +1079,11 @@ float ChipletRefiner::Pass(
         solution[v] = to;
         const float viol = FloorplanViolation(hgraph, solution);
         solution[v] = from;
-        const float tol = 1e-4f * std::max(1.0f, current_violation_);
+        const float tol = 1e-4f * std::max(1.0f, gate_threshold);
         if (gate_moves) {
           ++fp_stats_.gated;
         }
-        if (!gate_moves || viol <= current_violation_ + tol) {
+        if (!gate_moves || viol <= gate_threshold + tol) {
           candidate_violation = viol;
           candidate_seed = last_probe_;
           candidate_acceptable = true;
