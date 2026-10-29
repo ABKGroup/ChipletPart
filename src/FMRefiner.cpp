@@ -493,6 +493,32 @@ ChipletRefiner::Floorplanner(int max_steps, int perturbations,
       }
     }
 
+    // The seed itself competes with the walkers (as an un-annealed walker):
+    // when it is feasible the result is feasible, and with cost-aware
+    // selection the result is never costlier than the arrangement we were
+    // handed (e.g. the candidate floorplan a final floorplan starts from).
+    if (seeded_from_probe) {
+      try {
+        auto seed_walker = std::make_unique<SACore>(
+            static_cast<int>(workers.size()), chiplets_, bundled_nets_,
+            area_penalty_weight_, package_penalty_weight_, net_penalty_weight_,
+            pos_swap_prob_, neg_swap_prob_, double_swap_prob_, resize_prob_,
+            expand_prob_, per_worker_steps, per_worker_perturbations,
+            max_cooling_rate_, init_seed_ + static_cast<unsigned>(workers.size()));
+        seed_walker->setNormAreaPenalty(workers[0]->getNormAreaPenalty());
+        seed_walker->setNormPackagePenalty(workers[0]->getNormPackagePenalty());
+        seed_walker->setNormNetPenalty(workers[0]->getNormNetPenalty());
+        seed_walker->applySeed(fp_warm_);
+        seed_walker->evaluateCurrent();
+        if (seed_walker->isValid()) {
+          workers.push_back(std::move(seed_walker));
+          ++fp_run_stats_.walkers;
+        }
+      } catch (const std::exception& e) {
+        std::cerr << "[ERROR] Exception evaluating the floorplan seed: " << e.what() << std::endl;
+      }
+    }
+
     // Find best solution
     SACore* best_sa = nullptr;
     float best_cost = std::numeric_limits<float>::max();

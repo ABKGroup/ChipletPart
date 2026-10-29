@@ -1369,14 +1369,19 @@ void ChipletPart::Partition(
   struct PartitionResult {
     int partition_idx;
     int num_parts;
-    float cost;
+    float cost;             // refined cost (square chiplets, before any floorplan)
+    float post_cost;        // cost with the candidate floorplan's shapes (= cost when unknown)
     std::vector<int> partition;
     std::vector<float> aspect_ratios;
     std::vector<float> x_locations;
     std::vector<float> y_locations;
     bool valid;
     FloorplanSeed fp_seed;  // best floorplan arrangement known for this candidate
+    FloorplanSeed final_seed;  // arrangement of the final-budget floorplan (when run)
     chiplet::ChipletRefiner::FloorplanProbeStats probe_stats;
+    // Ranking key: feasible candidates by their post-floorplan cost (the
+    // number the design is reported with), the rest by refined cost.
+    float RankCost() const { return valid ? post_cost : cost; }
   };
   
   // Vector to store results from all partitions
@@ -1807,7 +1812,8 @@ void ChipletPart::Partition(
         int final_num_parts = *std::max_element(partition_copy.begin(), partition_copy.end()) + 1;
 
         // Feasibility of the refined candidate: a moderate floorplan run
-        // (the final, larger run below only sees the winner).
+        // (the final, larger run below only sees the top candidates).
+        float post_cost = final_cost;
         if (floorplan_aware_) {
           thread_refiner->SetFloorplanWorkers(kCandidateFloorplanWorkers);
           auto fp = thread_refiner->RunFloorplanner(
@@ -1817,18 +1823,31 @@ void ChipletPart::Partition(
           result_x_locations = std::get<1>(fp);
           result_y_locations = std::get<2>(fp);
           success = std::get<3>(fp);
+          if (success) {
+            // Cost with the floorplan's chiplet shapes: the candidates are
+            // ranked by this (the refined cost assumes square chiplets).
+            thread_refiner->SetAspectRatios(result_aspect_ratios);
+            thread_refiner->SetXLocations(result_x_locations);
+            thread_refiner->SetYLocations(result_y_locations);
+            post_cost = thread_refiner->GetCostFromScratch(partition_copy);
+          }
         }
         // Store results for this partition
         PartitionResult result;
         result.partition_idx = i;
         result.num_parts = final_num_parts;
         result.cost = final_cost;
+        result.post_cost = post_cost;
         result.partition = partition_copy;
         result.aspect_ratios = result_aspect_ratios;
         result.x_locations = result_x_locations;
         result.y_locations = result_y_locations;
         result.valid = success;
-        result.fp_seed = thread_refiner->GetFloorplanSeed();
+        // Seed for the final floorplan: the candidate floorplan's (feasible,
+        // cost-refined) arrangement when it has one, else the refinement's.
+        result.fp_seed = (floorplan_aware_ && success)
+                             ? thread_refiner->GetLastFloorplanResult()
+                             : thread_refiner->GetFloorplanSeed();
         result.probe_stats = thread_refiner->GetFloorplanProbeStats();
         
         // Thread-safe update of results vector
@@ -1850,6 +1869,9 @@ void ChipletPart::Partition(
                  " parts, cost " + std::to_string(result.cost) +
                  (floorplanning || floorplan_aware_
                       ? std::string(", floorplan ") + (result.valid ? "feasible" : "infeasible")
+                      : std::string()) +
+                 (floorplan_aware_ && result.valid
+                      ? ", post-floorplan cost " + std::to_string(result.post_cost)
                       : std::string()) +
                  (floorplan_aware_
                       ? ", probes " + std::to_string(ps.probes) + ", gated " +
@@ -1878,105 +1900,112 @@ void ChipletPart::Partition(
   Console::Success("Parallel floorplanning and refinement completed in " + 
            std::to_string(elapsed_parallel_time) + " seconds");
   
-  // Find the best partition: feasible candidates first (when feasibility is
-  // known), then by cost (lower is better).
+  // Rank the candidates: feasible ones first (when feasibility is known),
+  // then by post-floorplan cost for feasible candidates and refined cost for
+  // the rest (lower is better).
   const bool feasibility_known = floorplanning || floorplan_aware_;
-  if (!partition_results.empty()) {
+  const auto rank_candidates = [&]() {
     std::sort(partition_results.begin(), partition_results.end(),
               [feasibility_known](const PartitionResult& a, const PartitionResult& b) {
                 if (feasibility_known && a.valid != b.valid) {
                   return a.valid;
                 }
-                return a.cost < b.cost;
+                return a.RankCost() < b.RankCost();
               });
+  };
+  if (!partition_results.empty()) {
+    rank_candidates();
 
     refiner->SetFloorplanWorkers(fp_workers_ > 0 ? fp_workers_ : kFinalFloorplanWorkers);
     refiner->SetFloorplanAware(floorplan_aware_);
     refiner->SetFloorplanCostAware(fp_cost_aware_);
-    // Post-floorplan cost of a candidate: cost model evaluated with the
-    // aspect ratios and locations of its (final-budget) floorplan.
-    const auto post_floorplan_cost = [&](PartitionResult& cand) -> float {
+    using FloorResult =
+        std::tuple<std::vector<float>, std::vector<float>, std::vector<float>, bool>;
+    // Final (large-budget) floorplan of a candidate: updates its shapes,
+    // feasibility, seed and post-floorplan cost; returns the floorplan.
+    const auto final_floorplan = [&](PartitionResult& cand) -> FloorResult {
       refiner->SetNumParts(cand.num_parts);
       refiner->SetAspectRatios(cand.aspect_ratios);
       refiner->SetXLocations(cand.x_locations);
       refiner->SetYLocations(cand.y_locations);
       refiner->SetFloorplanSeed(cand.fp_seed);
-      auto fr = refiner->RunFloorplanner(
+      FloorResult fr = refiner->RunFloorplanner(
           cand.partition, hypergraph_, final_fp_steps_, final_fp_perturbs_, 0.00001);
       cand.valid = std::get<3>(fr);
       cand.aspect_ratios = std::get<0>(fr);
       cand.x_locations = std::get<1>(fr);
       cand.y_locations = std::get<2>(fr);
+      cand.final_seed = refiner->GetLastFloorplanResult();
       refiner->SetAspectRatios(cand.aspect_ratios);
       refiner->SetXLocations(cand.x_locations);
       refiner->SetYLocations(cand.y_locations);
-      return refiner->GetCostFromScratch(cand.partition);
+      cand.post_cost = refiner->GetCostFromScratch(cand.partition);
+      return fr;
     };
+
+    // Final floorplans. The candidate floorplans above are short runs, so
+    // the top feasible candidates (all of them with --fp-eval-candidates)
+    // are floorplanned with the full budget and the design is reported with
+    // the cheapest feasible one. Without feasibility information only the
+    // cheapest candidate is floorplanned.
+    constexpr size_t kFinalCandidates = 3;
+    size_t num_final = 1;
+    if (fp_eval_candidates_) {
+      num_final = partition_results.size();
+    } else if (feasibility_known) {
+      num_final = 0;
+      while (num_final < partition_results.size() &&
+             num_final < kFinalCandidates && partition_results[num_final].valid) {
+        ++num_final;
+      }
+      num_final = std::max<size_t>(num_final, 1);  // nothing feasible: report the cheapest
+    }
     if (fp_eval_candidates_) {
       Console::Subheader("Post-floorplan evaluation of all candidates");
-      refiner->SetFloorplanVerbose(false);
-      for (auto& cand : partition_results) {
-        const float post = post_floorplan_cost(cand);
+    }
+    refiner->SetFloorplanVerbose(!fp_eval_candidates_);
+    std::vector<FloorResult> final_results(num_final);
+    for (size_t t = 0; t < num_final; ++t) {
+      auto& cand = partition_results[t];
+      Console::Info("Final floorplan of candidate " + std::to_string(cand.partition_idx) +
+                    " (" + std::to_string(cand.num_parts) + " parts, refined cost " +
+                    std::to_string(cand.cost) + ")");
+      final_results[t] = final_floorplan(cand);
+      if (fp_eval_candidates_) {
         Console::Info("[CANDIDATE] idx=" + std::to_string(cand.partition_idx) +
                       " parts=" + std::to_string(cand.num_parts) +
                       " pre_cost=" + std::to_string(cand.cost) +
-                      " post_cost=" + std::to_string(post) +
+                      " post_cost=" + std::to_string(cand.post_cost) +
                       " feasible=" + (cand.valid ? "1" : "0") +
                       " probes=" + std::to_string(cand.probe_stats.probes) +
                       " rejected=" + std::to_string(cand.probe_stats.rejected));
+      } else if (!cand.valid && feasibility_known) {
+        Console::Warning("Candidate " + std::to_string(cand.partition_idx) +
+                         " is not floorplan-feasible under the final budget");
       }
-      // Re-rank with the final-budget feasibility
-      std::sort(partition_results.begin(), partition_results.end(),
-                [feasibility_known](const PartitionResult& a, const PartitionResult& b) {
-                  if (feasibility_known && a.valid != b.valid) {
-                    return a.valid;
-                  }
-                  return a.cost < b.cost;
-                });
     }
-
-    // Final floorplan (large budget). If the top candidate turns out to be
-    // infeasible under the larger run, fall back to the next candidates
-    // that passed the per-candidate check before giving up.
-    refiner->SetFloorplanVerbose(true);
-    using FloorResult =
-        std::tuple<std::vector<float>, std::vector<float>, std::vector<float>, bool>;
+    // Pick the reported design among the final-floorplanned candidates:
+    // feasible first, then cheapest post-floorplan cost.
     size_t best_idx = 0;
-    FloorResult floor_result;      // floorplan of the reported candidate
-    FloorResult first_floor_result;
-    const size_t max_final_tries = feasibility_known
-        ? std::min<size_t>(partition_results.size(), 3) : 1;
-    for (size_t t = 0; t < max_final_tries; ++t) {
-      auto& cand = partition_results[t];
-      if (t > 0 && !cand.valid) {
-        break;  // only candidates that passed the per-candidate check
-      }
-      refiner->SetNumParts(cand.num_parts);
-      refiner->SetAspectRatios(cand.aspect_ratios);
-      refiner->SetXLocations(cand.x_locations);
-      refiner->SetYLocations(cand.y_locations);
-      refiner->SetFloorplanAware(floorplan_aware_);
-      refiner->SetFloorplanSeed(cand.fp_seed);
-      Console::Info("Final floorplan of candidate " + std::to_string(cand.partition_idx) +
-                    " (" + std::to_string(cand.num_parts) + " parts, cost " +
-                    std::to_string(cand.cost) + ")");
-      FloorResult fr = refiner->RunFloorplanner(
-          cand.partition, hypergraph_, final_fp_steps_, final_fp_perturbs_, 0.00001);
-      cand.valid = std::get<3>(fr);
-      if (t == 0) {
-        first_floor_result = fr;
-      }
-      if (cand.valid) {
-        cand.aspect_ratios = std::get<0>(fr);
-        cand.x_locations = std::get<1>(fr);
-        cand.y_locations = std::get<2>(fr);
+    for (size_t t = 1; t < num_final; ++t) {
+      const auto& a = partition_results[t];
+      const auto& b = partition_results[best_idx];
+      if ((feasibility_known && a.valid != b.valid) ? a.valid : a.RankCost() < b.RankCost()) {
         best_idx = t;
-        floor_result = fr;
-        break;
       }
-      Console::Warning("Candidate " + std::to_string(cand.partition_idx) +
-                       " is not floorplan-feasible under the final budget");
-      floor_result = first_floor_result;  // nothing feasible yet: report the cheapest
+    }
+    FloorResult floor_result = final_results[best_idx];  // floorplan of the reported candidate
+    // Keep the list sorted for the top-3 table (the candidates that were not
+    // final-floorplanned keep their short-run post cost).
+    if (best_idx != 0 || fp_eval_candidates_) {
+      PartitionResult best_copy = partition_results[best_idx];
+      rank_candidates();
+      for (size_t t = 0; t < partition_results.size(); ++t) {
+        if (partition_results[t].partition_idx == best_copy.partition_idx) {
+          best_idx = t;
+          break;
+        }
+      }
     }
     
     // Get the best result
@@ -2001,7 +2030,8 @@ void ChipletPart::Partition(
     aspect_ratios_str += "]";
     Console::TableRow({"Partition index", std::to_string(best_result.partition_idx)}, result_widths);
     Console::TableRow({"Number of parts", std::to_string(best_result.num_parts)}, result_widths);
-    Console::TableRow({"Cost", std::to_string(best_result.cost)}, result_widths);
+    Console::TableRow({"Cost (with floorplan)", std::to_string(best_result.post_cost)}, result_widths);
+    Console::TableRow({"Refined cost (pre-floorplan)", std::to_string(best_result.cost)}, result_widths);
     // Per-candidate feasibility is only known when the per-candidate
     // floorplanner ran; otherwise the final floorplan decides.
     const auto feasible_str = [&](bool valid) -> std::string {
@@ -2015,8 +2045,8 @@ void ChipletPart::Partition(
     if (partition_results.size() > 1) {
       Console::Subheader("Top 3 Partition Results by Cost:");
       
-      std::vector<std::string> top_columns = {"Rank", "Partition Index", "Parts", "Cost", "Feasible"};
-      std::vector<int> top_widths = {10, 20, 10, 20, 10};
+      std::vector<std::string> top_columns = {"Rank", "Partition Index", "Parts", "Cost", "Refined cost", "Feasible"};
+      std::vector<int> top_widths = {10, 20, 10, 16, 16, 10};
       Console::TableHeader(top_columns, top_widths);
       
       // Show up to top 3 results
@@ -2028,6 +2058,7 @@ void ChipletPart::Partition(
           std::to_string(i+1), 
           std::to_string(result.partition_idx),
           std::to_string(result.num_parts),
+          std::to_string(result.RankCost()),
           std::to_string(result.cost),
           success,
         }, top_widths);
@@ -2038,20 +2069,15 @@ void ChipletPart::Partition(
     std::string success = std::get<3>(floor_result) ? "Yes" : "No";
     Console::Info("Floorplanner results: " + success);
     // Machine-readable summary lines (same wording as the other modes; the
-    // run_*.sh scripts grep for these).
-    Console::Success("Best cost: " + std::to_string(best_result.cost));
+    // run_*.sh scripts grep for these). "Best cost" is the cost of the
+    // reported design with its final floorplan applied, i.e. the number
+    // evaluation mode reports for the saved partition; the refined cost
+    // (square chiplets, before floorplanning) is given for reference.
+    Console::Success("Best cost: " + std::to_string(best_result.post_cost));
     Console::Success("Number of partitions: " + std::to_string(best_result.num_parts));
     Console::Success("Floorplan feasibility: " + std::string(std::get<3>(floor_result) ? "1" : "0"));
-    {
-      // Cost of the reported design with its final floorplan applied (the
-      // number evaluation mode reports for the saved partition).
-      refiner->SetNumParts(best_result.num_parts);
-      refiner->SetAspectRatios(std::get<0>(floor_result));
-      refiner->SetXLocations(std::get<1>(floor_result));
-      refiner->SetYLocations(std::get<2>(floor_result));
-      const float post = refiner->GetCostFromScratch(best_result.partition);
-      Console::Success("Post-floorplan cost: " + std::to_string(post));
-    }
+    Console::Success("Pre-floorplan cost: " + std::to_string(best_result.cost));
+    Console::Success("Post-floorplan cost: " + std::to_string(best_result.post_cost));
 
     std::string partition_file = OutputPath(chiplet_netlist_file + ".cpart." + std::to_string(best_result.num_parts));
 
@@ -2066,7 +2092,7 @@ void ChipletPart::Partition(
     // Save the floorplan arrangement with it, so that evaluating the saved
     // partition starts from the same arrangement and reproduces the
     // feasibility (a cold floorplan of a tight design may not).
-    if (WriteFloorplanSeed(partition_file + ".fp", refiner->GetLastFloorplanResult())) {
+    if (WriteFloorplanSeed(partition_file + ".fp", best_result.final_seed)) {
       Console::Success("Floorplan seed saved to " + partition_file + ".fp");
     }
     
