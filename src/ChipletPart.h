@@ -117,6 +117,11 @@ public:
   }
   // Number of parallel SA walkers (GWTW) for the final floorplan; 0 = auto.
   void SetFloorplanWorkers(int workers) { fp_workers_ = workers; }
+  // Experiment instrumentation: floorplan every refined candidate with the
+  // final budget and report its post-floorplan cost; audit gate rejections
+  // with a `factor`x probe (0 = off).
+  void SetEvalCandidates(bool on) { fp_eval_candidates_ = on; }
+  void SetFloorplanProbeAudit(int factor) { fp_audit_factor_ = factor; }
 
   // Join output_dir_ with a file name. `file_name` may be a path; only its
   // basename is used so inputs under test_data/ never get polluted.
@@ -289,6 +294,8 @@ private:
   int final_fp_steps_ = 1000;    // final floorplan: SA steps per walker
   int final_fp_perturbs_ = 1000; // final floorplan: perturbations per step
   int fp_workers_ = 0;           // final floorplan walkers (0 = auto)
+  bool fp_eval_candidates_ = false;
+  int fp_audit_factor_ = 0;
   int num_parts_ = 8;     // number of partitions
   int refine_iters_ = 2;  // number of refinement iterations
   int max_moves_ = 50;

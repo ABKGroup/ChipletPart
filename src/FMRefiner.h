@@ -414,6 +414,19 @@ public:
   // a seed (GetFloorplanSeed) for the full floorplanner.
   void SetFloorplanAware(bool aware) { floorplan_aware_ = aware; }
   bool IsFloorplanAware() const { return floorplan_aware_; }
+  // Probe statistics for the current candidate (reset by
+  // ResetFloorplanProbeState). `audit_*` are only filled when an audit factor
+  // is set: every gate rejection is then re-checked with a probe whose budget
+  // is `factor` times larger, and a disagreement counts as a false rejection.
+  struct FloorplanProbeStats {
+    int probes = 0;             // SA probes run
+    int gated = 0;              // probes whose result could veto a move/swap
+    int rejected = 0;           // vetoes
+    int audit_checked = 0;      // vetoes re-checked with the large probe
+    int audit_false = 0;        // ... of which the large probe would have accepted
+  };
+  const FloorplanProbeStats& GetFloorplanProbeStats() const { return fp_stats_; }
+  void SetFloorplanProbeAudit(int factor) { fp_audit_factor_ = std::max(0, factor); }
   // Budget of the per-move probe (steps x perturbations, one SA walker).
   void SetFloorplanCheckBudget(int steps, int perturbs) {
     fp_check_steps_ = std::max(1, steps);
@@ -443,6 +456,7 @@ public:
     fp_probe_count_ = 0;
     current_violation_ = 0.0f;
     last_probe_violation_ = 0.0f;
+    fp_stats_ = FloorplanProbeStats();
   }
   // Make the result of the last probe (IsFloorplanAcceptable / 
   // FloorplanViolation) the new baseline and seed, once the probed partition
@@ -609,7 +623,12 @@ private:
   float last_probe_violation_ = 0.0f;    // result of the last probe
   FloorplanSeed last_probe_;             // best arrangement found by the last probe
   FloorplanSeed fp_warm_;                // best arrangement for the current partition
-  int fp_probe_count_ = 0;               // statistics
+  int fp_probe_count_ = 0;               // seeds successive probes
+  FloorplanProbeStats fp_stats_;
+  int fp_audit_factor_ = 0;              // 0 = no audit
+  // Re-check a vetoed partition with a `fp_audit_factor_`x probe without
+  // disturbing the probe state (seed, warm start) of the real search.
+  void AuditFloorplanRejection(const HGraphPtr &hgraph, const std::vector<int> &partition);
   int max_num_step_ = 2000;
   int num_perturb_per_step_ = 500;
   int num_oscillations_ = 4; // number of oscillations allowed in FM

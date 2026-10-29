@@ -1307,6 +1307,7 @@ void ChipletPart::Partition(
     std::vector<float> y_locations;
     bool valid;
     FloorplanSeed fp_seed;  // best floorplan arrangement known for this candidate
+    chiplet::ChipletRefiner::FloorplanProbeStats probe_stats;
   };
   
   // Vector to store results from all partitions
@@ -1666,6 +1667,7 @@ void ChipletPart::Partition(
       thread_refiner->SetYLocations(y_locations);
       thread_refiner->SetFloorplanAware(floorplan_aware_);
       thread_refiner->SetFloorplanCheckBudget(fp_check_steps_, fp_check_perturbs_);
+      thread_refiner->SetFloorplanProbeAudit(fp_audit_factor_);
       thread_refiner->ResetFloorplanProbeState();
       
       // Balance bounds sized to this candidate's number of partitions
@@ -1757,6 +1759,7 @@ void ChipletPart::Partition(
         result.y_locations = result_y_locations;
         result.valid = success;
         result.fp_seed = thread_refiner->GetFloorplanSeed();
+        result.probe_stats = thread_refiner->GetFloorplanProbeStats();
         
         // Thread-safe update of results vector
         {
@@ -1772,10 +1775,19 @@ void ChipletPart::Partition(
       {
         std::lock_guard<std::mutex> lock(results_mutex);
         float progress = static_cast<float>(completed) / init_partitions.size();
+        const auto& ps = result.probe_stats;
         Console::Info("Candidate " + std::to_string(i) + ": " + std::to_string(result.num_parts) +
                  " parts, cost " + std::to_string(result.cost) +
                  (floorplanning || floorplan_aware_
                       ? std::string(", floorplan ") + (result.valid ? "feasible" : "infeasible")
+                      : std::string()) +
+                 (floorplan_aware_
+                      ? ", probes " + std::to_string(ps.probes) + ", gated " +
+                            std::to_string(ps.gated) + ", rejected " + std::to_string(ps.rejected) +
+                            (ps.audit_checked > 0
+                                 ? ", audit false " + std::to_string(ps.audit_false) + "/" +
+                                       std::to_string(ps.audit_checked)
+                                 : std::string())
                       : std::string()));
         Console::Info("Processed " + std::to_string(completed) + " partitions out of " + 
                  std::to_string(init_partitions.size()) + " (" + 
@@ -1808,11 +1820,54 @@ void ChipletPart::Partition(
                 return a.cost < b.cost;
               });
 
+    refiner->SetFloorplanWorkers(fp_workers_);
+    refiner->SetFloorplanAware(floorplan_aware_);
+    // Post-floorplan cost of a candidate: cost model evaluated with the
+    // aspect ratios and locations of its (final-budget) floorplan.
+    const auto post_floorplan_cost = [&](PartitionResult& cand) -> float {
+      refiner->SetNumParts(cand.num_parts);
+      refiner->SetAspectRatios(cand.aspect_ratios);
+      refiner->SetXLocations(cand.x_locations);
+      refiner->SetYLocations(cand.y_locations);
+      refiner->SetFloorplanSeed(cand.fp_seed);
+      auto fr = refiner->RunFloorplanner(
+          cand.partition, hypergraph_, final_fp_steps_, final_fp_perturbs_, 0.00001);
+      cand.valid = std::get<3>(fr);
+      cand.aspect_ratios = std::get<0>(fr);
+      cand.x_locations = std::get<1>(fr);
+      cand.y_locations = std::get<2>(fr);
+      refiner->SetAspectRatios(cand.aspect_ratios);
+      refiner->SetXLocations(cand.x_locations);
+      refiner->SetYLocations(cand.y_locations);
+      return refiner->GetCostFromScratch(cand.partition);
+    };
+    if (fp_eval_candidates_) {
+      Console::Subheader("Post-floorplan evaluation of all candidates");
+      refiner->SetFloorplanVerbose(false);
+      for (auto& cand : partition_results) {
+        const float post = post_floorplan_cost(cand);
+        Console::Info("[CANDIDATE] idx=" + std::to_string(cand.partition_idx) +
+                      " parts=" + std::to_string(cand.num_parts) +
+                      " pre_cost=" + std::to_string(cand.cost) +
+                      " post_cost=" + std::to_string(post) +
+                      " feasible=" + (cand.valid ? "1" : "0") +
+                      " probes=" + std::to_string(cand.probe_stats.probes) +
+                      " rejected=" + std::to_string(cand.probe_stats.rejected));
+      }
+      // Re-rank with the final-budget feasibility
+      std::sort(partition_results.begin(), partition_results.end(),
+                [feasibility_known](const PartitionResult& a, const PartitionResult& b) {
+                  if (feasibility_known && a.valid != b.valid) {
+                    return a.valid;
+                  }
+                  return a.cost < b.cost;
+                });
+    }
+
     // Final floorplan (large budget). If the top candidate turns out to be
     // infeasible under the larger run, fall back to the next candidates
     // that passed the per-candidate check before giving up.
     refiner->SetFloorplanVerbose(true);
-    refiner->SetFloorplanWorkers(fp_workers_);
     using FloorResult =
         std::tuple<std::vector<float>, std::vector<float>, std::vector<float>, bool>;
     size_t best_idx = 0;
@@ -1916,6 +1971,16 @@ void ChipletPart::Partition(
     Console::Success("Best cost: " + std::to_string(best_result.cost));
     Console::Success("Number of partitions: " + std::to_string(best_result.num_parts));
     Console::Success("Floorplan feasibility: " + std::string(std::get<3>(floor_result) ? "1" : "0"));
+    {
+      // Cost of the reported design with its final floorplan applied (the
+      // number evaluation mode reports for the saved partition).
+      refiner->SetNumParts(best_result.num_parts);
+      refiner->SetAspectRatios(std::get<0>(floor_result));
+      refiner->SetXLocations(std::get<1>(floor_result));
+      refiner->SetYLocations(std::get<2>(floor_result));
+      const float post = refiner->GetCostFromScratch(best_result.partition);
+      Console::Success("Post-floorplan cost: " + std::to_string(post));
+    }
 
     std::string partition_file = OutputPath(chiplet_netlist_file + ".cpart." + std::to_string(best_result.num_parts));
 

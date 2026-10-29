@@ -591,6 +591,7 @@ float ChipletRefiner::FloorplanViolation(const HGraphPtr &hgraph,
     return 0.0f;  // a single chiplet (or no inter-chiplet nets) is trivially feasible
   }
   ++fp_probe_count_;
+  ++fp_stats_.probes;
   SACore sa(0, chiplets_, bundled_nets_, area_penalty_weight_, package_penalty_weight_,
             net_penalty_weight_, pos_swap_prob_, neg_swap_prob_, double_swap_prob_,
             resize_prob_, expand_prob_, fp_check_steps_, fp_check_perturbs_,
@@ -635,7 +636,41 @@ bool ChipletRefiner::IsFloorplanAcceptable(const HGraphPtr &hgraph,
   }
   const float v = FloorplanViolation(hgraph, partition);
   const float tol = 1e-4f * std::max(1.0f, current_violation_);
-  return v <= current_violation_ + tol;
+  ++fp_stats_.gated;
+  if (v <= current_violation_ + tol) {
+    return true;
+  }
+  ++fp_stats_.rejected;
+  AuditFloorplanRejection(hgraph, partition);
+  return false;
+}
+
+void ChipletRefiner::AuditFloorplanRejection(const HGraphPtr &hgraph,
+                                             const std::vector<int> &partition) {
+  if (fp_audit_factor_ <= 1) {
+    return;
+  }
+  const FloorplanSeed saved_probe = last_probe_;
+  const float saved_violation = last_probe_violation_;
+  const int saved_count = fp_probe_count_;
+  const int saved_steps = fp_check_steps_;
+  const int saved_perturbs = fp_check_perturbs_;
+  const int saved_probes = fp_stats_.probes;
+  const float scale = std::sqrt(static_cast<float>(fp_audit_factor_));
+  fp_check_steps_ = std::max(1, static_cast<int>(std::lround(saved_steps * scale)));
+  fp_check_perturbs_ = std::max(1, static_cast<int>(std::lround(saved_perturbs * scale)));
+  fp_probe_count_ += 1000000;  // keep the audit's RNG stream apart from the search's
+  const float v = FloorplanViolation(hgraph, partition);
+  ++fp_stats_.audit_checked;
+  if (v <= current_violation_ + 1e-4f * std::max(1.0f, current_violation_)) {
+    ++fp_stats_.audit_false;
+  }
+  fp_check_steps_ = saved_steps;
+  fp_check_perturbs_ = saved_perturbs;
+  fp_probe_count_ = saved_count;
+  fp_stats_.probes = saved_probes;
+  last_probe_ = saved_probe;
+  last_probe_violation_ = saved_violation;
 }
 
 // The main function of refinement class
@@ -912,6 +947,9 @@ float ChipletRefiner::Pass(
         const float viol = FloorplanViolation(hgraph, solution);
         solution[v] = from;
         const float tol = 1e-4f * std::max(1.0f, current_violation_);
+        if (gate_moves) {
+          ++fp_stats_.gated;
+        }
         if (!gate_moves || viol <= current_violation_ + tol) {
           candidate_violation = viol;
           candidate_seed = last_probe_;
@@ -920,6 +958,12 @@ float ChipletRefiner::Pass(
         }
         scanned.push_back({candidate, viol, last_probe_});
         buckets[to]->Remove(v);
+        ++fp_stats_.rejected;
+        if (fp_audit_factor_ > 1) {
+          solution[v] = to;
+          AuditFloorplanRejection(hgraph, solution);
+          solution[v] = from;
+        }
         if (static_cast<int>(scanned.size()) < max_scan) {
           continue;
         }

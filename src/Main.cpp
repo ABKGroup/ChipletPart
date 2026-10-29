@@ -89,6 +89,8 @@ struct Options {
   int fp_steps = 1000;                  // --fp-steps
   int fp_perturbs = 1000;               // --fp-perturbs
   int fp_workers = 0;                   // --fp-workers (0 = auto)
+  bool fp_eval_candidates = false;      // --fp-eval-candidates
+  int fp_probe_audit = 0;               // --fp-probe-audit <factor>
   bool help = false;
 };
 
@@ -126,6 +128,10 @@ void displayUsage(const char* programName) {
       << "  --fp-steps <int>         Final floorplan: SA steps per walker (default: 1000)\n"
       << "  --fp-perturbs <int>      Final floorplan: perturbations per step (default: 1000)\n"
       << "  --fp-workers <int>       Final floorplan: parallel SA walkers (default: min(threads,4))\n"
+      << "  --fp-eval-candidates     Floorplan every refined candidate with the final budget and report\n"
+      << "                           its post-floorplan cost ([CANDIDATE] lines; experiments)\n"
+      << "  --fp-probe-audit <int>   Re-check every gate rejection with an <int>x probe and report the\n"
+      << "                           false-rejection count (experiments; slow)\n"
       << "  -h, --help               Show this message\n"
       << "\n"
       << "Positional semantics:\n"
@@ -251,6 +257,10 @@ Options parseArgs(int argc, char* argv[]) {
       opt.fp_perturbs = parseInt(needValue(i, arg), "fp-perturbs");
     } else if (arg == "--fp-workers") {
       opt.fp_workers = parseInt(needValue(i, arg), "fp-workers");
+    } else if (arg == "--fp-eval-candidates") {
+      opt.fp_eval_candidates = true;
+    } else if (arg == "--fp-probe-audit") {
+      opt.fp_probe_audit = parseInt(needValue(i, arg), "fp-probe-audit");
     } else if (arg == "--tech-nodes") {
       opt.tech_nodes = parseTechList(needValue(i, arg));
       // Legacy form: `--tech-nodes 7nm 14nm 28nm`. Absorb following tokens
@@ -361,6 +371,8 @@ int main(int argc, char* argv[]) {
     chiplet_part->SetFloorplanCheckBudget(opt.fp_check_steps, opt.fp_check_perturbs);
     chiplet_part->SetFinalFloorplanBudget(opt.fp_steps, opt.fp_perturbs);
     chiplet_part->SetFloorplanWorkers(opt.fp_workers);
+    chiplet_part->SetEvalCandidates(opt.fp_eval_candidates);
+    chiplet_part->SetFloorplanProbeAudit(opt.fp_probe_audit);
     Console::Info("Output directory: " + chiplet_part->GetOutputDir());
 
     switch (opt.mode) {
