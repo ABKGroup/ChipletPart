@@ -432,9 +432,14 @@ public:
     int rejected = 0;           // vetoes
     int audit_checked = 0;      // vetoes re-checked with the large probe
     int audit_false = 0;        // ... of which the large probe would have accepted
+    int tier2_checked = 0;      // improving vetoes re-probed by the second tier
+    int tier2_accepted = 0;     // ... of which the second tier accepted
   };
   const FloorplanProbeStats& GetFloorplanProbeStats() const { return fp_stats_; }
   void SetFloorplanProbeAudit(int factor) { fp_audit_factor_ = std::max(0, factor); }
+  // Two-tier gate: a vetoed move with a positive gain is re-probed once with
+  // a `factor`x budget (0/1 = off); it is accepted if the second probe passes.
+  void SetFloorplanSecondTier(int factor) { fp_tier2_factor_ = std::max(0, factor); }
   // Budget of the per-move probe (steps x perturbations, one SA walker).
   void SetFloorplanCheckBudget(int steps, int perturbs) {
     fp_check_steps_ = std::max(1, steps);
@@ -659,6 +664,10 @@ private:
   int fp_probe_count_ = 0;               // seeds successive probes
   FloorplanProbeStats fp_stats_;
   int fp_audit_factor_ = 0;              // 0 = no audit
+  int fp_tier2_factor_ = 0;              // 0 = single-tier gate
+  // Second-tier probe of `partition`: `fp_tier2_factor_`x budget on its own
+  // RNG stream; returns the violation and leaves last_probe_ on its result.
+  float SecondTierViolation(const HGraphPtr &hgraph, const std::vector<int> &partition);
   // Re-check a vetoed partition with a `fp_audit_factor_`x probe without
   // disturbing the probe state (seed, warm start) of the real search.
   void AuditFloorplanRejection(const HGraphPtr &hgraph, const std::vector<int> &partition);

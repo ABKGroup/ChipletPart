@@ -91,10 +91,12 @@ struct Options {
   int fp_workers = 0;                   // --fp-workers (0 = auto)
   bool fp_eval_candidates = false;      // --fp-eval-candidates
   int fp_probe_audit = 0;               // --fp-probe-audit <factor>
+  int fp_second_tier = 0;               // --fp-second-tier <factor>
   bool fp_cost_aware = true;            // --no-fp-cost-aware
   float fp_excursion = 0.0f;            // --fp-excursion <frac>
   int ils_kicks = 256;                  // --ils-kicks <n>
   int ils_parents = 1;                  // --ils-parents <n>
+  std::vector<std::string> init_partitions;  // --init-partition <file> (repeatable)
   bool help = false;
 };
 
@@ -141,15 +143,20 @@ void displayUsage(const char* programName) {
       << "                           attempts per parent, in rounds of 8, stopping after two rounds\n"
       << "                           without improvement (default: 256; 0 = off)\n"
       << "  --ils-parents <int>      Number of cheapest feasible candidates to kick (default: 1)\n"
+      << "  --init-partition <file>  Add the partition in <file> (one chiplet id per vertex) to the\n"
+      << "                           initial candidates; may be repeated\n"
       << "  --fp-eval-candidates     Floorplan every refined candidate with the final budget and report\n"
       << "                           its post-floorplan cost ([CANDIDATE] lines; experiments)\n"
+      << "  --fp-second-tier <int>   Two-tier gate: re-probe an improving move vetoed by the cheap probe\n"
+      << "                           once with an <int>x probe and accept it if that passes (default: 0)\n"
       << "  --fp-probe-audit <int>   Re-check every gate rejection with an <int>x probe and report the\n"
       << "                           false-rejection count (experiments; slow)\n"
       << "  -h, --help               Show this message\n"
       << "\n"
       << "Positional semantics:\n"
       << "  <reach>       Default IO reach (mm) for net types that have no 'reach' attribute in the IO file\n"
-      << "  <separation>  Minimum spacing between chiplets used by the floorplanner (mm)\n"
+      << "  <separation>  Minimum gap between two chiplets in the floorplanner (mm); the cost model\n"
+      << "                uses die_separation of the assembly process for the same quantity\n"
       << "\n"
       << "Examples:\n"
       << "  " << programName << " io.xml layer.xml wafer.xml assembly.xml test.xml netlist.xml blocks.txt 0.5 0.25 7nm\n"
@@ -274,6 +281,8 @@ Options parseArgs(int argc, char* argv[]) {
       opt.fp_eval_candidates = true;
     } else if (arg == "--fp-probe-audit") {
       opt.fp_probe_audit = parseInt(needValue(i, arg), "fp-probe-audit");
+    } else if (arg == "--fp-second-tier") {
+      opt.fp_second_tier = parseInt(needValue(i, arg), "fp-second-tier");
     } else if (arg == "--no-fp-cost-aware") {
       opt.fp_cost_aware = false;
     } else if (arg == "--fp-excursion") {
@@ -282,6 +291,8 @@ Options parseArgs(int argc, char* argv[]) {
       opt.ils_kicks = parseInt(needValue(i, arg), "ils-kicks");
     } else if (arg == "--ils-parents") {
       opt.ils_parents = parseInt(needValue(i, arg), "ils-parents");
+    } else if (arg == "--init-partition") {
+      opt.init_partitions.push_back(needValue(i, arg));
     } else if (arg == "--tech-nodes") {
       opt.tech_nodes = parseTechList(needValue(i, arg));
       // Legacy form: `--tech-nodes 7nm 14nm 28nm`. Absorb following tokens
@@ -397,9 +408,11 @@ int main(int argc, char* argv[]) {
     chiplet_part->SetFloorplanWorkers(opt.fp_workers);
     chiplet_part->SetEvalCandidates(opt.fp_eval_candidates);
     chiplet_part->SetFloorplanProbeAudit(opt.fp_probe_audit);
+    chiplet_part->SetFloorplanSecondTier(opt.fp_second_tier);
     chiplet_part->SetFloorplanCostAware(opt.fp_cost_aware);
     chiplet_part->SetFloorplanExcursion(opt.fp_excursion);
     chiplet_part->SetIlsKicks(opt.ils_kicks, opt.ils_parents);
+    chiplet_part->SetInitPartitionFiles(opt.init_partitions);
     Console::Info("Output directory: " + chiplet_part->GetOutputDir());
 
     switch (opt.mode) {

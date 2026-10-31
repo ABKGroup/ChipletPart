@@ -19,7 +19,7 @@ show_help() {
     echo "Options:"
     echo "  --partition <file>    Partition file to evaluate (required)"
     echo "  --reach <value>       Reach in mm (default: 0.50)"
-    echo "  --separation <value>  Separation in mm (default: 0.25)"
+    echo "  --separation <value>  Minimum gap between chiplets in mm (default: 0.1)"
     echo "  --tech <node>         Tech node for every chiplet (default: 7nm)"
     echo "  --output-dir <dir>    Where result files go (default: results/<test_case_name>)"
     echo "  --help                Display this help message"
@@ -37,7 +37,7 @@ TEST_CASE_NAME="$1"
 shift
 
 REACH="0.50"
-SEPARATION="0.25"
+SEPARATION="0.1"
 TECH="7nm"
 PARTITION=""
 OUTPUT_DIR=""

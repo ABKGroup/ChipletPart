@@ -1363,6 +1363,26 @@ void ChipletPart::Partition(
     }
   }
 
+  // Step 3b: user-supplied starting partitions (--init-partition)
+  for (const std::string& file : init_partition_files_) {
+    std::ifstream in(file);
+    std::vector<int> part;
+    int id;
+    while (in >> id) part.push_back(id);
+    if (static_cast<int>(part.size()) != hypergraph_->GetNumVertices()) {
+      Console::Warning("Ignoring --init-partition " + file + ": " + std::to_string(part.size()) +
+                       " ids for " + std::to_string(hypergraph_->GetNumVertices()) + " vertices");
+      continue;
+    }
+    const int parts = *std::max_element(part.begin(), part.end()) + 1;
+    if (parts > num_parts_ || *std::min_element(part.begin(), part.end()) < 0) {
+      Console::Warning("Ignoring --init-partition " + file + ": chiplet ids out of range");
+      continue;
+    }
+    Console::Info("Initial partition loaded from " + file + " (" + std::to_string(parts) + " chiplets)");
+    init_partitions.push_back(std::move(part));
+  }
+
   Console::Info("Random and METIS partitions obtained!");
   Console::Info("Total number of initial partitions: " +
            std::to_string(init_partitions.size()));
@@ -1759,6 +1779,7 @@ void ChipletPart::Partition(
       thread_refiner->SetFloorplanAware(floorplan_aware_);
       thread_refiner->SetFloorplanCheckBudget(fp_check_steps_, fp_check_perturbs_);
       thread_refiner->SetFloorplanProbeAudit(fp_audit_factor_);
+      thread_refiner->SetFloorplanSecondTier(fp_tier2_factor_);
       thread_refiner->SetFloorplanCostAware(fp_cost_aware_);
       thread_refiner->SetFloorplanExcursion(fp_excursion_);
       // A kick displaces 2-4 vertices from a refined partition, so its
@@ -1908,6 +1929,10 @@ void ChipletPart::Partition(
            (floorplan_aware_
                 ? ", probes " + std::to_string(ps.probes) + ", gated " +
                       std::to_string(ps.gated) + ", rejected " + std::to_string(ps.rejected) +
+                      (ps.tier2_checked > 0
+                           ? ", tier2 " + std::to_string(ps.tier2_accepted) + "/" +
+                                 std::to_string(ps.tier2_checked)
+                           : "") +
                       (ps.audit_checked > 0
                            ? ", audit false " + std::to_string(ps.audit_false) + "/" +
                                  std::to_string(ps.audit_checked)

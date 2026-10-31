@@ -26,7 +26,8 @@ show_help() {
     echo
     echo "Options:"
     echo "  --reach <value>        Default IO reach for net types missing from the IO file (default: 0.50)"
-    echo "  --separation <value>   Minimum chiplet spacing used by the floorplanner (default: 0.25)"
+    echo "  --separation <value>   Minimum gap between chiplets used by the floorplanner (default: 0.1,
+                         the cost model's die_separation)"
     echo "  --tech <node>          Tech node for standard partitioning / evaluation (default: 7nm)"
     echo "  --tech-nodes <list>    Comma-separated tech nodes for --genetic/--canonical-ga/--tech-enum"
     echo "                         (default: 7nm,10nm,14nm; known nodes: 45nm 16nm 14nm 10nm 7nm)"
@@ -47,6 +48,10 @@ show_help() {
     echo "  --ils-parents <n>      Cheapest feasible candidates to kick (default: 1)"
     echo "  --fp-excursion <frac>  Feasibility gate: tolerate reach violations up to <frac> x reach scale"
     echo "                         within a pass that starts feasible (default: 0 = strict)"
+    echo "  --fp-second-tier <n>   Re-probe an improving move vetoed by the cheap probe with an <n>x"
+    echo "                         probe before rejecting it (default: 0 = off)"
+    echo "  --init-partition <f>   Add the partition in <f> (one chiplet id per line) to the initial"
+    echo "                         candidates; repeatable (e.g. a seed from tools/mip_seed.py)"
     echo "  --help                 Show this message"
     echo
     echo "Examples:"
@@ -70,7 +75,7 @@ TEST_CASE_NAME="$1"
 shift
 
 REACH="0.50"
-SEPARATION="0.25"
+SEPARATION="0.1"
 TECH="7nm"
 SEED="42"
 GENERATIONS="50"
@@ -108,8 +113,9 @@ while [ "$#" -gt 0 ]; do
         --output-dir)         OUTPUT_DIR="$2"; shift 2 ;;
         --floorplan-aware|--no-floorplan-aware|--fp-eval-candidates|--no-fp-cost-aware)
                               EXTRA_OPTS+=("$1"); shift ;;
-        --fp-check-budget|--fp-steps|--fp-perturbs|--fp-workers|--fp-probe-audit|--fp-excursion|--ils-kicks|--ils-parents)
+        --fp-check-budget|--fp-steps|--fp-perturbs|--fp-workers|--fp-probe-audit|--fp-excursion|--fp-second-tier|--ils-kicks|--ils-parents)
                               EXTRA_OPTS+=("$1" "$2"); shift 2 ;;
+        --init-partition)     EXTRA_OPTS+=("$1" "$2"); shift 2 ;;
         *)
             echo -e "${RED}Error: Unknown option: $1${NC}"
             show_help

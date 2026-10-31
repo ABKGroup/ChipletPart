@@ -172,8 +172,11 @@ void ChipletRefiner::BuildChiplets(const HGraphPtr &hgraph) {
     fp_reach_scale_ += net.weight * net.reach;
   }
 
-  // Cache the halo width to avoid multiple lookups
-  const float halo_width = separation_;
+  // separation_ is the minimum gap between two chiplets (the cost model's
+  // die_separation has the same meaning). Each chiplet carries half of it as a
+  // halo, so two abutting halos give exactly one separation; using the full
+  // separation as the halo doubled the gap.
+  const float halo_width = 0.5f * separation_;
 
   // Process all vertices to create chiplets
   for (int i = 0; i < num_vertices; ++i) {
@@ -766,9 +769,33 @@ bool ChipletRefiner::IsFloorplanAcceptable(const HGraphPtr &hgraph,
   if (v <= current_violation_ + tol) {
     return true;
   }
+  if (fp_tier2_factor_ > 1 && current_violation_ <= 1e-4f) {
+    const float v2 = SecondTierViolation(hgraph, partition);
+    if (v2 <= current_violation_ + tol) {
+      ++fp_stats_.tier2_accepted;
+      return true;
+    }
+  }
   ++fp_stats_.rejected;
   AuditFloorplanRejection(hgraph, partition);
   return false;
+}
+
+float ChipletRefiner::SecondTierViolation(const HGraphPtr &hgraph,
+                                          const std::vector<int> &partition) {
+  const int saved_count = fp_probe_count_;
+  const int saved_steps = fp_check_steps_;
+  const int saved_perturbs = fp_check_perturbs_;
+  const float scale = std::sqrt(static_cast<float>(fp_tier2_factor_));
+  fp_check_steps_ = std::max(1, static_cast<int>(std::lround(saved_steps * scale)));
+  fp_check_perturbs_ = std::max(1, static_cast<int>(std::lround(saved_perturbs * scale)));
+  fp_probe_count_ += 2000000;  // own RNG stream (audits use +1000000)
+  const float v = FloorplanViolation(hgraph, partition);
+  ++fp_stats_.tier2_checked;
+  fp_check_steps_ = saved_steps;
+  fp_check_perturbs_ = saved_perturbs;
+  fp_probe_count_ = saved_count + 1;
+  return v;
 }
 
 void ChipletRefiner::AuditFloorplanRejection(const HGraphPtr &hgraph,
@@ -1099,6 +1126,35 @@ float ChipletRefiner::Pass(
           candidate_seed = last_probe_;
           candidate_acceptable = true;
           break;
+        }
+        if (fp_tier2_factor_ > 1 && exact_gain > 0.0f && !infeasible_start) {
+          // Improving move vetoed by the cheap probe from a feasible state:
+          // give it one larger probe. (Only from a feasible state: there a
+          // pass is a constructive proof, whereas comparing a large probe's
+          // violation against a threshold measured by a cheap probe would
+          // bias the repair passes towards gain.)
+          solution[v] = to;
+          const float viol2 = SecondTierViolation(hgraph, solution);
+          solution[v] = from;
+          if (viol2 <= gate_threshold + tol) {
+            // Confirm with a cheap probe warm-started from the arrangement the
+            // large probe found, so the accepted state is one the regular
+            // probes can reproduce (a seed is re-applied from its aspect
+            // ratios, not its exact shapes).
+            const FloorplanSeed saved_warm = fp_warm_;
+            fp_warm_ = last_probe_;
+            solution[v] = to;
+            const float viol3 = FloorplanViolation(hgraph, solution);
+            solution[v] = from;
+            fp_warm_ = saved_warm;
+            if (viol3 <= gate_threshold + tol) {
+              ++fp_stats_.tier2_accepted;
+              candidate_violation = viol3;
+              candidate_seed = last_probe_;
+              candidate_acceptable = true;
+              break;
+            }
+          }
         }
         scanned.push_back({candidate, viol, last_probe_});
         buckets[to]->Remove(v);

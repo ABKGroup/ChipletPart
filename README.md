@@ -19,6 +19,10 @@ The overall flow is shown below: ![shown here](https://github.com/ABKGroup/Chipl
   `Best cost` is reported by this post-floorplan cost.
 - **Iterated local search.** Kick-and-repair moves off the plateau that gated FM reaches, run in
   parallel and accepted only when feasible and cheaper after floorplanning (`--ils-kicks`, `--ils-parents`).
+- **Lower bounds and MIP seeds** ([details](#lower-bounds-and-mip-seeds)). `tools/mip_seed.py` solves a
+  mixed-integer relaxation of the cost model with HiGHS: it reports how far a result can be from the
+  optimum (0.6 – 1.1% on EPYC, GA100 and WS₁) and writes seed partitions that `--init-partition` adds
+  to the search (cheaper WS₃ designs).
 - **Reproducible results.** The final arrangement is saved next to the partition (`*.cpart.N.fp`);
   evaluation mode starts from it and reproduces the partitioner's cost and feasibility. Runs are
   deterministic for a given `--seed` regardless of the thread count.
@@ -33,6 +37,8 @@ The overall flow is shown below: ![shown here](https://github.com/ABKGroup/Chipl
    `block_level_netlist.xml` and `block_definitions.txt` (columns: `name area_mm2 power_W tech is_memory`).
 4. `test_case_gen/generateSystemDefinition.py` – the wafer-scale (WS) netlist generator.
 5. `run_*.sh` – run scripts (see [Usage](#usage-directions)). Results go to `results/`; `test_data/` is never written to.
+6. `tools/` – `mip_seed.py` (MIP lower bounds and seed partitions) and `cost_probe.cpp`, the cost-model
+   sampler it uses (see [Lower bounds and MIP seeds](#lower-bounds-and-mip-seeds)).
 
 Dependencies: CMake ≥ 3.14, a C++17 compiler, OpenMP, Boost (headers), Eigen 3, METIS 5 (+ GKlib) and pugixml (bundled in `src/`).
 
@@ -105,28 +111,31 @@ Results are written to `results/<case>/standard/` (override with `--output-dir`)
 +------------+----------------------+------------+------------------+------------------+------------+
 | Rank       | Partition Index      | Parts      | Cost             | Refined cost     | Feasible   |
 +------------+----------------------+------------+------------------+------------------+------------+
-| 1          | 17                   | 8          | 71.225777        | 71.296188        | Yes        |
-| 2          | 16                   | 8          | 72.078323        | 71.835381        | Yes        |
-| 3          | 13                   | 6          | 73.521904        | 73.643364        | Yes        |
+| 1          | 17                   | 8          | 71.228477        | 71.296188        | Yes        |
+| 2          | 15                   | 7          | 72.562843        | 72.612068        | Yes        |
+| 3          | 16                   | 8          | 73.097603        | 72.839340        | Yes        |
 [INFO] Floorplanner results: Yes
-[SUCCESS] Best cost: 71.225777
+[SUCCESS] Best cost: 71.228477
 [SUCCESS] Number of partitions: 8
 [SUCCESS] Floorplan feasibility: 1
 [SUCCESS] Pre-floorplan cost: 71.296188
-[SUCCESS] Post-floorplan cost: 71.225777
+[SUCCESS] Post-floorplan cost: 71.228477
 [SUCCESS] Best partition saved to results/epyc7282/standard/block_level_netlist.xml.cpart.8
 [SUCCESS] Floorplan seed saved to results/epyc7282/standard/block_level_netlist.xml.cpart.8.fp
 ```
 `Cost` / `Best cost` is the cost of the design with its final floorplan applied (the number evaluation
 mode reports for the saved partition); `Refined cost` / `Pre-floorplan cost` is the cost the
 refinement optimised, which assumes square chiplets. Candidates are ranked by the former, so a
-candidate with a slightly higher refined cost can win (as above: 16 refines to 71.84 but floorplans
-to 72.08, 17 refines to 71.30 and floorplans to 71.23).
+candidate with a slightly higher refined cost can win (as above: 16 refines to 72.84 but floorplans
+to 73.10, 17 refines to 71.30 and floorplans to 71.23).
 
 ### Floorplan feasibility ###
-A partition is *feasible* when the sequence-pair floorplanner can place the chiplets (with the
-`<separation>` halo and the IO shoreline each inter-chiplet bundle needs) so that every bundle is
-within its IO `reach`. `Floorplanner results` / `Floorplan feasibility` report this for the final
+A partition is *feasible* when the sequence-pair floorplanner can place the chiplets (at least
+`<separation>` apart, plus the IO shoreline each inter-chiplet bundle needs) so that every bundle is
+within its IO `reach`. `<separation>` is the minimum gap between two chiplets, the same quantity as
+the cost model's `die_separation` in `assembly_process_definitions.xml` (0.1 mm for the shipped
+benchmarks, and the scripts' default); each chiplet carries half of it as a
+halo. `Floorplanner results` / `Floorplan feasibility` report this for the final
 partition and are authoritative; the `Feasible` column is the result of the shorter per-candidate run.
 
 By default the refinement is **floorplan-aware**: every FM move and KL swap is followed by a short,
@@ -161,22 +170,77 @@ result is deterministic for a given seed. `--fp-excursion <frac>` additionally l
 walk through partitions that violate the reach by up to `frac` x the total weighted reach before
 the usual rollback; it changed nothing on the reference designs and is off by default.
 
-Results with the default settings (7nm, reach 0.5, separation 0.25; `Best cost` / chiplets over
+Results with the default settings (7nm, reach 0.5, separation 0.1; `Best cost` / chiplets over
 seeds 1, 2, 3 and 42, all feasible). `--ils-kicks 0` is the same search without the iterated local
-search; "Previous floorplanner" is the feasibility-aware search with the earlier floorplanner (walker
-chosen by the annealer's objective, no shape refinement, candidates ranked by refined cost);
-"Cost-only" is `--no-floorplan-aware`, whose EPYC and GA100 designs are **not** placeable:
+search (seed 42); "Previous floorplanner" is the feasibility-aware search with the earlier
+floorplanner (walker chosen by the annealer's objective, no shape refinement, candidates ranked by
+refined cost; measured with the earlier 0.5 mm gap, see below); "Cost-only" is
+`--no-floorplan-aware`, whose EPYC and GA100 designs are **not** placeable:
 
 | Case | Default | `--ils-kicks 0` | Previous floorplanner (seed 1) | Cost-only (seed 42) |
 |------|---------|-----------------|--------------------------------|---------------------|
-| EPYC (`epyc7282`) | 71.23 – 71.36 / 8 | 71.97 / 8 | 72.27 / 8 | 70.83 / 8 (infeasible) |
-| GA100 (`ga100`) | 70.24 / 8 | 70.24 / 8 | 71.17 / 8 | 70.14 / 8 (infeasible) |
-| WS₁ (`48_1_14_4_1600_1600`) | 48.97 – 49.41 / 4 – 6 | 49.56 – 50.04 / 4 – 8 | 50.12 / 4 | 49.89 / 7 |
-| WS₃ (`48_4_14_4_1600_1600`) | 243.62 – 245.67 / 8 | 259.17 / 8 | 262.40 / 8 | 260.23 / 8 |
-| MP (`mempool_group`) | 5.81 / 1 | 5.81 / 1 | 5.82 / 1 | 5.82 / 1 |
+| EPYC (`epyc7282`) | 71.23 – 71.25 / 8 | 72.25 / 8 | 72.27 / 8 | 71.80 / 8 (infeasible) |
+| GA100 (`ga100`) | 70.24 / 8 | 70.24 / 8 | 71.17 / 8 | 71.48 / 8 (infeasible) |
+| WS₁ (`48_1_14_4_1600_1600`) | 48.97 – 49.41 / 4 – 6 | 49.76 / 7 | 50.12 / 4 | 49.79 / 7 |
+| WS₃ (`48_4_14_4_1600_1600`) | 242.60 – 243.70 / 8 | 259.17 / 8 | 262.40 / 8 | 259.82 / 8 |
+| MP (`mempool_group`) | 5.81 / 1 | 5.81 / 1 | 5.82 / 1 | 5.81 / 1 |
 
-Runtime on a laptop (8 threads): EPYC and GA100 about 9 s, WS₃ 30 – 40 s, WS₁ 8 s, MP 3 s
-(without the local search: 9 s, 15 s, 5 s, 3 s).
+Runtime on a laptop (8 threads): EPYC and GA100 about 11 s, WS₃ 40 – 45 s, WS₁ 10 s, MP 4 s
+(without the local search: 9 s, 17 s, 5 s, 3 s).
+
+Until commit `c133f49` the floorplanner used the whole `<separation>` as the halo of *each* chiplet,
+so two chiplets were kept 2 × separation apart (0.5 mm with the then-default 0.25) while the cost
+model assumed 0.1 mm. Both the halo (now separation / 2) and the default (now 0.1, the assembly
+process's `die_separation`) have been corrected; with the same gap as before (`--separation 0.5`) the
+results are unchanged, and the old designs remain feasible at the new default (e.g. the EPYC design
+above evaluates to 71.20).
+
+### Lower bounds and MIP seeds ###
+`tools/mip_seed.py` answers "how much is left on the table" and produces starting points the
+heuristic does not find on its own. It samples the cost model with the `cost_probe` helper
+(CMake target `cost_probe`, built in `build/bin/`), builds a mixed-integer relaxation with
+[HiGHS](https://highs.dev) and solves it per chiplet count:
+
+- binaries `x[v,k]` assign block `v` to chiplet `k`; cut indicators give each chiplet's IO area and the
+  interposer signal count `S`;
+- the per-chiplet cost `f(W)` (incl. yield, minimised over aspect ratio) and the interposer cost `g(U)`
+  are replaced by supporting lines of their lower convex hulls, the yield factor `exp(λS)/Y₀` by a
+  tangent at `--s0` plus a McCormick bound, so the MIP optimum (or its dual bound at the time limit) is
+  a valid lower bound on the cost of *any* partition into `K` chiplets, floorplan feasibility ignored
+  (up to the 0.25 mm² sampling grid of `f`);
+- the MIP's own partition is written as `<out>/<case>.K<k>.part`, and `--init-partition <file>` adds it
+  to the partitioner's initial candidates (repeatable; `--topology-from <part>` restricts the MIP to the
+  chiplet adjacencies of an existing feasible partition).
+
+```bash
+pip install numpy highspy
+cmake --build build --target cost_probe
+tools/mip_seed.py test_data/48_4_14_4_1600_1600 --k 8 --time 600 --out seeds
+./run_chiplet_test.sh 48_4_14_4_1600_1600 --init-partition seeds/48_4_14_4_1600_1600.K8.part
+```
+
+| Case | Lower bound (K) | Best feasible result | Gap |
+|------|-----------------|----------------------|-----|
+| EPYC | 70.48 (8); 71.23 (7), higher for K ≤ 6 | 71.23 / 8 | ≤ 1.1% |
+| GA100 | 69.77 (8, MIP solved to optimality) | 70.24 / 8 | 0.7% |
+| WS₁ | 48.68 (5); 48.78 (6), 49.09 (4), 49.06 (7), 49.50 (8) | 48.97 / 4 – 6 | 0.6% |
+| WS₃ | 224.75 (8), 226.7 (7) after 2 × 600 s, MIP not converged | 242.39 / 8 (seeded) | ≤ 7.9% (open) |
+| MP | 5.81 (1); 6.09 (2), ≥ 6.50 (K ≥ 3) | 5.81 / 1 | optimal |
+
+The relaxation ignores placeability, and its unconstrained optima are not placeable on EPYC and GA100
+(the chiplet adjacency graph is non-planar), so on those designs the seeds change nothing (EPYC
+71.23, GA100 70.23 vs 70.24); with the MIP restricted to the topology of the heuristic's best EPYC
+design the two agree to 0.03%. On WS₃ the seed is feasible and the partitioner finishes at
+**242.39 – 242.58** over seeds 1, 2 and 42 (default 242.60 – 243.70) in the usual 30 – 45 s; solving
+the MIP takes minutes offline (`--time` per solve, two solves per `K`) and is done once per design. The WS₃ bound is loose because HiGHS does not close the MIP in that time; the other
+designs are solved to optimality or within 0.2%.
+
+`--fp-second-tier <n>` re-probes an improving move that the cheap feasibility probe vetoed with an
+`n`× larger probe before rejecting it (from feasible states only, confirmed by a cheap probe warm-started
+from the large one). About 5% of the vetoes are false, but accepting those moves does not help:
+with `n = 4` GA100 is unchanged, WS₃ moves within noise (243.42 – 243.76) and EPYC ends at 7
+chiplets (71.69 – 71.73) because the accepted moves lead the 8-chiplet candidates into states the
+repair cannot place, so the option is off by default.
 
 ## Heterogeneous mode ##
 Multiple technology nodes; partitioning and technology assignment are co-optimised by a genetic algorithm:
@@ -232,7 +296,8 @@ Modes (pick at most one; default is standard single-technology partitioning):
 
 Options:
   --reach <value>        Default IO reach for net types missing from the IO file (default: 0.50)
-  --separation <value>   Minimum chiplet spacing used by the floorplanner (default: 0.25)
+  --separation <value>   Minimum gap between chiplets used by the floorplanner (default: 0.1,
+                         the cost model's die_separation)
   --tech <node>          Tech node for standard partitioning / evaluation (default: 7nm)
   --tech-nodes <list>    Comma-separated tech nodes for --genetic/--canonical-ga/--tech-enum
                          (default: 7nm,10nm,14nm; known nodes: 45nm 16nm 14nm 10nm 7nm)
@@ -253,6 +318,10 @@ Options:
   --ils-parents <n>      Cheapest feasible candidates to kick (default: 1)
   --fp-excursion <frac>  Feasibility gate: tolerate reach violations up to <frac> x reach scale
                          within a pass that starts feasible (default: 0 = strict)
+  --fp-second-tier <n>   Re-probe an improving move vetoed by the cheap probe with an <n>x
+                         probe before rejecting it (default: 0 = off)
+  --init-partition <f>   Add the partition in <f> (one chiplet id per line) to the initial
+                         candidates; repeatable (e.g. a seed from tools/mip_seed.py)
   --help                 Show this message
 
 Examples:

@@ -129,11 +129,19 @@ public:
     ils_kicks_ = kicks;
     ils_parents_ = parents;
   }
+  // Extra starting partitions (one chiplet id per vertex per file) added to
+  // the initial candidates of the standard flow.
+  void SetInitPartitionFiles(const std::vector<std::string>& files) {
+    init_partition_files_ = files;
+  }
   // Experiment instrumentation: floorplan every refined candidate with the
   // final budget and report its post-floorplan cost; audit gate rejections
   // with a `factor`x probe (0 = off).
   void SetEvalCandidates(bool on) { fp_eval_candidates_ = on; }
   void SetFloorplanProbeAudit(int factor) { fp_audit_factor_ = factor; }
+  // Two-tier feasibility gate: re-probe improving vetoed moves with a
+  // factor x budget (0 = off).
+  void SetFloorplanSecondTier(int factor) { fp_tier2_factor_ = factor; }
 
   // Join output_dir_ with a file name. `file_name` may be a path; only its
   // basename is used so inputs under test_data/ never get polluted.
@@ -310,8 +318,10 @@ private:
   float fp_excursion_ = 0.0f;    // bounded-excursion budget of the gate
   int ils_kicks_ = 256;          // max ILS kicks per parent (0 = off)
   int ils_parents_ = 1;          // ILS parents (cheapest feasible candidates)
+  std::vector<std::string> init_partition_files_;  // --init-partition
   bool fp_eval_candidates_ = false;
   int fp_audit_factor_ = 0;
+  int fp_tier2_factor_ = 0;
   int num_parts_ = 8;     // number of partitions
   int refine_iters_ = 2;  // number of refinement iterations
   int max_moves_ = 50;

@@ -212,4 +212,11 @@ if(BUILD_MAIN_APP)
     if(OpenMP_CXX_FOUND)
         target_link_libraries(chipletPart PRIVATE ${OpenMP_CXX_LIBRARIES})
     endif()
+
+    # Cost-model sampler used by tools/mip_seed.py (MIP seeds / lower bounds).
+    add_executable(cost_probe tools/cost_probe.cpp)
+    target_link_libraries(cost_probe PRIVATE cost_model)
+    if(OpenMP_CXX_FOUND)
+        target_link_libraries(cost_probe PRIVATE ${OpenMP_CXX_LIBRARIES})
+    endif()
 endif()
